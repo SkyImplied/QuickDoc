@@ -4,20 +4,6 @@
 
 QuickDoc is a macOS Finder Sync extension that adds a fast "New File" menu to Finder, so you can create common documents directly from a folder background, a selected folder, or the Desktop.
 
-## Preview
-
-### Light mode app interface
-
-![QuickDoc light mode](./浅色模式app主界面.png)
-
-### Dark mode app interface
-
-![QuickDoc dark mode](./深色模式app主界面.png)
-
-### Finder right-click menu
-
-![QuickDoc Finder context menu](./菜单右键.png)
-
 ## Highlights
 
 - Create common files directly from Finder right-click menus
