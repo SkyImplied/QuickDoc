@@ -4,6 +4,20 @@
 
 QuickDoc 是一个 macOS Finder Sync 扩展，可以把“新建文件”菜单直接加到 Finder 右键菜单中，让你在文件夹背景、选中文件夹或桌面上快速创建常见文件。
 
+## 效果预览
+
+### 浅色模式应用界面
+
+![QuickDoc 浅色模式](./浅色模式app主界面.png)
+
+### 深色模式应用界面
+
+![QuickDoc 深色模式](./深色模式app主界面.png)
+
+### Finder 右键菜单
+
+![QuickDoc Finder 右键菜单](./菜单右键.png)
+
 ## 功能亮点
 
 - 直接在 Finder 右键菜单中新建常见文件
