@@ -36,7 +36,7 @@ QuickDoc is a macOS Finder Sync extension that adds a fast "New File" menu to Fi
 
 ## Installation
 
-Download the latest `QuickDoc-<version>.dmg` from GitHub Releases, open it, and drag `QuickDoc.app` into `Applications`.
+The recommended way to use QuickDoc is to download the latest `QuickDoc-<version>.dmg` from GitHub Releases, open it, and drag `QuickDoc.app` into `Applications`.
 
 Then:
 
@@ -47,19 +47,48 @@ Then:
 
 If macOS warns that the app is from an unidentified developer, open it once from Finder with `Control` + click -> `Open`.
 
-## Development
+## Build From Source
 
-This project requires full Xcode because Finder Sync extensions cannot be built with Command Line Tools alone.
+QuickDoc requires full Xcode because Finder Sync extensions cannot be built with Command Line Tools alone.
+
+### Option 1: one-command local build and run
+
+```bash
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+./script/build_and_run.sh
+```
+
+This script will:
+
+1. Build the `QuickDoc` app and Finder extension
+2. Refresh Finder extension registration
+3. Restart Finder
+4. Launch `QuickDoc.app`
+
+After the first launch, enable `QuickDocFinderSync` in Finder Extensions if macOS has not already enabled it.
+
+### Option 2: build manually in Xcode
+
+1. Run the following once if needed:
 
 ```bash
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
 
-Then open `QuickDoc.xcodeproj` in Xcode, select the `QuickDoc` scheme, and run the app.
+2. Open `QuickDoc.xcodeproj` in Xcode
+3. Select the `QuickDoc` scheme
+4. Click Run
+5. Enable `QuickDocFinderSync` in Finder Extensions
 
-## Release Notes
+## Build Distribution Files
 
-This project currently produces an unsigned Release artifact by default. It is suitable for internal sharing or manual distribution, but Gatekeeper warnings are expected on other Macs until the app is signed with a Developer ID Application certificate and notarized by Apple.
+If you want to build your own app bundle, ZIP, or DMG from source:
+
+```bash
+./script/package_release.sh
+```
+
+Artifacts are generated in `dist/`.
 
 ## Troubleshooting
 
@@ -72,5 +101,5 @@ killall Finder
 If a menu click does nothing, stream extension logs while testing:
 
 ```bash
-log stream --info --style compact --predicate 'subsystem == "com.skyimplied.QuickDoc"'
+log stream --info --style compact --predicate 'process == "QuickDoc" OR process == "QuickDocFinderSync"'
 ```
