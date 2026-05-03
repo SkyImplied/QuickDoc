@@ -1,0 +1,568 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* main.swift */; };
+		A10000000000000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* AppDelegate.swift */; };
+		A10000000000000000000003 /* FinderSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000017 /* FinderSync.swift */; };
+		A10000000000000000000004 /* QuickDocFinderSync.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* QuickDocFinderSync.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A10000000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000025 /* Assets.xcassets */; };
+		A10000000000000000000006 /* menu-icon.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000026 /* menu-icon.png */; };
+		A10000000000000000000007 /* blank.docx in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000027 /* blank.docx */; };
+		A10000000000000000000008 /* blank.xlsx in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000028 /* blank.xlsx */; };
+		A10000000000000000000009 /* blank.pptx in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000029 /* blank.pptx */; };
+		A1000000000000000000000A /* word_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002A /* word_icon.png */; };
+		A1000000000000000000000B /* word_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002A /* word_icon.png */; };
+		B1000000000000000000000C /* txt.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002B /* txt.png */; };
+		B1000000000000000000000D /* txt.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002B /* txt.png */; };
+		B1000000000000000000000E /* md.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002C /* md.png */; };
+		B1000000000000000000000F /* md.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002C /* md.png */; };
+		B10000000000000000000010 /* excel.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002D /* excel.png */; };
+		B10000000000000000000011 /* excel.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002D /* excel.png */; };
+		B10000000000000000000012 /* CSV.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002E /* CSV.png */; };
+		B10000000000000000000013 /* CSV.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002E /* CSV.png */; };
+		B10000000000000000000014 /* PPT.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002F /* PPT.png */; };
+		B10000000000000000000015 /* PPT.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000002F /* PPT.png */; };
+		B10000000000000000000016 /* json.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000030 /* json.png */; };
+		B10000000000000000000017 /* json.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000030 /* json.png */; };
+		B10000000000000000000018 /* 空白.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000033 /* 空白.png */; };
+		B10000000000000000000019 /* 空白.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000033 /* 空白.png */; };
+		B1000000000000000000001A /* python.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000034 /* python.png */; };
+		B1000000000000000000001B /* python.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000034 /* python.png */; };
+		B1000000000000000000001C /* html.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000035 /* html.png */; };
+		B1000000000000000000001D /* html.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000035 /* html.png */; };
+		B1000000000000000000001E /* shell.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000036 /* shell.png */; };
+		B1000000000000000000001F /* shell.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000036 /* shell.png */; };
+		B10000000000000000000040 /* rtf.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000037 /* rtf.png */; };
+		B10000000000000000000042 /* rtf.png in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000037 /* rtf.png */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A10000000000000000000062 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000041 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000032;
+			remoteInfo = QuickDocFinderSync;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A10000000000000000000054 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A10000000000000000000004 /* QuickDocFinderSync.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		A10000000000000000000011 /* QuickDoc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuickDoc.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000012 /* QuickDocFinderSync.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuickDocFinderSync.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000013 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		A10000000000000000000014 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A10000000000000000000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000000000000000000016 /* QuickDoc.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuickDoc.entitlements; sourceTree = "<group>"; };
+		A10000000000000000000017 /* FinderSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderSync.swift; sourceTree = "<group>"; };
+		A10000000000000000000018 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000000000000000000019 /* QuickDocFinderSync.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuickDocFinderSync.entitlements; sourceTree = "<group>"; };
+		A10000000000000000000020 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		A10000000000000000000025 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A10000000000000000000026 /* menu-icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Resources/menu-icon.png"; sourceTree = "<group>"; };
+		A10000000000000000000027 /* blank.docx */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Resources/Templates/blank.docx"; sourceTree = "<group>"; };
+		A10000000000000000000028 /* blank.xlsx */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Resources/Templates/blank.xlsx"; sourceTree = "<group>"; };
+		A10000000000000000000029 /* blank.pptx */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Resources/Templates/blank.pptx"; sourceTree = "<group>"; };
+		A1000000000000000000002A /* word_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icons/word_icon.png; sourceTree = "<group>"; };
+		A1000000000000000000002B /* txt.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icons/txt.png; sourceTree = "<group>"; };
+		A1000000000000000000002C /* md.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icons/md.png; sourceTree = "<group>"; };
+		A1000000000000000000002D /* excel.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icons/excel.png; sourceTree = "<group>"; };
+		A1000000000000000000002E /* CSV.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icons/CSV.png; sourceTree = "<group>"; };
+		A1000000000000000000002F /* PPT.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icons/PPT.png; sourceTree = "<group>"; };
+		A10000000000000000000030 /* json.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icons/json.png; sourceTree = "<group>"; };
+		A10000000000000000000033 /* 空白.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icons/空白.png"; sourceTree = "<group>"; };
+		A10000000000000000000034 /* python.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icons/python.png; sourceTree = "<group>"; };
+		A10000000000000000000035 /* html.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icons/html.png; sourceTree = "<group>"; };
+		A10000000000000000000036 /* shell.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icons/shell.png; sourceTree = "<group>"; };
+		A10000000000000000000037 /* rtf.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icons/rtf.png; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000000000000000000052 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000056 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000000000000000000021 = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000022 /* QuickDoc */,
+				A10000000000000000000023 /* QuickDocFinderSync */,
+				A1000000000000000000002A /* word_icon.png */,
+				A1000000000000000000002B /* txt.png */,
+				A1000000000000000000002C /* md.png */,
+				A1000000000000000000002D /* excel.png */,
+				A1000000000000000000002E /* CSV.png */,
+				A1000000000000000000002F /* PPT.png */,
+				A10000000000000000000030 /* json.png */,
+				A10000000000000000000033 /* 空白.png */,
+				A10000000000000000000034 /* python.png */,
+				A10000000000000000000035 /* html.png */,
+				A10000000000000000000036 /* shell.png */,
+				A10000000000000000000037 /* rtf.png */,
+				A10000000000000000000020 /* README.md */,
+				A10000000000000000000024 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000000000000000000022 /* QuickDoc */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000013 /* main.swift */,
+				A10000000000000000000014 /* AppDelegate.swift */,
+				A10000000000000000000025 /* Assets.xcassets */,
+				A10000000000000000000015 /* Info.plist */,
+				A10000000000000000000016 /* QuickDoc.entitlements */,
+			);
+			path = QuickDoc;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000023 /* QuickDocFinderSync */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000017 /* FinderSync.swift */,
+				A10000000000000000000026 /* menu-icon.png */,
+				A10000000000000000000027 /* blank.docx */,
+				A10000000000000000000028 /* blank.xlsx */,
+				A10000000000000000000029 /* blank.pptx */,
+				A10000000000000000000018 /* Info.plist */,
+				A10000000000000000000019 /* QuickDocFinderSync.entitlements */,
+			);
+			path = QuickDocFinderSync;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000024 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000011 /* QuickDoc.app */,
+				A10000000000000000000012 /* QuickDocFinderSync.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000000000000000000031 /* QuickDoc */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000082 /* Build configuration list for PBXNativeTarget "QuickDoc" */;
+			buildPhases = (
+				A10000000000000000000051 /* Sources */,
+				A10000000000000000000052 /* Frameworks */,
+				A10000000000000000000053 /* Resources */,
+				A10000000000000000000054 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000061 /* PBXTargetDependency */,
+			);
+			name = QuickDoc;
+			productName = QuickDoc;
+			productReference = A10000000000000000000011 /* QuickDoc.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A10000000000000000000032 /* QuickDocFinderSync */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000083 /* Build configuration list for PBXNativeTarget "QuickDocFinderSync" */;
+			buildPhases = (
+				A10000000000000000000055 /* Sources */,
+				A10000000000000000000056 /* Frameworks */,
+				A10000000000000000000057 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = QuickDocFinderSync;
+			productName = QuickDocFinderSync;
+			productReference = A10000000000000000000012 /* QuickDocFinderSync.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000000000000000000041 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1530;
+				LastUpgradeCheck = 1530;
+				TargetAttributes = {
+					A10000000000000000000031 = {
+						CreatedOnToolsVersion = 15.3;
+						ProvisioningStyle = Automatic;
+					};
+					A10000000000000000000032 = {
+						CreatedOnToolsVersion = 15.3;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = A10000000000000000000081 /* Build configuration list for PBXProject "QuickDoc" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A10000000000000000000021;
+			productRefGroup = A10000000000000000000024 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000000000000000000031 /* QuickDoc */,
+				A10000000000000000000032 /* QuickDocFinderSync */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000000000000000000053 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000005 /* Assets.xcassets in Resources */,
+				A1000000000000000000000A /* word_icon.png in Resources */,
+				B1000000000000000000000C /* txt.png in Resources */,
+				B1000000000000000000000E /* md.png in Resources */,
+				B10000000000000000000010 /* excel.png in Resources */,
+				B10000000000000000000012 /* CSV.png in Resources */,
+				B10000000000000000000014 /* PPT.png in Resources */,
+				B10000000000000000000016 /* json.png in Resources */,
+				B10000000000000000000018 /* 空白.png in Resources */,
+				B1000000000000000000001A /* python.png in Resources */,
+				B1000000000000000000001C /* html.png in Resources */,
+				B1000000000000000000001E /* shell.png in Resources */,
+				B10000000000000000000040 /* rtf.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000057 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000006 /* menu-icon.png in Resources */,
+				A10000000000000000000007 /* blank.docx in Resources */,
+				A10000000000000000000008 /* blank.xlsx in Resources */,
+				A10000000000000000000009 /* blank.pptx in Resources */,
+				A1000000000000000000000B /* word_icon.png in Resources */,
+				B1000000000000000000000D /* txt.png in Resources */,
+				B1000000000000000000000F /* md.png in Resources */,
+				B10000000000000000000011 /* excel.png in Resources */,
+				B10000000000000000000013 /* CSV.png in Resources */,
+				B10000000000000000000015 /* PPT.png in Resources */,
+				B10000000000000000000017 /* json.png in Resources */,
+				B10000000000000000000019 /* 空白.png in Resources */,
+				B1000000000000000000001B /* python.png in Resources */,
+				B1000000000000000000001D /* html.png in Resources */,
+				B1000000000000000000001F /* shell.png in Resources */,
+				B10000000000000000000042 /* rtf.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A10000000000000000000051 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* main.swift in Sources */,
+				A10000000000000000000002 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000055 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000003 /* FinderSync.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A10000000000000000000061 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000032 /* QuickDocFinderSync */;
+			targetProxy = A10000000000000000000062 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A10000000000000000000071 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = QuickDoc/QuickDoc.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = QuickDoc/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc;
+				PRODUCT_NAME = QuickDoc;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A10000000000000000000072 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = QuickDoc/QuickDoc.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = QuickDoc/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc;
+				PRODUCT_NAME = QuickDoc;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A10000000000000000000073 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = QuickDocFinderSync/QuickDocFinderSync.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = QuickDocFinderSync/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.FinderSync;
+				PRODUCT_NAME = QuickDocFinderSync;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				WRAPPER_EXTENSION = appex;
+			};
+			name = Debug;
+		};
+		A10000000000000000000074 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = QuickDocFinderSync/QuickDocFinderSync.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = QuickDocFinderSync/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.FinderSync;
+				PRODUCT_NAME = QuickDocFinderSync;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				WRAPPER_EXTENSION = appex;
+			};
+			name = Release;
+		};
+		A10000000000000000000075 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+			};
+			name = Debug;
+		};
+		A10000000000000000000076 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000000000000000000081 /* Build configuration list for PBXProject "QuickDoc" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000075 /* Debug */,
+				A10000000000000000000076 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000082 /* Build configuration list for PBXNativeTarget "QuickDoc" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000071 /* Debug */,
+				A10000000000000000000072 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000083 /* Build configuration list for PBXNativeTarget "QuickDocFinderSync" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000073 /* Debug */,
+				A10000000000000000000074 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A10000000000000000000041 /* Project object */;
+}
