@@ -38,8 +38,9 @@ This project requires full Xcode because Finder Sync extensions cannot be built 
 
 ```bash
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-./script/build_and_run.sh
 ```
+
+Then open `QuickDoc.xcodeproj` in Xcode, select the `QuickDoc` scheme, and run the app.
 
 Then enable the extension:
 
@@ -50,19 +51,9 @@ Then enable the extension:
 
 ## Build a Release DMG
 
-To build a distributable app bundle and DMG locally:
+Create a Release build from Xcode, then package the exported `QuickDoc.app` as a DMG or ZIP for distribution.
 
-```bash
-./script/package_release.sh
-```
-
-Artifacts are written to:
-
-- `dist/QuickDoc.app`
-- `dist/QuickDoc-1.0.dmg`
-- `dist/QuickDoc-1.0.zip`
-
-This packaging flow builds an unsigned Release artifact by default. It is suitable for internal sharing or manual distribution, but Gatekeeper warnings are expected on other Macs until the app is signed with a Developer ID Application certificate and notarized by Apple.
+This project currently produces an unsigned Release artifact by default. It is suitable for internal sharing or manual distribution, but Gatekeeper warnings are expected on other Macs until the app is signed with a Developer ID Application certificate and notarized by Apple.
 
 ## Publish to GitHub
 
@@ -71,7 +62,7 @@ Recommended release flow:
 1. Create a GitHub repository.
 2. Add it as `origin`.
 3. Commit and push this project.
-4. Run `./script/package_release.sh`.
+4. Build a Release app in Xcode.
 5. Upload the generated DMG and ZIP to a GitHub Release.
 
 If you later configure `gh` and a remote repository, the remaining git push and release upload steps can be automated.
@@ -85,7 +76,6 @@ Right-click a folder, a Finder window background, or the Desktop and choose `新
 After changing the extension code, rebuild and restart Finder so macOS unloads the old extension process:
 
 ```bash
-./script/build_and_run.sh
 killall Finder
 ```
 
