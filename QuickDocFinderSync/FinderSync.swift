@@ -6,16 +6,32 @@ final class FinderSync: FIFinderSync {
     private let logger = Logger(subsystem: "com.skyimplied.QuickDoc", category: "FinderSync")
     private var menuDefinitionsByTag: [Int: FileDefinition] = [:]
     private lazy var menuIcon: NSImage = {
-        let image = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: "新建文件") ?? NSImage()
-        image.size = NSSize(width: 18, height: 18)
-        image.isTemplate = true
-        return image
+        if let image = Self.iconImage(named: "新建文件icon", size: NSSize(width: 18, height: 18)) {
+            return image
+        }
+
+        let fallback = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: "新建文件") ?? NSImage()
+        fallback.size = NSSize(width: 18, height: 18)
+        fallback.isTemplate = true
+        return fallback
+    }()
+    private lazy var terminalIcon: NSImage = {
+        Self.iconImage(named: "终端直达", size: NSSize(width: 18, height: 18))
+        ?? NSImage(systemSymbolName: "terminal", accessibilityDescription: "在终端中打开")
+        ?? NSImage()
+    }()
+    private lazy var pathCopyIcon: NSImage = {
+        Self.iconImage(named: "文件路径", size: NSSize(width: 18, height: 18))
+        ?? NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "复制当前路径")
+        ?? NSImage()
     }()
     private var menuItemIconsByID: [String: NSImage] = [:]
 
     private static let enabledFileTypesKey = "enabledFileTypes"
     private static let customExtensionsKey = "customExtensions"
     private static let menuOrderKey = "menuOrder"
+    private static let terminalDirectEnabledKey = "terminalDirectEnabled"
+    private static let pathCopyEnabledKey = "pathCopyEnabled"
     private static let customMenuIDPrefix = "custom."
     private static let builtInIconResourceNames: [String: String] = [
         "txt": "txt",
@@ -54,6 +70,19 @@ final class FinderSync: FIFinderSync {
         urls.append(contentsOf: commonUserDirectories.map {
             userHomeURL.appendingPathComponent($0, isDirectory: true)
         })
+
+        // Finder Sync needs the real filesystem location for iCloud Drive, not
+        // just the sidebar label shown in Finder.
+        let iCloudCandidateURLs = [
+            userHomeURL
+                .appendingPathComponent("Library", isDirectory: true)
+                .appendingPathComponent("Mobile Documents", isDirectory: true)
+                .appendingPathComponent("com~apple~CloudDocs", isDirectory: true),
+            userHomeURL
+                .appendingPathComponent("Library", isDirectory: true)
+                .appendingPathComponent("Mobile Documents", isDirectory: true)
+        ]
+        urls.append(contentsOf: iCloudCandidateURLs)
 
         var seenPaths: Set<String> = []
         return urls.filter { url in
@@ -118,11 +147,21 @@ final class FinderSync: FIFinderSync {
     private func makeNewFileMenu() -> NSMenu {
         diagnosticLog("Building Finder menu")
         let menu = NSMenu(title: "QuickDoc")
+        menuDefinitionsByTag.removeAll()
+
+        let actionItems = buildActionItems()
+        actionItems.forEach { menu.addItem($0) }
+
+        diagnosticLog("Finder menu contains \(actionItems.count) top-level item(s)")
+        return menu
+    }
+
+    private func buildActionItems() -> [NSMenuItem] {
+        var items: [NSMenuItem] = []
+
         let parent = NSMenuItem(title: "新建文件", action: nil, keyEquivalent: "")
         parent.image = menuIcon
-
         let submenu = NSMenu(title: "新建文件")
-        menuDefinitionsByTag.removeAll()
 
         enabledDefinitions().enumerated().forEach { index, definition in
             let item = NSMenuItem(title: definition.title, action: #selector(createConfiguredFile(_:)), keyEquivalent: "")
@@ -140,9 +179,23 @@ final class FinderSync: FIFinderSync {
         }
 
         parent.submenu = submenu
-        menu.addItem(parent)
-        diagnosticLog("Finder menu contains \(submenu.items.count) item(s)")
-        return menu
+        items.append(parent)
+
+        if terminalDirectEnabled() {
+            let terminalItem = NSMenuItem(title: "在终端中打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
+            terminalItem.target = self
+            terminalItem.image = terminalIcon
+            items.append(terminalItem)
+        }
+
+        if pathCopyEnabled() {
+            let pathItem = NSMenuItem(title: "复制当前路径", action: #selector(copyCurrentPath(_:)), keyEquivalent: "")
+            pathItem.target = self
+            pathItem.image = pathCopyIcon
+            items.append(pathItem)
+        }
+
+        return items
     }
 
     private func configureIcon(for item: NSMenuItem, definition: FileDefinition) {
@@ -206,7 +259,7 @@ final class FinderSync: FIFinderSync {
         return orderedDefinitions + remainingDefinitions
     }
 
-    private func readSharedSettings() -> (enabledFileTypes: [String]?, customExtensions: [String]?, menuOrder: [String]?) {
+    private func readSharedSettings() -> (enabledFileTypes: [String]?, customExtensions: [String]?, menuOrder: [String]?, terminalDirectEnabled: Bool?, pathCopyEnabled: Bool?) {
         for url in Self.sharedSettingsURLs {
             guard let data = try? Data(contentsOf: url),
                   let payload = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
@@ -216,11 +269,35 @@ final class FinderSync: FIFinderSync {
             return (
                 payload[Self.enabledFileTypesKey] as? [String],
                 payload[Self.customExtensionsKey] as? [String],
-                payload[Self.menuOrderKey] as? [String]
+                payload[Self.menuOrderKey] as? [String],
+                payload[Self.terminalDirectEnabledKey] as? Bool,
+                payload[Self.pathCopyEnabledKey] as? Bool
             )
         }
 
-        return (nil, nil, nil)
+        return (nil, nil, nil, nil, nil)
+    }
+
+    private func terminalDirectEnabled() -> Bool {
+        readBoolSetting(key: Self.terminalDirectEnabledKey, fallback: true)
+    }
+
+    private func pathCopyEnabled() -> Bool {
+        readBoolSetting(key: Self.pathCopyEnabledKey, fallback: true)
+    }
+
+    private func readBoolSetting(key: String, fallback: Bool) -> Bool {
+        for url in Self.sharedSettingsURLs {
+            guard let data = try? Data(contentsOf: url),
+                  let payload = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
+                  let value = payload[key] as? Bool else {
+                continue
+            }
+
+            return value
+        }
+
+        return UserDefaults.standard.object(forKey: key) as? Bool ?? fallback
     }
 
     private static var sharedSettingsURLs: [URL] {
@@ -278,6 +355,26 @@ final class FinderSync: FIFinderSync {
         }
     }
 
+    @objc private func openInTerminal(_ sender: NSMenuItem) {
+        guard let directory = targetDirectory() else {
+            showError(message: "无法确定目标文件夹。")
+            return
+        }
+
+        openDirectoryInTerminal(directory)
+    }
+
+    @objc private func copyCurrentPath(_ sender: NSMenuItem) {
+        guard let directory = targetDirectory() else {
+            showError(message: "无法确定目标文件夹。")
+            return
+        }
+
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(directory.path, forType: .string)
+        diagnosticLog("Copied current path: \(directory.path)")
+    }
+
     private func targetDirectory() -> URL? {
         let finderController = FIFinderSyncController.default()
 
@@ -299,6 +396,33 @@ final class FinderSync: FIFinderSync {
         }
 
         return isDirectory.boolValue ? url : url.deletingLastPathComponent()
+    }
+
+    private func openDirectoryInTerminal(_ directory: URL) {
+        var components = URLComponents()
+        components.scheme = "quickdoc"
+        components.host = "open-terminal"
+        components.queryItems = [
+            URLQueryItem(name: "path", value: directory.path)
+        ]
+
+        guard let quickDocURL = components.url else {
+            showError(message: "无法生成终端打开请求。")
+            return
+        }
+
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        configuration.promptsUserIfNeeded = true
+
+        NSWorkspace.shared.open(quickDocURL, configuration: configuration) { [weak self] _, error in
+            if let error {
+                self?.showError(message: "唤起 QuickDoc 失败：\(error.localizedDescription)")
+                return
+            }
+
+            self?.diagnosticLog("Delegated terminal open request for path: \(directory.path)")
+        }
     }
 
     private func uniqueFileURL(in directory: URL, definition: FileDefinition) throws -> URL {

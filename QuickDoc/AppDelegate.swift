@@ -1,22 +1,82 @@
 import Cocoa
+import Carbon
+import FinderSync
+import os
 import ServiceManagement
 import SwiftUI
 import UniformTypeIdentifiers
 
-final class AppDelegate: NSObject, NSApplicationDelegate {
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+    private let logger = Logger(subsystem: "com.skyimplied.QuickDoc", category: "AppDelegate")
+    private let settingsModel = QuickDocSettingsModel()
     private var window: NSWindow?
+    private var statusItem: NSStatusItem?
+    private static let terminalPathQueryKey = "path"
+    private var initialWindowWorkItem: DispatchWorkItem?
+    private var shouldSuppressInitialWindow = false
+
+    override init() {
+        super.init()
+        NSAppleEventManager.shared().setEventHandler(
+            self,
+            andSelector: #selector(handleGetURLEvent(_:withReplyEvent:)),
+            forEventClass: AEEventClass(kInternetEventClass),
+            andEventID: AEEventID(kAEGetURL)
+        )
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        showMainWindow()
+        settingsModel.onDisplayModeDidChange = { [weak self] mode in
+            self?.applyDisplayMode(mode)
+        }
+        applyDisplayMode(settingsModel.displayMode)
+        scheduleInitialWindowPresentation()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
     }
 
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            showMainWindow()
+        }
+        return true
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        urls.forEach(handleIncomingURL(_:))
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        sender.orderOut(nil)
+        return false
+    }
+
     private func showMainWindow() {
+        cancelInitialWindowPresentation()
+        shouldSuppressInitialWindow = false
+
+        if window == nil {
+            window = makeMainWindow()
+        }
+
+        applyDisplayMode(settingsModel.displayMode)
+
+        guard let window else { return }
+        if window.isMiniaturized {
+            window.deminiaturize(nil)
+        }
+
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func makeMainWindow() -> NSWindow {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 920, height: 640),
+            contentRect: NSRect(x: 0, y: 0, width: 1200, height: 840),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -25,12 +85,258 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = false
-        window.minSize = NSSize(width: 820, height: 560)
+        window.minSize = NSSize(width: 1120, height: 700)
+        window.isReleasedWhenClosed = false
+        window.delegate = self
         window.center()
-        window.contentView = NSHostingView(rootView: QuickDocSettingsView())
-        window.makeKeyAndOrderFront(nil)
+        window.contentView = NSHostingView(rootView: QuickDocSettingsView(model: settingsModel))
+        return window
+    }
+
+    private func applyDisplayMode(_ mode: QuickDocDisplayMode) {
+        updateStatusItemVisibility(for: mode)
+
+        let targetPolicy = mode.activationPolicy
+        if NSApp.activationPolicy() != targetPolicy {
+            NSApp.setActivationPolicy(targetPolicy)
+        }
+    }
+
+    private func updateStatusItemVisibility(for mode: QuickDocDisplayMode) {
+        if mode.showsStatusItem {
+            if statusItem == nil {
+                let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+                configureStatusItem(item)
+                statusItem = item
+            } else {
+                refreshStatusItemAppearance()
+            }
+        } else if let statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+            self.statusItem = nil
+        }
+    }
+
+    private func configureStatusItem(_ item: NSStatusItem) {
+        guard let button = item.button else { return }
+        button.target = self
+        button.action = #selector(handleStatusItemClick(_:))
+        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        button.toolTip = "QuickDoc 正在运行"
+        refreshStatusItemAppearance()
+    }
+
+    private func refreshStatusItemAppearance() {
+        guard let button = statusItem?.button else { return }
+        button.title = ""
+        button.imagePosition = .imageOnly
+        button.image = statusBarImage()
+    }
+
+    private func statusBarImage() -> NSImage? {
+        guard let baseImage = NSApp.applicationIconImage else { return nil }
+        let image = (baseImage.copy() as? NSImage) ?? baseImage
+        image.size = NSSize(width: 18, height: 18)
+        image.isTemplate = false
+        return image
+    }
+
+    private func presentStatusMenu() {
+        guard let statusItem else { return }
+
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        let openSettingsItem = NSMenuItem(title: "打开设置", action: #selector(openSettingsFromMenu(_:)), keyEquivalent: "")
+        openSettingsItem.target = self
+        menu.addItem(openSettingsItem)
+        menu.addItem(.separator())
+
+        let displayModeItem = NSMenuItem(title: "显示方式", action: nil, keyEquivalent: "")
+        let displayModeMenu = NSMenu()
+        for mode in QuickDocDisplayMode.allCases {
+            let item = NSMenuItem(title: mode.title, action: #selector(selectDisplayModeFromMenu(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = mode.rawValue
+            item.state = settingsModel.displayMode == mode ? .on : .off
+            displayModeMenu.addItem(item)
+        }
+        displayModeItem.submenu = displayModeMenu
+        menu.addItem(displayModeItem)
+
+        let launchAtLoginItem = NSMenuItem(title: "开机自启动", action: #selector(toggleLaunchAtLogin(_:)), keyEquivalent: "")
+        launchAtLoginItem.target = self
+        launchAtLoginItem.state = settingsModel.launchAtLogin ? .on : .off
+        menu.addItem(launchAtLoginItem)
+
+        menu.addItem(.separator())
+
+        let finderItem = NSMenuItem(title: "重启访达", action: #selector(restartFinderFromMenu(_:)), keyEquivalent: "")
+        finderItem.target = self
+        menu.addItem(finderItem)
+
+        let extensionItem = NSMenuItem(title: "打开扩展设置", action: #selector(openExtensionSettingsFromMenu(_:)), keyEquivalent: "")
+        extensionItem.target = self
+        menu.addItem(extensionItem)
+
+        menu.addItem(.separator())
+
+        let quitItem = NSMenuItem(title: "退出 QuickDoc", action: #selector(quitApplication(_:)), keyEquivalent: "")
+        quitItem.target = self
+        menu.addItem(quitItem)
+
+        statusItem.menu = menu
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
+    }
+
+    @objc
+    private func handleStatusItemClick(_ sender: Any?) {
+        if NSApp.currentEvent?.type == .rightMouseUp {
+            presentStatusMenu()
+        } else {
+            showMainWindow()
+        }
+    }
+
+    @objc
+    private func openSettingsFromMenu(_ sender: Any?) {
+        showMainWindow()
+    }
+
+    @objc
+    private func selectDisplayModeFromMenu(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String,
+              let mode = QuickDocDisplayMode(rawValue: rawValue) else {
+            return
+        }
+
+        settingsModel.requestDisplayModeChange(mode)
+    }
+
+    @objc
+    private func toggleLaunchAtLogin(_ sender: Any?) {
+        settingsModel.launchAtLogin.toggle()
+    }
+
+    @objc
+    private func restartFinderFromMenu(_ sender: Any?) {
+        settingsModel.restartFinder()
+    }
+
+    @objc
+    private func openExtensionSettingsFromMenu(_ sender: Any?) {
+        settingsModel.openExtensionSettings()
+    }
+
+    @objc
+    private func quitApplication(_ sender: Any?) {
+        NSApp.terminate(nil)
+    }
+
+    private func handleIncomingURL(_ url: URL) {
+        shouldSuppressInitialWindow = true
+        cancelInitialWindowPresentation()
+
+        guard url.scheme == "quickdoc",
+              url.host == "open-terminal",
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let encodedPath = components.queryItems?.first(where: { $0.name == Self.terminalPathQueryKey })?.value,
+              let path = encodedPath.removingPercentEncoding else {
+            logger.error("Ignored unsupported URL: \(url.absoluteString, privacy: .public)")
+            return
+        }
+
+        logger.info("Received terminal open request for \(path, privacy: .public)")
+        openTerminal(atPath: path)
+    }
+
+    private func openTerminal(atPath path: String) {
+        let directoryURL = URL(fileURLWithPath: path, isDirectory: true)
+        guard FileManager.default.fileExists(atPath: directoryURL.path) else {
+            logger.error("Terminal open path does not exist: \(path, privacy: .public)")
+            return
+        }
+
         NSApp.activate(ignoringOtherApps: true)
-        self.window = window
+
+        if runTerminalAppleScript(for: directoryURL.path) {
+            return
+        }
+
+        guard let terminalURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") else { return }
+
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        configuration.promptsUserIfNeeded = true
+
+        NSWorkspace.shared.open([directoryURL], withApplicationAt: terminalURL, configuration: configuration) { runningApplication, error in
+            if error != nil {
+                self.logger.error("Fallback Terminal open failed for \(directoryURL.path, privacy: .public)")
+                return
+            }
+
+            runningApplication?.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+        }
+    }
+
+    @objc
+    private func handleGetURLEvent(_ event: NSAppleEventDescriptor, withReplyEvent replyEvent: NSAppleEventDescriptor) {
+        guard let urlString = event.paramDescriptor(forKeyword: AEKeyword(keyDirectObject))?.stringValue,
+              let url = URL(string: urlString) else {
+            logger.error("Received malformed Apple Event URL")
+            return
+        }
+
+        handleIncomingURL(url)
+    }
+
+    private func runTerminalAppleScript(for path: String) -> Bool {
+        let escapedPath = appleScriptEscapedString(path)
+        let source = """
+        set targetPath to "\(escapedPath)"
+        tell application "Terminal"
+            do script ("cd " & quoted form of targetPath)
+            activate
+        end tell
+        """
+
+        var error: NSDictionary?
+        let script = NSAppleScript(source: source)
+        script?.executeAndReturnError(&error)
+
+        if let error {
+            logger.error("AppleScript terminal open failed: \(String(describing: error), privacy: .public)")
+            return false
+        }
+
+        NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.Terminal")
+            .first?
+            .activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+        logger.info("Opened Terminal via AppleScript for \(path, privacy: .public)")
+        return true
+    }
+
+    private func appleScriptEscapedString(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+    }
+
+    private func scheduleInitialWindowPresentation() {
+        cancelInitialWindowPresentation()
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self, !self.shouldSuppressInitialWindow else { return }
+            self.showMainWindow()
+        }
+        initialWindowWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: workItem)
+    }
+
+    private func cancelInitialWindowPresentation() {
+        initialWindowWorkItem?.cancel()
+        initialWindowWorkItem = nil
     }
 }
 
@@ -60,6 +366,59 @@ private enum SettingsPage: String, CaseIterable, Identifiable {
         case .fileTypes: return "doc.text"
         case .finder: return "folder"
         case .about: return "info.circle"
+        }
+    }
+}
+
+private enum QuickDocDisplayMode: String, CaseIterable, Identifiable {
+    case menuBarOnly
+    case hiddenBoth
+    case dockOnly
+    case menuBarAndDock
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .menuBarOnly:
+            return "仅在菜单栏显示"
+        case .hiddenBoth:
+            return "隐藏菜单栏和 Dock"
+        case .dockOnly:
+            return "仅在 Dock 栏显示"
+        case .menuBarAndDock:
+            return "菜单栏和 Dock 同时显示"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .menuBarOnly:
+            return "默认推荐，常驻状态栏，点击图标可快速打开设置。"
+        case .hiddenBoth:
+            return "后台静默运行，不显示菜单栏与 Dock，可通过再次启动应用重新打开。"
+        case .dockOnly:
+            return "保留当前传统窗口应用行为，仅通过 Dock 使用。"
+        case .menuBarAndDock:
+            return "同时保留菜单栏入口与 Dock 图标，适合双入口习惯。"
+        }
+    }
+
+    var activationPolicy: NSApplication.ActivationPolicy {
+        switch self {
+        case .menuBarOnly, .hiddenBoth:
+            return .accessory
+        case .dockOnly, .menuBarAndDock:
+            return .regular
+        }
+    }
+
+    var showsStatusItem: Bool {
+        switch self {
+        case .menuBarOnly, .menuBarAndDock:
+            return true
+        case .hiddenBoth, .dockOnly:
+            return false
         }
     }
 }
@@ -122,21 +481,30 @@ private let quickDocFileTypes: [FileType] = [
 ]
 
 private struct QuickDocSettingsView: View {
-    @StateObject private var model = QuickDocSettingsModel()
+    @ObservedObject private var model: QuickDocSettingsModel
     @State private var selection: SettingsPage? = .general
+    private let sidebarWidth: CGFloat = 282
+    private let detailMinWidth: CGFloat = 760
+
+    init(model: QuickDocSettingsModel) {
+        _model = ObservedObject(wrappedValue: model)
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
             HStack(spacing: 0) {
                 sidebar
-                    .frame(width: 262)
+                    .frame(width: sidebarWidth)
+                    .fixedSize(horizontal: true, vertical: false)
                 Divider()
                 ScrollView {
                     selectedPage
-                        .padding(.horizontal, 34)
+                        .padding(.horizontal, 36)
                         .padding(.vertical, 30)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: 1020, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
+                .frame(minWidth: detailMinWidth, maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .scrollContentBackground(.hidden)
                 .background(GlassBackground())
             }
@@ -146,7 +514,7 @@ private struct QuickDocSettingsView: View {
                 .contentShape(Rectangle())
                 .ifAvailableWindowDragGesture()
         }
-        .frame(minWidth: 820, minHeight: 560)
+        .frame(minWidth: sidebarWidth + detailMinWidth + 1, minHeight: 700)
         .environmentObject(model)
     }
 
@@ -178,7 +546,10 @@ private struct QuickDocSettingsView: View {
                 }
                 .listStyle(.sidebar)
                 .scrollContentBackground(.hidden)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
+            .padding(.horizontal, 18)
+            .padding(.bottom, 18)
         }
     }
 
@@ -204,13 +575,74 @@ private struct GeneralSettingsPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            PageHeader(title: "通用设置", subtitle: "管理 QuickDoc 的启动行为。")
+            PageHeader(title: "通用设置", subtitle: "管理 QuickDoc 的启动行为与基础偏好。")
 
             GlassSection {
                 Toggle("开机自启动", isOn: $model.launchAtLogin)
                 Text("登录 macOS 时自动启动 QuickDoc。")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+            }
+
+            DisplayModeSettingsCard()
+            QuickAccessSettingsCard()
+            LanguageSettingsCard()
+        }
+    }
+}
+
+private struct DisplayModeSettingsCard: View {
+    @EnvironmentObject private var model: QuickDocSettingsModel
+
+    var body: some View {
+        GlassSection {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("显示方式")
+                        .font(.headline)
+                    Text("控制 QuickDoc 在菜单栏与 Dock 中的显示方式，默认推荐常驻菜单栏。")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                VStack(spacing: 10) {
+                    ForEach(QuickDocDisplayMode.allCases) { mode in
+                        Button {
+                            model.requestDisplayModeChange(mode)
+                        } label: {
+                            HStack(alignment: .top, spacing: 14) {
+                                Image(systemName: model.displayMode == mode ? "checkmark.circle.fill" : "circle")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(model.displayMode == mode ? Color.accentColor : .secondary)
+
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(mode.title)
+                                        .font(.callout.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                    Text(mode.subtitle)
+                                        .font(.callout)
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(model.displayMode == mode ? Color.accentColor.opacity(0.10) : Color.clear)
+                            )
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(model.displayMode == mode ? Color.accentColor.opacity(0.35) : Color.secondary.opacity(0.12), lineWidth: 1)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
         }
     }
@@ -249,7 +681,7 @@ private struct AboutPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            PageHeader(title: "关于", subtitle: "QuickDoc 为 Finder 右键菜单提供快速新建文件能力。")
+            PageHeader(title: "关于", subtitle: "QuickDoc 让 Finder 右键新建文件更快、更顺手。")
 
             GlassSection {
                 HStack(spacing: 18) {
@@ -258,18 +690,255 @@ private struct AboutPage: View {
                         .frame(width: 72, height: 72)
                         .shadow(radius: 8, y: 4)
 
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("QuickDoc")
                             .font(.title2.weight(.bold))
-                        Text("版本 \(model.appVersion)")
+                        Text("版本 v\(model.appVersion)")
+                            .font(.headline)
                             .foregroundStyle(.secondary)
-                        Text("Finder 右键新建文件工具")
+                        Text("为 Finder 右键菜单提供一键新建常用文件的效率工具。")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
+
+                    Spacer()
+                }
+            }
+
+            LazyVGrid(columns: [
+                GridItem(.flexible(minimum: 220), spacing: 14),
+                GridItem(.flexible(minimum: 220), spacing: 14)
+            ], alignment: .leading, spacing: 14) {
+                AboutFeatureCard(
+                    systemImage: "doc.badge.plus",
+                    title: "常用文件一键新建",
+                    subtitle: "支持 TXT、Markdown、Word、Excel、PPT、JSON 等常见文件类型。"
+                )
+                AboutFeatureCard(
+                    systemImage: "slider.horizontal.3",
+                    title: "自定义后缀",
+                    subtitle: "按需添加常用扩展名，让右键菜单更贴合你的工作流。"
+                )
+                AboutFeatureCard(
+                    systemImage: "folder.badge.gearshape",
+                    title: "访达右键集成",
+                    subtitle: "直接从 Finder 菜单创建文件，不必切换应用。"
+                )
+                AboutFeatureCard(
+                    systemImage: "checkmark.shield",
+                    title: "权限与扩展管理",
+                    subtitle: "在应用内查看扩展状态，并快速跳转系统设置。"
+                )
+            }
+
+            GlassSection {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("声明", systemImage: "info.circle")
+                        .font(.headline)
+                    Text("本软件为免费开源项目，仅供交流学习与个人使用。请遵守相关法律法规与开源协议，勿用于任何商业或非法用途。")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            GlassSection {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("联系与主页", systemImage: "link")
+                        .font(.headline)
+
+                    ContactRow(title: "Bilibili", value: "默示天空")
+                    ContactRow(title: "GitHub", value: "SkyImplied")
+                    ContactRow(title: "邮箱", value: "skyimplied@163.com")
                 }
             }
         }
+    }
+}
+
+private struct AboutFeatureCard: View {
+    let systemImage: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        GlassSection {
+            VStack(alignment: .leading, spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.blue)
+                    .frame(width: 36, height: 36)
+                    .background(Color.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                Text(title)
+                    .font(.headline)
+
+                Text(subtitle)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+private struct ContactRow: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(title)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 70, alignment: .leading)
+            Text(value)
+                .font(.callout)
+        }
+    }
+}
+
+private struct LanguageOption: Identifiable {
+    let id: String
+    let title: String
+    let subtitle: String
+}
+
+private let quickDocLanguageOptions: [LanguageOption] = [
+    LanguageOption(id: "zh-Hans", title: "简体中文", subtitle: "适合中国大陆用户"),
+    LanguageOption(id: "en", title: "English", subtitle: "International"),
+    LanguageOption(id: "ja", title: "日本语", subtitle: "Japanese"),
+    LanguageOption(id: "ko", title: "한국어", subtitle: "Korean"),
+    LanguageOption(id: "fr", title: "Français", subtitle: "French"),
+    LanguageOption(id: "de", title: "Deutsch", subtitle: "German")
+]
+
+private struct LanguageSettingsCard: View {
+    @EnvironmentObject private var model: QuickDocSettingsModel
+    @State private var isPresentingLanguageSheet = false
+
+    var body: some View {
+        GlassSection {
+            HStack(alignment: .center, spacing: 14) {
+                Image(systemName: "globe")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.blue)
+                    .frame(width: 40, height: 40)
+                    .background(Color.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("软件语言")
+                        .font(.headline)
+                    Text("点击后再选择语言，v1.1 暂不支持实际切换。")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                Button("语言设置") {
+                    isPresentingLanguageSheet = true
+                }
+                .glassButtonStyle()
+            }
+        }
+        .sheet(isPresented: $isPresentingLanguageSheet) {
+            LanguageSelectionSheet()
+                .environmentObject(model)
+        }
+    }
+}
+
+private struct QuickAccessSettingsCard: View {
+    @EnvironmentObject private var model: QuickDocSettingsModel
+
+    var body: some View {
+        GlassSection {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .center, spacing: 14) {
+                    Image(systemName: "command")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.blue)
+                        .frame(width: 40, height: 40)
+                        .background(Color.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("终端直达与路径复制")
+                            .font(.headline)
+                        Text("开启后会在 Finder 右键一级菜单显示“在终端中打开”和“复制当前路径”。")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                Toggle("启用终端直达", isOn: $model.terminalDirectEnabled)
+                Toggle("启用路径复制", isOn: $model.pathCopyEnabled)
+
+                Text("开启后可直接在右键菜单里打开终端或复制当前文件夹路径。")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct LanguageSelectionSheet: View {
+    @EnvironmentObject private var model: QuickDocSettingsModel
+    @Environment(\.dismiss) private var dismiss
+
+    private let columns = [
+        GridItem(.flexible(minimum: 180), spacing: 12),
+        GridItem(.flexible(minimum: 180), spacing: 12)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("选择软件语言")
+                    .font(.title3.weight(.bold))
+                Text("以下语言将在未来版本逐步支持，当前仅展示选择入口。")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
+                ForEach(quickDocLanguageOptions) { option in
+                    Button {
+                        model.showLanguageComingSoon(languageName: option.title)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(option.title)
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(.primary)
+                            Text(option.subtitle)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(.quaternary, lineWidth: 1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            HStack {
+                Spacer()
+                Button("关闭") {
+                    dismiss()
+                }
+                .glassButtonStyle()
+            }
+        }
+        .padding(24)
+        .frame(minWidth: 480, idealWidth: 540, minHeight: 320)
     }
 }
 
@@ -277,13 +946,15 @@ private struct PermissionStatusCard: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
 
     var body: some View {
+        let status = model.extensionStatus
+
         GlassSection {
             HStack(alignment: .center, spacing: 16) {
                 Label {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("系统扩展权限")
                             .font(.headline)
-                        Text("请在 系统设置 > 隐私与安全性 > 登录项与扩展 中启用 QuickDoc 扩展")
+                        Text(status.description)
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
@@ -293,12 +964,12 @@ private struct PermissionStatusCard: View {
 
                 Spacer()
 
-                Text("需确认")
+                Text(status.badgeTitle)
                     .font(.callout.weight(.semibold))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(status.tint)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
-                    .background(.red.opacity(0.12), in: Capsule())
+                    .background(status.backgroundTint, in: Capsule())
 
                 Button("打开系统设置") {
                     model.openExtensionSettings()
@@ -332,6 +1003,7 @@ private struct FinderRestartCard: View {
                 Button("立即重启 Finder") {
                     model.restartFinder()
                 }
+                .disabled(model.isRestartingFinder)
                 .glassButtonStyle(prominent: true)
             }
         }
@@ -410,104 +1082,219 @@ private struct FileTypesCard: View {
 
 private struct MenuPreviewCard: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
-    @State private var draggingItemID: String?
+    @State private var isEditingOrder = false
+    @State private var editingSelectionOrder: [String] = []
+    @State private var baselineVisibleOrder: [String] = []
 
     var body: some View {
         GlassSection {
-            HStack(spacing: 34) {
-                Label {
-                    VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .center, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("访达右键菜单预览")
                             .font(.headline)
-                        Text("在 Finder 中右键点击，将显示以下新建文件选项。")
+                        Text("这里会模拟 Finder 里“新建文件”的展示顺序，编辑后右键菜单也会同步更新。")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
-                } icon: {
-                    Image(systemName: "folder")
-                        .font(.system(size: 44))
-                        .foregroundStyle(.blue)
+
+                    Spacer(minLength: 0)
+
+                    Button(isEditingOrder ? "完成排序" : "编辑排序") {
+                        toggleEditingOrder()
+                    }
+                    .glassButtonStyle()
                 }
 
-                Spacer()
-
-                VStack(alignment: .leading, spacing: 0) {
-                    ScrollView {
-                        if model.menuPreviewItems.isEmpty {
-                            PreviewMenuRow(item: MenuPreviewItem(id: "empty", title: "暂无启用的新建类型"), draggable: false)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            LazyVStack(alignment: .leading, spacing: 0) {
-                                ForEach(model.menuPreviewItems) { item in
-                                    PreviewMenuRow(item: item, draggable: true)
-                                        .contentShape(Rectangle())
-                                        .onDrag {
-                                            draggingItemID = item.id
-                                            return NSItemProvider(object: item.id as NSString)
-                                        }
-                                        .onDrop(
-                                            of: [UTType.text],
-                                            delegate: PreviewMenuDropDelegate(
-                                                item: item,
-                                                draggingItemID: $draggingItemID,
-                                                moveAction: model.movePreviewItem
-                                            )
-                                        )
+                HStack(alignment: .top, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack(alignment: .center, spacing: 14) {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .fill(Color.accentColor.opacity(0.12))
+                                .frame(width: 74, height: 74)
+                                .overlay {
+                                    Image(systemName: "folder.badge.plus")
+                                        .font(.system(size: 30, weight: .semibold))
+                                        .foregroundStyle(.blue)
                                 }
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("右键菜单样式")
+                                    .font(.title3.weight(.semibold))
+                                Text("当前已启用 \(model.menuPreviewItems.count) 项")
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
                             }
                         }
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            PreviewTipRow(
+                                systemImage: isEditingOrder ? "checklist.checked" : "hand.tap",
+                                text: helperText
+                            )
+                        }
+
+                        Spacer(minLength: 0)
                     }
-                }
-                .frame(width: 310, height: 248)
-                .padding(.vertical, 8)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(.quaternary, lineWidth: 1)
+                    .frame(width: 320, alignment: .leading)
+
+                    menuPreviewPanel
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
     }
-}
 
-private struct PreviewMenuDropDelegate: DropDelegate {
-    let item: MenuPreviewItem
-    @Binding var draggingItemID: String?
-    let moveAction: (String, String) -> Void
+    private var helperText: String {
+        if isEditingOrder {
+            return "请按目标顺序依次点击左侧圆圈。第一次点击排第 1，第二次点击排第 2；再次点击已选项可取消。"
+        }
 
-    func dropEntered(info: DropInfo) {
-        guard let draggingItemID, draggingItemID != item.id else { return }
-        moveAction(draggingItemID, item.id)
+        return "点击“编辑排序”后，可通过左侧圆圈按顺序设置菜单位置，排序后 Finder 右键菜单会同步更新。"
     }
 
-    func performDrop(info: DropInfo) -> Bool {
-        draggingItemID = nil
-        return true
+    private var menuPreviewPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles.rectangle.stack")
+                    .foregroundStyle(.secondary)
+                Text("Finder > 新建文件")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            Divider()
+
+            ScrollView {
+                if model.menuPreviewItems.isEmpty {
+                    PreviewMenuRow(
+                        item: MenuPreviewItem(id: "empty", title: "暂无启用的新建类型"),
+                        isEditing: false,
+                        selectionRank: nil,
+                        showsChevron: false,
+                        onSelect: nil
+                    )
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 6)
+                } else {
+                    LazyVStack(alignment: .leading, spacing: 2) {
+                        ForEach(model.menuPreviewItems) { item in
+                            PreviewMenuRow(
+                                item: item,
+                                isEditing: isEditingOrder,
+                                selectionRank: selectionRank(for: item.id),
+                                showsChevron: !isEditingOrder,
+                                onSelect: isEditingOrder ? {
+                                    toggleSelection(for: item.id)
+                                } : nil
+                            )
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
+            .frame(minHeight: 290)
+            .animation(.snappy(duration: 0.22), value: model.menuPreviewItems.map(\.id))
+        }
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(.quaternary, lineWidth: 1)
+        }
+    }
+
+    private func toggleEditingOrder() {
+        if isEditingOrder {
+            isEditingOrder = false
+            editingSelectionOrder = []
+            baselineVisibleOrder = []
+            return
+        }
+
+        baselineVisibleOrder = model.menuPreviewItems.map(\.id)
+        editingSelectionOrder = []
+        isEditingOrder = true
+    }
+
+    private func toggleSelection(for itemID: String) {
+        withAnimation(.snappy(duration: 0.2)) {
+            if let index = editingSelectionOrder.firstIndex(of: itemID) {
+                editingSelectionOrder.remove(at: index)
+            } else {
+                editingSelectionOrder.append(itemID)
+            }
+
+            model.applyPreviewSelectionOrder(editingSelectionOrder, baseVisibleOrder: baselineVisibleOrder)
+        }
+    }
+
+    private func selectionRank(for itemID: String) -> Int? {
+        guard let index = editingSelectionOrder.firstIndex(of: itemID) else { return nil }
+        return index + 1
     }
 }
 
 private struct PreviewMenuRow: View {
     let item: MenuPreviewItem
-    let draggable: Bool
+    let isEditing: Bool
+    let selectionRank: Int?
+    let showsChevron: Bool
+    let onSelect: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 10) {
+            if isEditing {
+                selectionBadge
+            }
             previewIcon
                 .frame(width: 18, height: 18)
             Text(item.title)
                 .lineLimit(1)
             Spacer()
-            if draggable {
-                Image(systemName: "line.3.horizontal")
+            if showsChevron {
+                Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
             }
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
-        .frame(height: 32)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 38)
         .padding(.horizontal, 14)
+        .background(rowBackground)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard isEditing else { return }
+            onSelect?()
+        }
+    }
+
+    @ViewBuilder
+    private var selectionBadge: some View {
+        Button {
+            onSelect?()
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(selectionRank == nil ? Color.secondary.opacity(0.45) : Color.accentColor, lineWidth: 1.5)
+                    .background(
+                        Circle()
+                            .fill(selectionRank == nil ? Color.clear : Color.accentColor.opacity(0.14))
+                    )
+                    .frame(width: 24, height: 24)
+
+                if let selectionRank {
+                    Text("\(selectionRank)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
+            .frame(width: 28, height: 28)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.borderless)
     }
 
     @ViewBuilder
@@ -520,6 +1307,37 @@ private struct PreviewMenuRow: View {
             Image(systemName: "doc")
                 .foregroundStyle(.secondary)
         }
+    }
+
+    @ViewBuilder
+    private var rowBackground: some View {
+        if isEditing, selectionRank != nil {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.accentColor.opacity(0.08))
+        } else {
+            Color.clear
+        }
+    }
+}
+
+private struct PreviewTipRow: View {
+    let systemImage: String
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: systemImage)
+                .foregroundStyle(.blue)
+                .frame(width: 18)
+
+            Text(text)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
@@ -568,9 +1386,49 @@ private struct GlassBackground: View {
 
 @MainActor
 private final class QuickDocSettingsModel: ObservableObject {
+    struct AlertContent {
+        let title: String
+        let message: String
+        let style: NSAlert.Style
+    }
+
+    struct ExtensionStatus {
+        let isConfirmed: Bool
+
+        var badgeTitle: String {
+            isConfirmed ? "已确认" : "需确认"
+        }
+
+        var description: String {
+            if isConfirmed {
+                return "QuickDoc Finder Sync 扩展已启用，可以正常显示在 Finder 右键菜单中。"
+            }
+
+            return "请在 系统设置 > 隐私与安全性 > 登录项与扩展 中启用 QuickDoc 扩展"
+        }
+
+        var tint: Color {
+            isConfirmed ? .green : .red
+        }
+
+        var backgroundTint: Color {
+            tint.opacity(0.12)
+        }
+    }
+
     @Published var launchAtLogin: Bool {
         didSet { setLaunchAtLogin(launchAtLogin) }
     }
+
+    @Published private(set) var displayMode: QuickDocDisplayMode {
+        didSet {
+            UserDefaults.standard.set(displayMode.rawValue, forKey: Self.displayModeKey)
+            onDisplayModeDidChange?(displayMode)
+        }
+    }
+
+    @Published private(set) var extensionStatus = ExtensionStatus(isConfirmed: false)
+    @Published private(set) var isRestartingFinder = false
 
     @Published var enabledFileTypes: Set<String> {
         didSet {
@@ -587,6 +1445,20 @@ private final class QuickDocSettingsModel: ObservableObject {
         }
     }
 
+    @Published var terminalDirectEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(terminalDirectEnabled, forKey: Self.terminalDirectEnabledKey)
+            writeSharedSettings()
+        }
+    }
+
+    @Published var pathCopyEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(pathCopyEnabled, forKey: Self.pathCopyEnabledKey)
+            writeSharedSettings()
+        }
+    }
+
     @Published private var menuOrder: [String] {
         didSet {
             UserDefaults.standard.set(menuOrder, forKey: Self.menuOrderKey)
@@ -595,6 +1467,11 @@ private final class QuickDocSettingsModel: ObservableObject {
     }
 
     let appVersion: String
+    var onDisplayModeDidChange: ((QuickDocDisplayMode) -> Void)?
+    private var notificationObservers: [NSObjectProtocol] = []
+    private static let displayModeKey = "displayMode"
+    private static let terminalDirectEnabledKey = "terminalDirectEnabled"
+    private static let pathCopyEnabledKey = "pathCopyEnabled"
     private static let enabledFileTypesKey = "enabledFileTypes"
     private static let customExtensionsKey = "customExtensions"
     private static let menuOrderKey = "menuOrder"
@@ -602,6 +1479,9 @@ private final class QuickDocSettingsModel: ObservableObject {
     init() {
         let defaultTypes = quickDocFileTypes.filter(\.enabledByDefault).map(\.id)
         UserDefaults.standard.register(defaults: [
+            Self.displayModeKey: QuickDocDisplayMode.menuBarOnly.rawValue,
+            Self.terminalDirectEnabledKey: true,
+            Self.pathCopyEnabledKey: true,
             Self.enabledFileTypesKey: defaultTypes,
             Self.customExtensionsKey: [],
             Self.menuOrderKey: Self.defaultMenuOrder
@@ -609,6 +1489,11 @@ private final class QuickDocSettingsModel: ObservableObject {
         let sharedSettings = Self.readSharedSettings()
 
         launchAtLogin = SMAppService.mainApp.status == .enabled
+        displayMode = QuickDocDisplayMode(
+            rawValue: UserDefaults.standard.string(forKey: Self.displayModeKey) ?? QuickDocDisplayMode.menuBarOnly.rawValue
+        ) ?? .menuBarOnly
+        terminalDirectEnabled = sharedSettings.terminalDirectEnabled ?? UserDefaults.standard.object(forKey: Self.terminalDirectEnabledKey) as? Bool ?? true
+        pathCopyEnabled = sharedSettings.pathCopyEnabled ?? UserDefaults.standard.object(forKey: Self.pathCopyEnabledKey) as? Bool ?? true
         let storedCustomExtensions = sharedSettings.customExtensions ?? UserDefaults.standard.stringArray(forKey: Self.customExtensionsKey) ?? []
         enabledFileTypes = Set(sharedSettings.enabledFileTypes ?? UserDefaults.standard.stringArray(forKey: Self.enabledFileTypesKey) ?? defaultTypes)
         customExtensions = storedCustomExtensions
@@ -616,6 +1501,14 @@ private final class QuickDocSettingsModel: ObservableObject {
         appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         reconcileMenuOrder()
         writeSharedSettings()
+        refreshExtensionStatus()
+        observeAppActivation()
+    }
+
+    deinit {
+        for observer in notificationObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
     }
 
     var menuPreviewItems: [MenuPreviewItem] {
@@ -661,40 +1554,70 @@ private final class QuickDocSettingsModel: ObservableObject {
         customExtensions.removeAll { $0 == value }
     }
 
-    func movePreviewItem(_ sourceID: String, before targetID: String) {
-        var visibleOrder = menuPreviewItems.map(\.id)
-        guard let sourceIndex = visibleOrder.firstIndex(of: sourceID),
-              let targetIndex = visibleOrder.firstIndex(of: targetID),
-              sourceIndex != targetIndex else {
-            return
+    func applyPreviewSelectionOrder(_ prioritizedIDs: [String], baseVisibleOrder: [String]) {
+        let currentlyVisibleIDs = Set(menuPreviewItems.map(\.id))
+        let normalizedPriorities = prioritizedIDs.filter { currentlyVisibleIDs.contains($0) }
+        let remainingVisibleIDs = baseVisibleOrder.filter {
+            currentlyVisibleIDs.contains($0) && !normalizedPriorities.contains($0)
         }
-
-        let movedID = visibleOrder.remove(at: sourceIndex)
-        let adjustedTargetIndex = visibleOrder.firstIndex(of: targetID) ?? targetIndex
-        visibleOrder.insert(movedID, at: adjustedTargetIndex)
-
-        let visibleIDs = Set(visibleOrder)
-        var updatedVisibleOrder = visibleOrder
-        let hiddenOrderedIDs = menuOrder.filter { !visibleIDs.contains($0) }
-        updatedVisibleOrder.append(contentsOf: hiddenOrderedIDs)
-        menuOrder = Self.normalizedMenuOrder(updatedVisibleOrder, customExtensions: customExtensions)
+        let visibleOrder = normalizedPriorities + remainingVisibleIDs
+        let visibleIDSet = Set(visibleOrder)
+        let hiddenOrderedIDs = menuOrder.filter { !visibleIDSet.contains($0) }
+        menuOrder = Self.normalizedMenuOrder(visibleOrder + hiddenOrderedIDs, customExtensions: customExtensions)
     }
 
     func openExtensionSettings() {
+        refreshExtensionStatus()
+
         if let url = URL(string: "x-apple.systempreferences:com.apple.ExtensionsPreferences") {
             NSWorkspace.shared.open(url)
         }
     }
 
-    func restartFinder() {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
-        process.arguments = ["Finder"]
-        do {
-            try process.run()
-        } catch {
-            showAlert(title: "重启 Finder 失败", message: error.localizedDescription)
+    func refreshExtensionStatus() {
+        extensionStatus = ExtensionStatus(isConfirmed: FIFinderSyncController.isExtensionEnabled)
+    }
+
+    func requestDisplayModeChange(_ newMode: QuickDocDisplayMode) {
+        guard newMode != displayMode else { return }
+
+        if newMode == .hiddenBoth {
+            let alert = NSAlert()
+            alert.messageText = "确认隐藏菜单栏与 Dock"
+            alert.informativeText = "切换后 QuickDoc 将不在菜单栏和 Dock 中显示，只会在后台运行。你仍可通过再次启动应用重新打开设置界面。"
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "继续切换")
+            alert.addButton(withTitle: "取消")
+
+            guard alert.runModal() == .alertFirstButtonReturn else { return }
         }
+
+        displayMode = newMode
+    }
+
+    func restartFinder() {
+        guard !isRestartingFinder else { return }
+        isRestartingFinder = true
+
+        Task {
+            let alert = await restartFinderWorkflow()
+            isRestartingFinder = false
+            showAlert(alert)
+        }
+    }
+
+    func showLanguageComingSoon(languageName: String) {
+        showAlert(
+            title: "功能等待未来更新",
+            message: "\(languageName) 语言支持正在规划中，v1.1 暂未开放，敬请期待后续版本更新。"
+        )
+    }
+
+    func showFeatureComingSoon(featureName: String) {
+        showAlert(
+            title: "功能等待未来更新",
+            message: "\(featureName) 功能正在规划中，v1.1 暂未开放，敬请期待后续版本更新。"
+        )
     }
 
     private func setLaunchAtLogin(_ enabled: Bool) {
@@ -707,6 +1630,106 @@ private final class QuickDocSettingsModel: ObservableObject {
         } catch {
             launchAtLogin = SMAppService.mainApp.status == .enabled
             showAlert(title: "开机自启动设置失败", message: error.localizedDescription)
+        }
+    }
+
+    private func observeAppActivation() {
+        let observer = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: NSApp,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.refreshExtensionStatus()
+            }
+        }
+
+        notificationObservers.append(observer)
+    }
+
+    private func restartFinderWorkflow() async -> AlertContent {
+        let finderBundleIdentifier = "com.apple.finder"
+        let wasRunningBeforeRestart = isApplicationRunning(bundleIdentifier: finderBundleIdentifier)
+
+        let terminateResult = await runProcess(
+            executablePath: "/usr/bin/killall",
+            arguments: ["Finder"]
+        )
+
+        guard terminateResult.exitCode == 0 else {
+            return AlertContent(
+                title: "重启 Finder 失败",
+                message: terminateResult.errorDescription ?? "Finder 进程结束命令返回了退出码 \(terminateResult.exitCode)。",
+                style: .warning
+            )
+        }
+
+        if wasRunningBeforeRestart {
+            try? await Task.sleep(for: .milliseconds(250))
+        }
+
+        let relaunchSucceeded = await waitForFinderToLaunch(bundleIdentifier: finderBundleIdentifier)
+        guard relaunchSucceeded else {
+            return AlertContent(
+                title: "重启 Finder 失败",
+                message: "Finder 已退出，但未能自动重新启动，请手动打开访达后重试。",
+                style: .warning
+            )
+        }
+
+        return AlertContent(
+            title: "重启 Finder 成功",
+            message: "访达已经重新启动，扩展刷新应已生效。",
+            style: .informational
+        )
+    }
+
+    private func waitForFinderToLaunch(bundleIdentifier: String) async -> Bool {
+        for _ in 0..<40 {
+            let isRunning = isApplicationRunning(bundleIdentifier: bundleIdentifier)
+            if isRunning {
+                return true
+            }
+
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+
+        return false
+    }
+
+    private func isApplicationRunning(bundleIdentifier: String) -> Bool {
+        !NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).isEmpty
+    }
+
+    private func runProcess(executablePath: String, arguments: [String]) async -> ProcessResult {
+        return await withCheckedContinuation { continuation in
+            let process = Process()
+            let outputPipe = Pipe()
+            let errorPipe = Pipe()
+
+            process.executableURL = URL(fileURLWithPath: executablePath)
+            process.arguments = arguments
+            process.standardOutput = outputPipe
+            process.standardError = errorPipe
+            process.terminationHandler = { process in
+                let output = readPipe(outputPipe)
+                let error = readPipe(errorPipe)
+                continuation.resume(returning: ProcessResult(
+                    exitCode: process.terminationStatus,
+                    output: output,
+                    error: error
+                ))
+            }
+
+            do {
+                try process.run()
+            } catch {
+                continuation.resume(returning: ProcessResult(
+                    exitCode: -1,
+                    output: "",
+                    error: error.localizedDescription
+                ))
+            }
         }
     }
 
@@ -724,7 +1747,9 @@ private final class QuickDocSettingsModel: ObservableObject {
         let payload: [String: Any] = [
             Self.enabledFileTypesKey: Array(enabledFileTypes),
             Self.customExtensionsKey: customExtensions,
-            Self.menuOrderKey: menuOrder
+            Self.menuOrderKey: menuOrder,
+            Self.terminalDirectEnabledKey: terminalDirectEnabled,
+            Self.pathCopyEnabledKey: pathCopyEnabled
         ]
 
         do {
@@ -737,16 +1762,18 @@ private final class QuickDocSettingsModel: ObservableObject {
         }
     }
 
-    private static func readSharedSettings() -> (enabledFileTypes: [String]?, customExtensions: [String]?, menuOrder: [String]?) {
+    private static func readSharedSettings() -> (enabledFileTypes: [String]?, customExtensions: [String]?, menuOrder: [String]?, terminalDirectEnabled: Bool?, pathCopyEnabled: Bool?) {
         guard let data = try? Data(contentsOf: sharedSettingsURL),
               let payload = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
-            return (nil, nil, nil)
+            return (nil, nil, nil, nil, nil)
         }
 
         return (
             payload[enabledFileTypesKey] as? [String],
             payload[customExtensionsKey] as? [String],
-            payload[menuOrderKey] as? [String]
+            payload[menuOrderKey] as? [String],
+            payload[terminalDirectEnabledKey] as? Bool,
+            payload[pathCopyEnabledKey] as? Bool
         )
     }
 
@@ -800,13 +1827,41 @@ private final class QuickDocSettingsModel: ObservableObject {
         return MenuPreviewItem(id: id, title: "新建 \(fileExtension.uppercased()) 文件")
     }
 
-    private func showAlert(title: String, message: String) {
+    private func showAlert(_ content: AlertContent) {
         let alert = NSAlert()
-        alert.messageText = title
-        alert.informativeText = message
-        alert.alertStyle = .informational
+        alert.messageText = content.title
+        alert.informativeText = content.message
+        alert.alertStyle = content.style
         alert.runModal()
     }
+
+    private func showAlert(title: String, message: String) {
+        showAlert(AlertContent(title: title, message: message, style: .informational))
+    }
+}
+
+private struct ProcessResult {
+    let exitCode: Int32
+    let output: String
+    let error: String
+
+    var errorDescription: String? {
+        if !error.isEmpty {
+            return error
+        }
+
+        if !output.isEmpty {
+            return output
+        }
+
+        return nil
+    }
+}
+
+private func readPipe(_ pipe: Pipe) -> String {
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    return String(data: data, encoding: .utf8)?
+        .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 }
 
 private extension View {
