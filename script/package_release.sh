@@ -12,8 +12,12 @@ DIST_DIR="$ROOT_DIR/dist"
 STAGE_DIR="$DIST_DIR/dmg-root"
 APP_BUNDLE="$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION/$APP_NAME.app"
 VERSION="$(
-  /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$ROOT_DIR/QuickDoc/Info.plist" \
-    | sed 's/$(MARKETING_VERSION)/1.0/'
+  /usr/bin/xcodebuild \
+    -project "$ROOT_DIR/$PROJECT_NAME" \
+    -scheme "$SCHEME_NAME" \
+    -configuration "$CONFIGURATION" \
+    -showBuildSettings 2>/dev/null \
+    | awk '/MARKETING_VERSION = / { print $3; exit }'
 )"
 DMG_NAME="$APP_NAME-$VERSION.dmg"
 ZIP_NAME="$APP_NAME-$VERSION.zip"
