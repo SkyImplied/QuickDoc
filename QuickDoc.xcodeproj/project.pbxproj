@@ -47,6 +47,7 @@
 		C10000000000000000000047 /* 文件路径.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003A /* 文件路径.png */; };
 		C10000000000000000000048 /* 文件路径.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003A /* 文件路径.png */; };
 		C10000000000000000000049 /* 工具栏.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003B /* 工具栏.png */; };
+		C1000000000000000000004A /* 菜单栏.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003C /* 菜单栏.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,6 +106,7 @@
 		A10000000000000000000039 /* 终端直达.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icons/终端直达.png"; sourceTree = "<group>"; };
 		A1000000000000000000003A /* 文件路径.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icons/文件路径.png"; sourceTree = "<group>"; };
 		A1000000000000000000003B /* 工具栏.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icons/工具栏.png"; sourceTree = "<group>"; };
+		A1000000000000000000003C /* 菜单栏.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icons/菜单栏.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -146,6 +148,7 @@
 				A10000000000000000000039 /* 终端直达.png */,
 				A1000000000000000000003A /* 文件路径.png */,
 				A1000000000000000000003B /* 工具栏.png */,
+				A1000000000000000000003C /* 菜单栏.png */,
 				A10000000000000000000020 /* README.md */,
 				A10000000000000000000024 /* Products */,
 			);
@@ -285,6 +288,7 @@
 				C10000000000000000000043 /* 新建文件icon.png in Resources */,
 				C10000000000000000000045 /* 终端直达.png in Resources */,
 				C10000000000000000000047 /* 文件路径.png in Resources */,
+				C1000000000000000000004A /* 菜单栏.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -354,7 +358,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDoc/Info.plist;
@@ -363,7 +367,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc;
 				PRODUCT_NAME = QuickDoc;
 				SWIFT_VERSION = 5.0;
@@ -378,7 +382,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDoc/Info.plist;
@@ -387,7 +391,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc;
 				PRODUCT_NAME = QuickDoc;
 				SWIFT_VERSION = 5.0;
@@ -401,7 +405,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocFinderSync/QuickDocFinderSync.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocFinderSync/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -410,7 +414,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.FinderSync;
 				PRODUCT_NAME = QuickDocFinderSync;
 				SKIP_INSTALL = YES;
@@ -426,7 +430,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocFinderSync/QuickDocFinderSync.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocFinderSync/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -435,7 +439,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.FinderSync;
 				PRODUCT_NAME = QuickDocFinderSync;
 				SKIP_INSTALL = YES;

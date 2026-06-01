@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Create common files directly from Finder's right-click menu and toolbar.</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.3.1"><img src="https://img.shields.io/badge/version-v1.3.1-blue" alt="Version v1.3.1"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.4.0"><img src="https://img.shields.io/badge/version-v1.4.0-blue" alt="Version v1.4.0"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey?logo=apple" alt="Platform macOS 13+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Built with Swift">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.3.1/QuickDoc-1.3.1.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.4.0/QuickDoc-1.4.0.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="Downloads"></a>
   </p>
   <p>
@@ -15,6 +15,14 @@
 </div>
 
 QuickDoc is a macOS utility built around a Finder Sync extension. It adds a practical `New File` submenu to Finder's context menu, and since v1.3 it also supports adding QuickDoc to the Finder toolbar so file creation can be invoked directly from the toolbar.
+
+## What's New in v1.4.0
+
+- Added a dedicated template menu bar icon with automatic light and dark mode adaptation
+- Both left-click and right-click now open the menu bar shortcut menu
+- Added menu bar shortcuts for configuring new file types and optional Finder actions without opening the main window
+- Secondary menu toggles stay open so multiple settings can be changed in one pass
+- Added an in-app update checker that discovers new versions, downloads the ZIP package, validates it, replaces the previous app after quitting, and relaunches QuickDoc
 
 ## What's New in v1.3.1
 
@@ -45,7 +53,7 @@ QuickDoc is a macOS utility built around a Finder Sync extension. It adds a prac
 
 ## Supported File Types
 
-Built-in file types in v1.3.1:
+Built-in file types in v1.4.0:
 
 - TXT
 - Markdown (`.md`)
@@ -66,13 +74,13 @@ Default-enabled types are `TXT`, `Markdown`, `Word`, `Excel`, `CSV`, `PowerPoint
 
 ### Menu bar controls
 
-Use the status bar icon to open settings, switch display mode, toggle launch at login, restart Finder, or jump to extension settings.
+Use the status bar icon to configure Finder new-file types, toggle Terminal and path-copy actions, open the full settings window, switch display mode, toggle launch at login, restart Finder, or jump to extension settings. Secondary toggles stay open while you make several changes.
 
 ![QuickDoc menu bar UI](./photos/菜单栏界面.png)
 
 ### General settings
 
-The general page manages launch behavior, display mode, and right-click quick actions such as `Open in Terminal` and `Copy Current Path`.
+The general page manages launch behavior, display mode, right-click quick actions such as `Open in Terminal` and `Copy Current Path`, and in-app update checks.
 
 ![QuickDoc general settings](./photos/通用设置界面.png)
 
@@ -120,6 +128,8 @@ Then:
 2. Go to `权限与扩展` or click `打开扩展设置`
 3. Enable `QuickDocFinderSync` in `System Settings > Privacy & Security > Login Items & Extensions`
 4. If the menu does not appear right away, use QuickDoc's `立即重启 Finder` action
+
+After installing v1.4.0, future versions can be downloaded and installed from the `检查更新` button at the bottom of the General page.
 
 If macOS warns that the app is from an unidentified developer, open it once from Finder with `Control` + click and choose `Open`.
 

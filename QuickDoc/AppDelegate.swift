@@ -7,6 +7,36 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 @MainActor
+private final class PersistentMenuToggleView: NSView {
+    private let button: NSButton
+    private let onToggle: (Bool) -> Void
+
+    init(title: String, isOn: Bool, onToggle: @escaping (Bool) -> Void) {
+        button = NSButton(checkboxWithTitle: title, target: nil, action: nil)
+        self.onToggle = onToggle
+        super.init(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
+
+        button.frame = bounds.insetBy(dx: 8, dy: 0)
+        button.autoresizingMask = [.width, .height]
+        button.font = NSFont.menuFont(ofSize: 0)
+        button.state = isOn ? .on : .off
+        button.target = self
+        button.action = #selector(handleToggle(_:))
+        addSubview(button)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    @objc
+    private func handleToggle(_ sender: NSButton) {
+        onToggle(sender.state == .on)
+    }
+}
+
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let logger = Logger(subsystem: "com.skyimplied.QuickDoc", category: "AppDelegate")
     private let settingsModel = QuickDocSettingsModel()
@@ -106,8 +136,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if mode.showsStatusItem {
             if statusItem == nil {
                 let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-                configureStatusItem(item)
                 statusItem = item
+                configureStatusItem(item)
             } else {
                 refreshStatusItemAppearance()
             }
@@ -134,10 +164,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func statusBarImage() -> NSImage? {
-        guard let baseImage = NSApp.applicationIconImage else { return nil }
-        let image = (baseImage.copy() as? NSImage) ?? baseImage
+        guard let url = Bundle.main.url(forResource: "菜单栏", withExtension: "png"),
+              let image = NSImage(contentsOf: url) else {
+            return nil
+        }
         image.size = NSSize(width: 18, height: 18)
-        image.isTemplate = false
+        image.isTemplate = true
         return image
     }
 
@@ -163,6 +195,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         displayModeItem.submenu = displayModeMenu
         menu.addItem(displayModeItem)
+
+        let fileTypesItem = NSMenuItem(title: "新建文件类型", action: nil, keyEquivalent: "")
+        let fileTypesMenu = NSMenu()
+        for type in quickDocFileTypes {
+            fileTypesMenu.addItem(persistentToggleMenuItem(
+                title: type.title,
+                isOn: settingsModel.enabledFileTypes.contains(type.id)
+            ) { [weak self] enabled in
+                self?.settingsModel.setFileType(type.id, enabled: enabled)
+            })
+        }
+        fileTypesItem.submenu = fileTypesMenu
+        menu.addItem(fileTypesItem)
+
+        let otherFeaturesItem = NSMenuItem(title: "其他功能", action: nil, keyEquivalent: "")
+        let otherFeaturesMenu = NSMenu()
+
+        otherFeaturesMenu.addItem(persistentToggleMenuItem(
+            title: "终端直达",
+            isOn: settingsModel.terminalDirectEnabled
+        ) { [weak self] enabled in
+            self?.settingsModel.terminalDirectEnabled = enabled
+        })
+
+        otherFeaturesMenu.addItem(persistentToggleMenuItem(
+            title: "路径复制",
+            isOn: settingsModel.pathCopyEnabled
+        ) { [weak self] enabled in
+            self?.settingsModel.pathCopyEnabled = enabled
+        })
+
+        otherFeaturesItem.submenu = otherFeaturesMenu
+        menu.addItem(otherFeaturesItem)
 
         let launchAtLoginItem = NSMenuItem(title: "开机自启动", action: #selector(toggleLaunchAtLogin(_:)), keyEquivalent: "")
         launchAtLoginItem.target = self
@@ -190,13 +255,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         statusItem.menu = nil
     }
 
+    private func persistentToggleMenuItem(
+        title: String,
+        isOn: Bool,
+        onToggle: @escaping (Bool) -> Void
+    ) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.view = PersistentMenuToggleView(title: title, isOn: isOn, onToggle: onToggle)
+        return item
+    }
+
     @objc
     private func handleStatusItemClick(_ sender: Any?) {
-        if NSApp.currentEvent?.type == .rightMouseUp {
-            presentStatusMenu()
-        } else {
-            showMainWindow()
-        }
+        presentStatusMenu()
     }
 
     @objc
@@ -549,6 +620,7 @@ private struct GeneralSettingsPage: View {
             DisplayModeSettingsCard()
             QuickAccessSettingsCard()
             LanguageSettingsCard()
+            SoftwareUpdateSettingsCard()
         }
     }
 }
@@ -808,6 +880,50 @@ private struct LanguageSettingsCard: View {
         .sheet(isPresented: $isPresentingLanguageSheet) {
             LanguageSelectionSheet()
                 .environmentObject(model)
+        }
+    }
+}
+
+private struct SoftwareUpdateSettingsCard: View {
+    @EnvironmentObject private var model: QuickDocSettingsModel
+
+    var body: some View {
+        GlassSection {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center, spacing: 14) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.blue)
+                        .frame(width: 40, height: 40)
+                        .background(Color.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("软件更新")
+                            .font(.headline)
+                        Text("当前版本 v\(model.appVersion)")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Button(model.softwareUpdateButtonTitle) {
+                        model.checkForSoftwareUpdate()
+                    }
+                    .disabled(model.isSoftwareUpdateInProgress)
+                    .glassButtonStyle(prominent: true)
+                }
+
+                if model.isSoftwareUpdateInProgress {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+
+                Text(model.softwareUpdateStatusText)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }
@@ -1346,6 +1462,102 @@ private struct GlassBackground: View {
     }
 }
 
+private enum SoftwareUpdateState: Equatable {
+    case idle
+    case checking
+    case downloading(version: String)
+    case preparing(version: String)
+
+    var isWorking: Bool {
+        self != .idle
+    }
+
+    var buttonTitle: String {
+        switch self {
+        case .idle:
+            return "检查更新"
+        case .checking:
+            return "正在检查"
+        case .downloading:
+            return "正在下载"
+        case .preparing:
+            return "正在安装"
+        }
+    }
+
+    var statusText: String {
+        switch self {
+        case .idle:
+            return "检查是否有新版本。发现更新后将自动下载，并在退出 QuickDoc 后覆盖旧版本再重新启动。"
+        case .checking:
+            return "正在检查是否有新版本..."
+        case let .downloading(version):
+            return "发现新版本 v\(version)，正在下载安装包..."
+        case let .preparing(version):
+            return "已下载 v\(version)，正在校验并准备替换当前版本..."
+        }
+    }
+}
+
+private struct GitHubRelease {
+    let tagName: String
+    let assets: [GitHubReleaseAsset]
+}
+
+private struct GitHubReleaseAsset {
+    let name: String
+    let downloadURL: URL
+}
+
+private struct PreparedSoftwareUpdate {
+    let rootURL: URL
+    let appURL: URL
+}
+
+private enum SoftwareUpdateError: LocalizedError {
+    case invalidReleaseResponse
+    case invalidReleaseVersion(String)
+    case missingZipAsset
+    case invalidDownloadURL
+    case downloadFailed(Int)
+    case extractionFailed(String)
+    case missingAppBundle
+    case invalidBundleIdentifier
+    case mismatchedBundleVersion(expected: String, actual: String)
+    case invalidCodeSignature(String)
+    case unsupportedInstallLocation
+    case installerLaunchFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidReleaseResponse:
+            return "更新服务器返回了无法识别的数据，请稍后重试。"
+        case let .invalidReleaseVersion(version):
+            return "无法识别最新版本号：\(version)。"
+        case .missingZipAsset:
+            return "最新版本中没有找到 QuickDoc ZIP 安装包。"
+        case .invalidDownloadURL:
+            return "更新包下载地址不符合预期，已停止更新。"
+        case let .downloadFailed(statusCode):
+            return "下载安装包失败，服务器返回状态码 \(statusCode)。"
+        case let .extractionFailed(message):
+            return "解压安装包失败：\(message)"
+        case .missingAppBundle:
+            return "安装包中没有找到 QuickDoc.app。"
+        case .invalidBundleIdentifier:
+            return "安装包不是有效的 QuickDoc 应用，已停止更新。"
+        case let .mismatchedBundleVersion(expected, actual):
+            return "安装包版本不匹配：预期 v\(expected)，实际为 v\(actual)。"
+        case let .invalidCodeSignature(message):
+            return "安装包代码签名校验失败：\(message)"
+        case .unsupportedInstallLocation:
+            return "当前 QuickDoc 位于磁盘映像或临时隔离目录中。请先将应用移动到“应用程序”文件夹，再检查更新。"
+        case let .installerLaunchFailed(message):
+            return "无法启动更新安装程序：\(message)"
+        }
+    }
+}
+
 @MainActor
 private final class QuickDocSettingsModel: ObservableObject {
     struct AlertContent {
@@ -1391,6 +1603,7 @@ private final class QuickDocSettingsModel: ObservableObject {
 
     @Published private(set) var extensionStatus = ExtensionStatus(isConfirmed: false)
     @Published private(set) var isRestartingFinder = false
+    @Published private(set) var softwareUpdateState = SoftwareUpdateState.idle
 
     @Published var enabledFileTypes: Set<String> {
         didSet {
@@ -1437,6 +1650,8 @@ private final class QuickDocSettingsModel: ObservableObject {
     private static let enabledFileTypesKey = "enabledFileTypes"
     private static let customExtensionsKey = "customExtensions"
     private static let menuOrderKey = "menuOrder"
+    private static let bundleIdentifier = "com.skyimplied.QuickDoc"
+    private static let latestReleaseURL = URL(string: "https://github.com/SkyImplied/QuickDoc/releases/latest")!
 
     init() {
         let defaultTypes = quickDocFileTypes.filter(\.enabledByDefault).map(\.id)
@@ -1471,6 +1686,18 @@ private final class QuickDocSettingsModel: ObservableObject {
         for observer in notificationObservers {
             NotificationCenter.default.removeObserver(observer)
         }
+    }
+
+    var softwareUpdateButtonTitle: String {
+        softwareUpdateState.buttonTitle
+    }
+
+    var softwareUpdateStatusText: String {
+        softwareUpdateState.statusText
+    }
+
+    var isSoftwareUpdateInProgress: Bool {
+        softwareUpdateState.isWorking
     }
 
     var menuPreviewItems: [MenuPreviewItem] {
@@ -1568,6 +1795,20 @@ private final class QuickDocSettingsModel: ObservableObject {
         }
     }
 
+    func checkForSoftwareUpdate() {
+        guard !softwareUpdateState.isWorking else { return }
+        softwareUpdateState = .checking
+
+        Task {
+            do {
+                try await checkForSoftwareUpdateWorkflow()
+            } catch {
+                softwareUpdateState = .idle
+                showAlert(title: "检查更新失败", message: error.localizedDescription)
+            }
+        }
+    }
+
     func showLanguageComingSoon(languageName: String) {
         showAlert(
             title: "功能等待未来更新",
@@ -1580,6 +1821,184 @@ private final class QuickDocSettingsModel: ObservableObject {
             title: "功能等待未来更新",
             message: "\(featureName) 功能正在规划中，当前版本暂未开放，敬请期待后续版本更新。"
         )
+    }
+
+    private func checkForSoftwareUpdateWorkflow() async throws {
+        let release = try await fetchLatestRelease()
+        guard let latestVersion = Self.normalizedVersion(release.tagName) else {
+            throw SoftwareUpdateError.invalidReleaseVersion(release.tagName)
+        }
+
+        guard Self.isVersion(latestVersion, newerThan: appVersion) else {
+            softwareUpdateState = .idle
+            showAlert(
+                title: "已是最新版本",
+                message: "当前安装的 QuickDoc v\(appVersion) 已经是最新版本。"
+            )
+            return
+        }
+
+        guard let asset = release.assets.first(where: { asset in
+            asset.name.lowercased().hasPrefix("quickdoc-")
+                && asset.name.lowercased().hasSuffix(".zip")
+        }) else {
+            throw SoftwareUpdateError.missingZipAsset
+        }
+
+        softwareUpdateState = .downloading(version: latestVersion)
+        let preparedUpdate = try await downloadAndPrepareUpdate(asset: asset, version: latestVersion)
+        softwareUpdateState = .preparing(version: latestVersion)
+
+        do {
+            try scheduleSoftwareUpdateInstallation(preparedUpdate)
+        } catch {
+            try? FileManager.default.removeItem(at: preparedUpdate.rootURL)
+            throw error
+        }
+    }
+
+    private func fetchLatestRelease() async throws -> GitHubRelease {
+        var request = URLRequest(url: Self.latestReleaseURL)
+        request.setValue("QuickDoc/\(appVersion)", forHTTPHeaderField: "User-Agent")
+
+        let (_, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode),
+              let resolvedURL = httpResponse.url,
+              resolvedURL.host == "github.com",
+              resolvedURL.path.contains("/SkyImplied/QuickDoc/releases/tag/") else {
+            throw SoftwareUpdateError.invalidReleaseResponse
+        }
+
+        let tagName = resolvedURL.lastPathComponent
+        guard let version = Self.normalizedVersion(tagName),
+              let downloadURL = URL(
+                string: "https://github.com/SkyImplied/QuickDoc/releases/download/\(tagName)/QuickDoc-\(version).zip"
+              ) else {
+            throw SoftwareUpdateError.invalidReleaseVersion(tagName)
+        }
+
+        return GitHubRelease(
+            tagName: tagName,
+            assets: [GitHubReleaseAsset(name: "QuickDoc-\(version).zip", downloadURL: downloadURL)]
+        )
+    }
+
+    private func downloadAndPrepareUpdate(asset: GitHubReleaseAsset, version: String) async throws -> PreparedSoftwareUpdate {
+        guard asset.downloadURL.scheme == "https",
+              asset.downloadURL.host == "github.com" else {
+            throw SoftwareUpdateError.invalidDownloadURL
+        }
+
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("QuickDocUpdate-\(UUID().uuidString)", isDirectory: true)
+
+        do {
+            try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
+
+            var request = URLRequest(url: asset.downloadURL)
+            request.setValue("QuickDoc/\(appVersion)", forHTTPHeaderField: "User-Agent")
+            let (downloadURL, response) = try await URLSession.shared.download(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200..<300).contains(httpResponse.statusCode) else {
+                throw SoftwareUpdateError.downloadFailed((response as? HTTPURLResponse)?.statusCode ?? -1)
+            }
+
+            let archiveURL = rootURL.appendingPathComponent(asset.name)
+            try FileManager.default.moveItem(at: downloadURL, to: archiveURL)
+
+            let extractedURL = rootURL.appendingPathComponent("extracted", isDirectory: true)
+            try FileManager.default.createDirectory(at: extractedURL, withIntermediateDirectories: true)
+            let extractResult = await runProcess(
+                executablePath: "/usr/bin/ditto",
+                arguments: ["-x", "-k", archiveURL.path, extractedURL.path]
+            )
+            guard extractResult.exitCode == 0 else {
+                throw SoftwareUpdateError.extractionFailed(
+                    extractResult.errorDescription ?? "ditto 返回了退出码 \(extractResult.exitCode)。"
+                )
+            }
+
+            let appURL = extractedURL.appendingPathComponent("QuickDoc.app", isDirectory: true)
+            guard FileManager.default.fileExists(atPath: appURL.path) else {
+                throw SoftwareUpdateError.missingAppBundle
+            }
+
+            try await validatePreparedUpdate(at: appURL, expectedVersion: version)
+            return PreparedSoftwareUpdate(rootURL: rootURL, appURL: appURL)
+        } catch {
+            try? FileManager.default.removeItem(at: rootURL)
+            throw error
+        }
+    }
+
+    private func validatePreparedUpdate(at appURL: URL, expectedVersion: String) async throws {
+        let infoPlistURL = appURL.appendingPathComponent("Contents/Info.plist")
+        let data = try Data(contentsOf: infoPlistURL)
+        guard let payload = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
+              payload["CFBundleIdentifier"] as? String == Self.bundleIdentifier else {
+            throw SoftwareUpdateError.invalidBundleIdentifier
+        }
+
+        let actualVersion = payload["CFBundleShortVersionString"] as? String ?? ""
+        guard actualVersion == expectedVersion else {
+            throw SoftwareUpdateError.mismatchedBundleVersion(expected: expectedVersion, actual: actualVersion)
+        }
+
+        let verifyResult = await runProcess(
+            executablePath: "/usr/bin/codesign",
+            arguments: ["--verify", "--deep", "--strict", appURL.path]
+        )
+        guard verifyResult.exitCode == 0 else {
+            throw SoftwareUpdateError.invalidCodeSignature(
+                verifyResult.errorDescription ?? "codesign 返回了退出码 \(verifyResult.exitCode)。"
+            )
+        }
+    }
+
+    private func scheduleSoftwareUpdateInstallation(_ update: PreparedSoftwareUpdate) throws {
+        let installedAppURL = Bundle.main.bundleURL.resolvingSymlinksInPath()
+        guard !installedAppURL.path.hasPrefix("/Volumes/"),
+              !installedAppURL.path.contains("/AppTranslocation/") else {
+            throw SoftwareUpdateError.unsupportedInstallLocation
+        }
+
+        let scriptURL = update.rootURL.appendingPathComponent("install-update.sh")
+        try Self.installerScript.write(to: scriptURL, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
+
+        let arguments = [
+            scriptURL.path,
+            installedAppURL.path,
+            update.appURL.path,
+            String(ProcessInfo.processInfo.processIdentifier),
+            update.rootURL.path
+        ]
+        let parentURL = installedAppURL.deletingLastPathComponent()
+        let installer = Process()
+
+        if FileManager.default.isWritableFile(atPath: parentURL.path) {
+            installer.executableURL = URL(fileURLWithPath: "/bin/sh")
+            installer.arguments = arguments
+        } else {
+            let command = (["/bin/sh"] + arguments)
+                .map(Self.shellQuoted(_:))
+                .joined(separator: " ")
+            installer.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+            installer.arguments = [
+                "-e",
+                "do shell script \(Self.appleScriptQuoted(command)) with administrator privileges"
+            ]
+        }
+
+        do {
+            try installer.run()
+        } catch {
+            throw SoftwareUpdateError.installerLaunchFailed(error.localizedDescription)
+        }
+
+        NSApp.terminate(nil)
     }
 
     private func setLaunchAtLogin(_ enabled: Bool) {
@@ -1694,6 +2113,98 @@ private final class QuickDocSettingsModel: ObservableObject {
             }
         }
     }
+
+    private static func normalizedVersion(_ value: String) -> String? {
+        var version = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if version.lowercased().hasPrefix("v") {
+            version.removeFirst()
+        }
+        version = String(version.split(separator: "-", maxSplits: 1).first ?? "")
+
+        let components = version.split(separator: ".", omittingEmptySubsequences: false)
+        guard !components.isEmpty,
+              components.allSatisfy({ Int($0) != nil }) else {
+            return nil
+        }
+
+        return components.joined(separator: ".")
+    }
+
+    private static func isVersion(_ candidate: String, newerThan current: String) -> Bool {
+        guard let candidate = normalizedVersion(candidate),
+              let current = normalizedVersion(current) else {
+            return candidate.compare(current, options: .numeric) == .orderedDescending
+        }
+
+        var candidateComponents = candidate.split(separator: ".").compactMap { Int($0) }
+        var currentComponents = current.split(separator: ".").compactMap { Int($0) }
+        let componentCount = max(candidateComponents.count, currentComponents.count)
+
+        candidateComponents.append(contentsOf: repeatElement(0, count: componentCount - candidateComponents.count))
+        currentComponents.append(contentsOf: repeatElement(0, count: componentCount - currentComponents.count))
+
+        for index in 0..<componentCount where candidateComponents[index] != currentComponents[index] {
+            return candidateComponents[index] > currentComponents[index]
+        }
+
+        return false
+    }
+
+    private static func shellQuoted(_ value: String) -> String {
+        "'\(value.replacingOccurrences(of: "'", with: "'\"'\"'"))'"
+    }
+
+    private static func appleScriptQuoted(_ value: String) -> String {
+        let escapedValue = value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        return "\"\(escapedValue)\""
+    }
+
+    private static let installerScript = """
+    #!/bin/sh
+    set -u
+
+    target_app="$1"
+    source_app="$2"
+    old_pid="$3"
+    cleanup_root="$4"
+    parent_dir="$(/usr/bin/dirname "$target_app")"
+    incoming_app="$parent_dir/.QuickDoc.update-$$.app"
+    backup_app="$parent_dir/.QuickDoc.backup-$$.app"
+    lsregister="/System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister"
+
+    show_failure() {
+      if [ -e "$backup_app" ] && [ ! -e "$target_app" ]; then
+        /bin/mv "$backup_app" "$target_app" >/dev/null 2>&1 || true
+      fi
+      /usr/bin/open -R "$source_app" >/dev/null 2>&1 || true
+      /usr/bin/osascript -e 'display alert "QuickDoc 更新失败" message "自动替换没有完成，旧版本已保留。请在 Finder 中手动替换应用。"' >/dev/null 2>&1 || true
+      exit 1
+    }
+
+    while /bin/kill -0 "$old_pid" >/dev/null 2>&1; do
+      /bin/sleep 0.2
+    done
+
+    /usr/bin/pkill -x QuickDocFinderSync >/dev/null 2>&1 || true
+    /bin/rm -rf "$incoming_app" "$backup_app"
+    /usr/bin/ditto "$source_app" "$incoming_app" || show_failure
+
+    if [ -e "$target_app" ]; then
+      /bin/mv "$target_app" "$backup_app" || show_failure
+    fi
+
+    if /bin/mv "$incoming_app" "$target_app"; then
+      /bin/rm -rf "$backup_app"
+      "$lsregister" -f -R -trusted "$target_app" >/dev/null 2>&1 || true
+      /usr/bin/open -n "$target_app"
+      /bin/rm -rf "$cleanup_root"
+      exit 0
+    fi
+
+    show_failure
+    """
 
     private func normalizeExtension(_ value: String) -> String {
         var normalized = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
