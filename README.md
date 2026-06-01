@@ -22,7 +22,7 @@ QuickDoc is a macOS utility built around a Finder Sync extension. It adds a prac
 - Both left-click and right-click now open the menu bar shortcut menu
 - Added menu bar shortcuts for configuring new file types and optional Finder actions without opening the main window
 - Secondary menu toggles stay open so multiple settings can be changed in one pass
-- Added an in-app update checker that discovers new versions, downloads the ZIP package, validates it, replaces the previous app after quitting, and relaunches QuickDoc
+- Added an in-app update checker that discovers new versions, downloads the ZIP package, validates it, replaces the previous app after quitting, relaunches QuickDoc, and confirms when the upgrade is complete
 
 ## What's New in v1.3.1
 
@@ -129,7 +129,7 @@ Then:
 3. Enable `QuickDocFinderSync` in `System Settings > Privacy & Security > Login Items & Extensions`
 4. If the menu does not appear right away, use QuickDoc's `立即重启 Finder` action
 
-After installing v1.4.0, future versions can be downloaded and installed from the `检查更新` button at the bottom of the General page.
+After installing v1.4.0, future versions can be downloaded and installed from the `检查更新` button at the bottom of the General page. QuickDoc relaunches automatically and confirms when the upgrade is complete.
 
 If macOS warns that the app is from an unidentified developer, open it once from Finder with `Control` + click and choose `Open`.
 

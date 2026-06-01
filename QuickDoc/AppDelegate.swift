@@ -61,7 +61,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             self?.applyDisplayMode(mode)
         }
         applyDisplayMode(settingsModel.displayMode)
-        scheduleInitialWindowPresentation()
+        if let completedUpdateVersion = SoftwareUpdateCompletionStore.consumeVersion() {
+            showMainWindow()
+            DispatchQueue.main.async { [weak self] in
+                self?.presentCompletedUpdateAlert(version: completedUpdateVersion)
+            }
+        } else {
+            scheduleInitialWindowPresentation()
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -370,6 +377,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private func cancelInitialWindowPresentation() {
         initialWindowWorkItem?.cancel()
         initialWindowWorkItem = nil
+    }
+
+    private func presentCompletedUpdateAlert(version: String) {
+        let alert = NSAlert()
+        alert.messageText = "更新完成"
+        alert.informativeText = "QuickDoc 已成功升级到最新版 v\(version)。"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "好的")
+        alert.runModal()
     }
 }
 
@@ -1488,7 +1504,7 @@ private enum SoftwareUpdateState: Equatable {
     var statusText: String {
         switch self {
         case .idle:
-            return "检查是否有新版本。发现更新后将自动下载，并在退出 QuickDoc 后覆盖旧版本再重新启动。"
+            return "检查是否有新版本。发现更新后将自动下载，在退出 QuickDoc 后覆盖旧版本，重新启动并提示更新完成。"
         case .checking:
             return "正在检查是否有新版本..."
         case let .downloading(version):
@@ -1512,6 +1528,20 @@ private struct GitHubReleaseAsset {
 private struct PreparedSoftwareUpdate {
     let rootURL: URL
     let appURL: URL
+    let version: String
+}
+
+private enum SoftwareUpdateCompletionStore {
+    static let markerURL = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/Application Support/QuickDoc/update-complete.txt")
+
+    static func consumeVersion() -> String? {
+        guard let contents = try? String(contentsOf: markerURL, encoding: .utf8) else { return nil }
+        try? FileManager.default.removeItem(at: markerURL)
+
+        let version = contents.trimmingCharacters(in: .whitespacesAndNewlines)
+        return version.isEmpty ? nil : version
+    }
 }
 
 private enum SoftwareUpdateError: LocalizedError {
@@ -1926,7 +1956,7 @@ private final class QuickDocSettingsModel: ObservableObject {
             }
 
             try await validatePreparedUpdate(at: appURL, expectedVersion: version)
-            return PreparedSoftwareUpdate(rootURL: rootURL, appURL: appURL)
+            return PreparedSoftwareUpdate(rootURL: rootURL, appURL: appURL, version: version)
         } catch {
             try? FileManager.default.removeItem(at: rootURL)
             throw error
@@ -1973,7 +2003,9 @@ private final class QuickDocSettingsModel: ObservableObject {
             installedAppURL.path,
             update.appURL.path,
             String(ProcessInfo.processInfo.processIdentifier),
-            update.rootURL.path
+            update.rootURL.path,
+            SoftwareUpdateCompletionStore.markerURL.path,
+            update.version
         ]
         let parentURL = installedAppURL.deletingLastPathComponent()
         let installer = Process()
@@ -2169,6 +2201,8 @@ private final class QuickDocSettingsModel: ObservableObject {
     source_app="$2"
     old_pid="$3"
     cleanup_root="$4"
+    update_marker="$5"
+    installed_version="$6"
     parent_dir="$(/usr/bin/dirname "$target_app")"
     incoming_app="$parent_dir/.QuickDoc.update-$$.app"
     backup_app="$parent_dir/.QuickDoc.backup-$$.app"
@@ -2198,6 +2232,8 @@ private final class QuickDocSettingsModel: ObservableObject {
     if /bin/mv "$incoming_app" "$target_app"; then
       /bin/rm -rf "$backup_app"
       "$lsregister" -f -R -trusted "$target_app" >/dev/null 2>&1 || true
+      /bin/mkdir -p "$(/usr/bin/dirname "$update_marker")" >/dev/null 2>&1 || true
+      /usr/bin/printf '%s\n' "$installed_version" > "$update_marker" 2>/dev/null || true
       /usr/bin/open -n "$target_app"
       /bin/rm -rf "$cleanup_root"
       exit 0
