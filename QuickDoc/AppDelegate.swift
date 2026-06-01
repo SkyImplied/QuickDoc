@@ -1504,7 +1504,7 @@ private enum SoftwareUpdateState: Equatable {
     var statusText: String {
         switch self {
         case .idle:
-            return "检查是否有新版本。发现更新后将自动下载，在退出 QuickDoc 后覆盖旧版本，重新启动并提示更新完成。"
+            return "检查是否有新版本。发现更新后会先询问是否安装，确认后再下载并覆盖旧版本。"
         case .checking:
             return "正在检查是否有新版本..."
         case let .downloading(version):
@@ -1868,6 +1868,11 @@ private final class QuickDocSettingsModel: ObservableObject {
             return
         }
 
+        guard confirmSoftwareUpdate(version: latestVersion) else {
+            softwareUpdateState = .idle
+            return
+        }
+
         guard let asset = release.assets.first(where: { asset in
             asset.name.lowercased().hasPrefix("quickdoc-")
                 && asset.name.lowercased().hasSuffix(".zip")
@@ -1885,6 +1890,16 @@ private final class QuickDocSettingsModel: ObservableObject {
             try? FileManager.default.removeItem(at: preparedUpdate.rootURL)
             throw error
         }
+    }
+
+    private func confirmSoftwareUpdate(version: String) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = "发现新版本 v\(version)"
+        alert.informativeText = "是否立即下载并安装新版本？确认后 QuickDoc 会自动下载更新，在替换完成后重新打开并提示升级成功。"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "确认更新")
+        alert.addButton(withTitle: "暂不更新")
+        return alert.runModal() == .alertFirstButtonReturn
     }
 
     private func fetchLatestRelease() async throws -> GitHubRelease {

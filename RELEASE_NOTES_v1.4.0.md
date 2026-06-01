@@ -8,7 +8,7 @@ QuickDoc v1.4.0 improves the menu bar workflow and introduces in-app updates.
 - Left-click and right-click on the menu bar icon now both open the shortcut menu.
 - Added quick configuration submenus for Finder new-file types, Terminal access, and path copying.
 - Kept secondary toggle menus open while settings are changed, making multi-item adjustments faster.
-- Added an in-app update checker in General settings. It can discover a newer release, download the ZIP package, validate the QuickDoc bundle, replace the old app after quitting, relaunch the updated version, and confirm when the upgrade is complete.
+- Added an in-app update checker in General settings. When a newer release is available, QuickDoc asks for confirmation before downloading the ZIP package, validating the bundle, replacing the old app after quitting, relaunching the updated version, and confirming when the upgrade is complete.
 
 ## 中文说明
 
@@ -16,7 +16,7 @@ QuickDoc v1.4.0 improves the menu bar workflow and introduces in-app updates.
 - 左键和右键点击菜单栏图标都会打开快捷菜单。
 - 菜单栏可直接调整 Finder 右键新建文件类型、终端直达和路径复制开关。
 - 二级菜单支持连续勾选，不会每次点击后自动关闭。
-- 通用设置页新增检查更新功能，可自动下载、校验并覆盖安装新版本；完成后会自动打开新版并提示升级成功。
+- 通用设置页新增检查更新功能；发现新版本后会先询问是否安装，用户确认后才会自动下载、校验并覆盖旧版本，完成后自动打开新版并提示升级成功。
 
 ## Downloads
 
