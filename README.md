@@ -2,7 +2,12 @@
 
 [中文说明](README.zh-CN.md)
 
-QuickDoc is a macOS utility built around a Finder Sync extension. It adds a practical `New File` submenu to Finder's context menu, and in v1.3 it also supports adding QuickDoc to the Finder toolbar so file creation can be invoked directly from the toolbar.
+QuickDoc is a macOS utility built around a Finder Sync extension. It adds a practical `New File` submenu to Finder's context menu, and since v1.3 it also supports adding QuickDoc to the Finder toolbar so file creation can be invoked directly from the toolbar.
+
+## What's New in v1.3.1
+
+- Fixed an issue where creating a file on the Desktop could open an unwanted Finder window
+- Fixed an issue where `Open in Terminal` could launch an extra terminal window in the home directory
 
 ## What's New in v1.3
 
@@ -27,7 +32,7 @@ QuickDoc is a macOS utility built around a Finder Sync extension. It adds a prac
 
 ## Supported File Types
 
-Built-in file types in v1.3:
+Built-in file types in v1.3.1:
 
 - TXT
 - Markdown (`.md`)
