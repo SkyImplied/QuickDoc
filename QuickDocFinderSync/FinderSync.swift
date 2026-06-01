@@ -377,7 +377,9 @@ final class FinderSync: FIFinderSync {
             }
             logger.info("Created file at \(fileURL.path, privacy: .public)")
             diagnosticLog("Created file: \(fileURL.path)")
-            NSWorkspace.shared.activateFileViewerSelecting([fileURL])
+            if !directory.isDesktopDirectory {
+                NSWorkspace.shared.activateFileViewerSelecting([fileURL])
+            }
         } catch {
             logger.error("Create file failed: \(error.localizedDescription, privacy: .public)")
             diagnosticLog("Create file failed: \(error.localizedDescription)")
@@ -518,6 +520,13 @@ final class FinderSync: FIFinderSync {
             FileManager.default.homeDirectoryForCurrentUser
                 .appendingPathComponent("Library/Application Support/QuickDoc/finder-sync.log")
         ]
+    }
+}
+
+private extension URL {
+    var isDesktopDirectory: Bool {
+        let realDesktopPath = "/Users/\(NSUserName())/Desktop"
+        return path == realDesktopPath
     }
 }
 

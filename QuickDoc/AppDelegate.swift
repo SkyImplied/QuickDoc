@@ -258,12 +258,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return
         }
 
-        NSApp.activate(ignoringOtherApps: true)
-
-        if runTerminalAppleScript(for: directoryURL.path) {
-            return
-        }
-
         guard let terminalURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") else { return }
 
         let configuration = NSWorkspace.OpenConfiguration()
@@ -272,7 +266,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         NSWorkspace.shared.open([directoryURL], withApplicationAt: terminalURL, configuration: configuration) { runningApplication, error in
             if error != nil {
-                self.logger.error("Fallback Terminal open failed for \(directoryURL.path, privacy: .public)")
+                self.logger.error("Terminal open failed for \(directoryURL.path, privacy: .public)")
                 return
             }
 
@@ -289,38 +283,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
 
         handleIncomingURL(url)
-    }
-
-    private func runTerminalAppleScript(for path: String) -> Bool {
-        let escapedPath = appleScriptEscapedString(path)
-        let source = """
-        set targetPath to "\(escapedPath)"
-        tell application "Terminal"
-            do script ("cd " & quoted form of targetPath)
-            activate
-        end tell
-        """
-
-        var error: NSDictionary?
-        let script = NSAppleScript(source: source)
-        script?.executeAndReturnError(&error)
-
-        if let error {
-            logger.error("AppleScript terminal open failed: \(String(describing: error), privacy: .public)")
-            return false
-        }
-
-        NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.Terminal")
-            .first?
-            .activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
-        logger.info("Opened Terminal via AppleScript for \(path, privacy: .public)")
-        return true
-    }
-
-    private func appleScriptEscapedString(_ value: String) -> String {
-        value
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "\"", with: "\\\"")
     }
 
     private func scheduleInitialWindowPresentation() {
