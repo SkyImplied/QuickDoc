@@ -8,6 +8,7 @@ QuickDoc is a macOS utility built around a Finder Sync extension. It adds a prac
 
 - Fixed an issue where creating a file on the Desktop could open an unwanted Finder window
 - Fixed an issue where `Open in Terminal` could launch an extra terminal window in the home directory
+- Thanks to [DD-hit](https://github.com/DD-hit) for contributing these fixes in [#4](https://github.com/SkyImplied/QuickDoc/pull/4)
 
 ## What's New in v1.3
 
