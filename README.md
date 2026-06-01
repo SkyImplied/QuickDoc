@@ -29,7 +29,9 @@ QuickDoc is a macOS utility built around a Finder Sync extension. It adds a prac
 
 Configure Finder new-file types and optional quick actions directly from the menu bar.
 
-![QuickDoc v1.4.0 menu bar shortcuts](./photos/v1.4.0菜单栏.png)
+<p align="center">
+  <img src="./photos/菜单栏界面.png" alt="QuickDoc v1.4.0 menu bar shortcuts" width="520">
+</p>
 
 ### Update confirmation
 
