@@ -21,8 +21,6 @@ QuickDoc is a macOS utility built around a Finder Sync extension. It adds a prac
 
 - Added a `Silent Launch` option beneath `Launch at Login` in General settings
 - When enabled, QuickDoc starts in the background after macOS login without opening the main window
-- Manual launches still open the settings window normally, even when silent launch is enabled
-- Migrated launch-at-login handling to a dedicated embedded login item for reliable macOS startup behavior
 
 ## What's New in v1.4.0
 
