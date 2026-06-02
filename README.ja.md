@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Finder の右クリックメニューとツールバーから一般的なファイルを直接作成できます。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.4.0"><img src="https://img.shields.io/badge/version-v1.4.0-blue" alt="バージョン v1.4.0"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.4.1"><img src="https://img.shields.io/badge/version-v1.4.1-blue" alt="バージョン v1.4.1"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey?logo=apple" alt="プラットフォーム macOS 13+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Swift で開発">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.4.0/QuickDoc-1.4.0.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.4.1/QuickDoc-1.4.1.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="ダウンロード数"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/stargazers"><img src="https://img.shields.io/github/stars/SkyImplied/QuickDoc?label=stars&color=yellow" alt="Stars"></a>
   </p>
@@ -16,6 +16,13 @@
 </div>
 
 QuickDoc は macOS の Finder Sync 拡張機能を活用したユーティリティです。Finder のコンテキストメニューに実用的な「新建文件」サブメニューを追加します。v1.3 以降では Finder のツールバーにも QuickDoc を追加でき、ツールバーから直接ファイルを作成できます。
+
+## v1.4.1 の新機能
+
+- 一般設定の「ログイン時に起動」の下に「サイレント起動」オプションを追加
+- 有効にすると、macOS ログイン時にメインウィンドウを表示せずバックグラウンドで起動
+- サイレント起動が有効でも、ユーザーが手動で QuickDoc を開いた場合は設定ウィンドウを通常どおり表示
+- macOS ログイン時の動作を安定させるため、専用の埋め込みログイン項目へ移行
 
 ## v1.4.0 の新機能
 

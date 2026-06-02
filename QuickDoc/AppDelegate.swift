@@ -43,6 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var window: NSWindow?
     private var statusItem: NSStatusItem?
     private static let terminalPathQueryKey = "path"
+    private static let loginLaunchHost = "launch-at-login"
     private var initialWindowWorkItem: DispatchWorkItem?
     private var shouldSuppressInitialWindow = false
 
@@ -66,6 +67,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             DispatchQueue.main.async { [weak self] in
                 self?.presentCompletedUpdateAlert(version: completedUpdateVersion)
             }
+        } else if shouldSuppressInitialWindow {
+            logger.info("Suppressed initial window for silent login launch")
         } else {
             scheduleInitialWindowPresentation()
         }
@@ -241,6 +244,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         launchAtLoginItem.state = settingsModel.launchAtLogin ? .on : .off
         menu.addItem(launchAtLoginItem)
 
+        let silentLaunchAtLoginItem = NSMenuItem(title: "静默启动", action: #selector(toggleSilentLaunchAtLogin(_:)), keyEquivalent: "")
+        silentLaunchAtLoginItem.target = self
+        silentLaunchAtLoginItem.state = settingsModel.silentLaunchAtLogin ? .on : .off
+        silentLaunchAtLoginItem.isEnabled = settingsModel.launchAtLogin
+        menu.addItem(silentLaunchAtLoginItem)
+
         menu.addItem(.separator())
 
         let finderItem = NSMenuItem(title: "重启访达", action: #selector(restartFinderFromMenu(_:)), keyEquivalent: "")
@@ -298,6 +307,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     @objc
+    private func toggleSilentLaunchAtLogin(_ sender: Any?) {
+        settingsModel.silentLaunchAtLogin.toggle()
+    }
+
+    @objc
     private func restartFinderFromMenu(_ sender: Any?) {
         settingsModel.restartFinder()
     }
@@ -313,11 +327,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func handleIncomingURL(_ url: URL) {
-        shouldSuppressInitialWindow = true
-        cancelInitialWindowPresentation()
+        guard url.scheme == "quickdoc" else {
+            logger.error("Ignored unsupported URL: \(url.absoluteString, privacy: .public)")
+            return
+        }
 
-        guard url.scheme == "quickdoc",
-              url.host == "open-terminal",
+        if url.host == Self.loginLaunchHost {
+            guard settingsModel.silentLaunchAtLogin else {
+                logger.info("Received login launch request with normal startup enabled")
+                return
+            }
+
+            shouldSuppressInitialWindow = true
+            cancelInitialWindowPresentation()
+            logger.info("Received silent login launch request")
+            return
+        }
+
+        guard url.host == "open-terminal",
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let encodedPath = components.queryItems?.first(where: { $0.name == Self.terminalPathQueryKey })?.value,
               let path = encodedPath.removingPercentEncoding else {
@@ -325,6 +352,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return
         }
 
+        shouldSuppressInitialWindow = true
+        cancelInitialWindowPresentation()
         logger.info("Received terminal open request for \(path, privacy: .public)")
         openTerminal(atPath: path)
     }
@@ -627,10 +656,20 @@ private struct GeneralSettingsPage: View {
             PageHeader(title: "通用设置", subtitle: "管理 QuickDoc 的启动行为与基础偏好。")
 
             GlassSection {
-                Toggle("开机自启动", isOn: $model.launchAtLogin)
-                Text("登录 macOS 时自动启动 QuickDoc。")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 14) {
+                    Toggle("开机自启动", isOn: $model.launchAtLogin)
+                    Text("登录 macOS 时自动启动 QuickDoc。")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+
+                    Divider()
+
+                    Toggle("静默启动", isOn: $model.silentLaunchAtLogin)
+                        .disabled(!model.launchAtLogin)
+                    Text("开启后，登录 macOS 时在后台运行，不弹出软件主界面。")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             DisplayModeSettingsCard()
@@ -1621,7 +1660,16 @@ private final class QuickDocSettingsModel: ObservableObject {
     }
 
     @Published var launchAtLogin: Bool {
-        didSet { setLaunchAtLogin(launchAtLogin) }
+        didSet {
+            guard !isSynchronizingLaunchAtLogin else { return }
+            setLaunchAtLogin(launchAtLogin)
+        }
+    }
+
+    @Published var silentLaunchAtLogin: Bool {
+        didSet {
+            UserDefaults.standard.set(silentLaunchAtLogin, forKey: Self.silentLaunchAtLoginKey)
+        }
     }
 
     @Published private(set) var displayMode: QuickDocDisplayMode {
@@ -1674,19 +1722,23 @@ private final class QuickDocSettingsModel: ObservableObject {
     let appVersion: String
     var onDisplayModeDidChange: ((QuickDocDisplayMode) -> Void)?
     private var notificationObservers: [NSObjectProtocol] = []
+    private var isSynchronizingLaunchAtLogin = false
     private static let displayModeKey = "displayMode"
+    private static let silentLaunchAtLoginKey = "silentLaunchAtLogin"
     private static let terminalDirectEnabledKey = "terminalDirectEnabled"
     private static let pathCopyEnabledKey = "pathCopyEnabled"
     private static let enabledFileTypesKey = "enabledFileTypes"
     private static let customExtensionsKey = "customExtensions"
     private static let menuOrderKey = "menuOrder"
     private static let bundleIdentifier = "com.skyimplied.QuickDoc"
+    private static let loginItemIdentifier = "com.skyimplied.QuickDoc.LoginItem"
     private static let latestReleaseURL = URL(string: "https://github.com/SkyImplied/QuickDoc/releases/latest")!
 
     init() {
         let defaultTypes = quickDocFileTypes.filter(\.enabledByDefault).map(\.id)
         UserDefaults.standard.register(defaults: [
             Self.displayModeKey: QuickDocDisplayMode.menuBarOnly.rawValue,
+            Self.silentLaunchAtLoginKey: false,
             Self.terminalDirectEnabledKey: true,
             Self.pathCopyEnabledKey: true,
             Self.enabledFileTypesKey: defaultTypes,
@@ -1695,7 +1747,8 @@ private final class QuickDocSettingsModel: ObservableObject {
         ])
         let sharedSettings = Self.readSharedSettings()
 
-        launchAtLogin = SMAppService.mainApp.status == .enabled
+        launchAtLogin = Self.isLaunchAtLoginEnabled
+        silentLaunchAtLogin = UserDefaults.standard.bool(forKey: Self.silentLaunchAtLoginKey)
         displayMode = QuickDocDisplayMode(
             rawValue: UserDefaults.standard.string(forKey: Self.displayModeKey) ?? QuickDocDisplayMode.menuBarOnly.rawValue
         ) ?? .menuBarOnly
@@ -1710,6 +1763,7 @@ private final class QuickDocSettingsModel: ObservableObject {
         writeSharedSettings()
         refreshExtensionStatus()
         observeAppActivation()
+        migrateLegacyLaunchAtLoginIfNeeded()
     }
 
     deinit {
@@ -2051,14 +2105,62 @@ private final class QuickDocSettingsModel: ObservableObject {
     private func setLaunchAtLogin(_ enabled: Bool) {
         do {
             if enabled {
-                try SMAppService.mainApp.register()
+                try registerLoginItemIfNeeded()
+                try unregisterLegacyLaunchAtLoginIfPossible()
             } else {
-                try SMAppService.mainApp.unregister()
+                try unregisterLoginItemIfNeeded()
+                try unregisterServiceIfNeeded(SMAppService.mainApp)
             }
         } catch {
-            launchAtLogin = SMAppService.mainApp.status == .enabled
+            synchronizeLaunchAtLoginStatus()
             showAlert(title: "开机自启动设置失败", message: error.localizedDescription)
         }
+    }
+
+    private func migrateLegacyLaunchAtLoginIfNeeded() {
+        guard SMAppService.mainApp.status == .enabled else { return }
+
+        do {
+            try registerLoginItemIfNeeded()
+            try unregisterLegacyLaunchAtLoginIfPossible()
+            synchronizeLaunchAtLoginStatus()
+        } catch {
+            showAlert(title: "开机自启动升级失败", message: error.localizedDescription)
+        }
+    }
+
+    private func registerLoginItemIfNeeded() throws {
+        let service = Self.loginItemService
+        guard service.status == .notRegistered || service.status == .notFound else { return }
+        try service.register()
+    }
+
+    private func unregisterLegacyLaunchAtLoginIfPossible() throws {
+        guard Self.loginItemService.status == .enabled else { return }
+        try unregisterServiceIfNeeded(SMAppService.mainApp)
+    }
+
+    private func unregisterLoginItemIfNeeded() throws {
+        try unregisterServiceIfNeeded(Self.loginItemService)
+    }
+
+    private func unregisterServiceIfNeeded(_ service: SMAppService) throws {
+        guard service.status != .notRegistered, service.status != .notFound else { return }
+        try service.unregister()
+    }
+
+    private func synchronizeLaunchAtLoginStatus() {
+        isSynchronizingLaunchAtLogin = true
+        launchAtLogin = Self.isLaunchAtLoginEnabled
+        isSynchronizingLaunchAtLogin = false
+    }
+
+    private static var loginItemService: SMAppService {
+        SMAppService.loginItem(identifier: loginItemIdentifier)
+    }
+
+    private static var isLaunchAtLoginEnabled: Bool {
+        loginItemService.status == .enabled || SMAppService.mainApp.status == .enabled
     }
 
     private func observeAppActivation() {
