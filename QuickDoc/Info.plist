@@ -40,7 +40,7 @@
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>QuickDoc 需要控制“终端”来打开当前文件夹并自动切换到对应路径。</string>
+	<string>QuickDoc 需要打开你选择的终端应用，以便在当前文件夹路径启动终端。</string>
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
 </dict>

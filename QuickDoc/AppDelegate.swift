@@ -365,7 +365,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return
         }
 
-        guard let terminalURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") else { return }
+        guard let terminalURL = settingsModel.selectedTerminalApplicationURL else {
+            logger.error("No terminal application is available")
+            return
+        }
 
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true
@@ -373,7 +376,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         NSWorkspace.shared.open([directoryURL], withApplicationAt: terminalURL, configuration: configuration) { runningApplication, error in
             if error != nil {
-                self.logger.error("Terminal open failed for \(directoryURL.path, privacy: .public)")
+                self.logger.error("Terminal open failed for \(directoryURL.path, privacy: .public) using \(terminalURL.path, privacy: .public)")
                 return
             }
 
@@ -1009,10 +1012,70 @@ private struct QuickAccessSettingsCard: View {
                 Toggle("启用终端直达", isOn: $model.terminalDirectEnabled)
                 Toggle("启用路径复制", isOn: $model.pathCopyEnabled)
 
-                Text("开启后可直接在右键菜单里打开终端或复制当前文件夹路径。")
+                Divider()
+
+                TerminalApplicationPicker()
+
+                Text("开启后可直接在右键菜单里打开所选终端，或复制当前文件夹路径。")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
+        }
+    }
+}
+
+private struct TerminalApplicationPicker: View {
+    @EnvironmentObject private var model: QuickDocSettingsModel
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            Image(nsImage: model.selectedTerminalApplicationIcon)
+                .resizable()
+                .frame(width: 44, height: 44)
+                .padding(10)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
+                }
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("当前终端")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Text(model.selectedTerminalApplicationName)
+                    .font(.headline)
+
+                Text(model.selectedTerminalApplicationPathText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 10) {
+                Button("更换终端 App") {
+                    model.chooseTerminalApplication()
+                }
+                .glassButtonStyle(prominent: true)
+
+                Button("恢复系统终端") {
+                    model.resetTerminalApplication()
+                }
+                .disabled(!model.hasCustomTerminalApplication)
+                .glassButtonStyle()
+            }
+            .fixedSize()
+        }
+        .padding(14)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.secondary.opacity(0.12), lineWidth: 1)
         }
     }
 }
@@ -1583,6 +1646,42 @@ private enum SoftwareUpdateCompletionStore {
     }
 }
 
+private struct TerminalApplicationOption: Identifiable, Equatable {
+    let title: String
+    let bundleIdentifier: String?
+    let path: String?
+
+    var id: String {
+        bundleIdentifier ?? path ?? title
+    }
+
+    var resolvedURL: URL? {
+        if let path, FileManager.default.fileExists(atPath: path) {
+            return URL(fileURLWithPath: path, isDirectory: true)
+        }
+
+        if let bundleIdentifier {
+            return NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier)
+        }
+
+        return nil
+    }
+
+    var subtitle: String {
+        resolvedURL?.path ?? "未安装"
+    }
+
+    var icon: NSImage {
+        guard let resolvedURL else {
+            return NSImage(systemSymbolName: "terminal", accessibilityDescription: title) ?? NSImage()
+        }
+
+        let image = NSWorkspace.shared.icon(forFile: resolvedURL.path)
+        image.size = NSSize(width: 30, height: 30)
+        return image
+    }
+}
+
 private enum SoftwareUpdateError: LocalizedError {
     case invalidReleaseResponse
     case invalidReleaseVersion(String)
@@ -1705,6 +1804,12 @@ private final class QuickDocSettingsModel: ObservableObject {
         }
     }
 
+    @Published private(set) var selectedTerminalAppPath: String {
+        didSet {
+            UserDefaults.standard.set(selectedTerminalAppPath, forKey: Self.selectedTerminalAppPathKey)
+        }
+    }
+
     @Published var pathCopyEnabled: Bool {
         didSet {
             UserDefaults.standard.set(pathCopyEnabled, forKey: Self.pathCopyEnabledKey)
@@ -1726,13 +1831,20 @@ private final class QuickDocSettingsModel: ObservableObject {
     private static let displayModeKey = "displayMode"
     private static let silentLaunchAtLoginKey = "silentLaunchAtLogin"
     private static let terminalDirectEnabledKey = "terminalDirectEnabled"
+    private static let selectedTerminalAppPathKey = "selectedTerminalAppPath"
     private static let pathCopyEnabledKey = "pathCopyEnabled"
     private static let enabledFileTypesKey = "enabledFileTypes"
     private static let customExtensionsKey = "customExtensions"
     private static let menuOrderKey = "menuOrder"
     private static let bundleIdentifier = "com.skyimplied.QuickDoc"
     private static let loginItemIdentifier = "com.skyimplied.QuickDoc.LoginItem"
+    private static let systemTerminalBundleIdentifier = "com.apple.Terminal"
     private static let latestReleaseURL = URL(string: "https://github.com/SkyImplied/QuickDoc/releases/latest")!
+    private static let systemTerminalApplication = TerminalApplicationOption(
+        title: "系统终端",
+        bundleIdentifier: systemTerminalBundleIdentifier,
+        path: nil
+    )
 
     init() {
         let defaultTypes = quickDocFileTypes.filter(\.enabledByDefault).map(\.id)
@@ -1740,6 +1852,7 @@ private final class QuickDocSettingsModel: ObservableObject {
             Self.displayModeKey: QuickDocDisplayMode.menuBarOnly.rawValue,
             Self.silentLaunchAtLoginKey: false,
             Self.terminalDirectEnabledKey: true,
+            Self.selectedTerminalAppPathKey: "",
             Self.pathCopyEnabledKey: true,
             Self.enabledFileTypesKey: defaultTypes,
             Self.customExtensionsKey: [],
@@ -1753,6 +1866,7 @@ private final class QuickDocSettingsModel: ObservableObject {
             rawValue: UserDefaults.standard.string(forKey: Self.displayModeKey) ?? QuickDocDisplayMode.menuBarOnly.rawValue
         ) ?? .menuBarOnly
         terminalDirectEnabled = sharedSettings.terminalDirectEnabled ?? UserDefaults.standard.object(forKey: Self.terminalDirectEnabledKey) as? Bool ?? true
+        selectedTerminalAppPath = UserDefaults.standard.string(forKey: Self.selectedTerminalAppPathKey) ?? ""
         pathCopyEnabled = sharedSettings.pathCopyEnabled ?? UserDefaults.standard.object(forKey: Self.pathCopyEnabledKey) as? Bool ?? true
         let storedCustomExtensions = sharedSettings.customExtensions ?? UserDefaults.standard.stringArray(forKey: Self.customExtensionsKey) ?? []
         enabledFileTypes = Set(sharedSettings.enabledFileTypes ?? UserDefaults.standard.stringArray(forKey: Self.enabledFileTypesKey) ?? defaultTypes)
@@ -1784,6 +1898,28 @@ private final class QuickDocSettingsModel: ObservableObject {
         softwareUpdateState.isWorking
     }
 
+    var selectedTerminalApplicationURL: URL? {
+        selectedTerminalApplication?.resolvedURL
+            ?? Self.systemTerminalApplication.resolvedURL
+    }
+
+    var selectedTerminalApplicationName: String {
+        selectedTerminalApplication?.title ?? "系统终端"
+    }
+
+    var selectedTerminalApplicationPathText: String {
+        selectedTerminalApplicationURL?.path ?? "未找到可用终端"
+    }
+
+    var selectedTerminalApplicationIcon: NSImage {
+        selectedTerminalApplication?.icon
+            ?? Self.systemTerminalApplication.icon
+    }
+
+    var hasCustomTerminalApplication: Bool {
+        !selectedTerminalAppPath.isEmpty
+    }
+
     var menuPreviewItems: [MenuPreviewItem] {
         menuOrder.compactMap { id in
             guard enabledFileTypes.contains(id) || id.hasPrefix(Self.customMenuIDPrefix) else {
@@ -1791,6 +1927,62 @@ private final class QuickDocSettingsModel: ObservableObject {
             }
             return menuItem(for: id)
         }
+    }
+
+    func chooseTerminalApplication() {
+        let panel = NSOpenPanel()
+        panel.title = "选择终端 App"
+        panel.message = "请选择一个可打开文件夹的终端应用。"
+        panel.prompt = "选择"
+        panel.directoryURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedFileTypes = ["app"]
+
+        guard panel.runModal() == .OK,
+              let url = panel.url else {
+            return
+        }
+
+        guard url.pathExtension.lowercased() == "app",
+              FileManager.default.fileExists(atPath: url.path) else {
+            showAlert(title: "无法选择终端", message: "请选择有效的 macOS 应用。")
+            return
+        }
+
+        selectedTerminalAppPath = url.path
+    }
+
+    func resetTerminalApplication() {
+        selectedTerminalAppPath = ""
+    }
+
+    private var selectedTerminalApplication: TerminalApplicationOption? {
+        if selectedTerminalAppPath.isEmpty {
+            return Self.systemTerminalApplication
+        }
+
+        guard FileManager.default.fileExists(atPath: selectedTerminalAppPath) else {
+            return nil
+        }
+
+        return Self.terminalApplicationOption(for: URL(fileURLWithPath: selectedTerminalAppPath, isDirectory: true))
+    }
+
+    private static func terminalApplicationOption(for url: URL) -> TerminalApplicationOption {
+        let bundle = Bundle(url: url)
+        let displayName = bundle?.localizedInfoDictionary?["CFBundleDisplayName"] as? String
+            ?? bundle?.infoDictionary?["CFBundleDisplayName"] as? String
+            ?? bundle?.localizedInfoDictionary?["CFBundleName"] as? String
+            ?? bundle?.infoDictionary?["CFBundleName"] as? String
+            ?? url.deletingPathExtension().lastPathComponent
+
+        return TerminalApplicationOption(
+            title: displayName,
+            bundleIdentifier: bundle?.bundleIdentifier,
+            path: url.path
+        )
     }
 
     func setFileType(_ id: String, enabled: Bool) {

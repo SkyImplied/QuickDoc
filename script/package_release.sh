@@ -12,12 +12,7 @@ DIST_DIR="$ROOT_DIR/dist"
 STAGE_DIR="$DIST_DIR/dmg-root"
 APP_BUNDLE="$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION/$APP_NAME.app"
 VERSION="$(
-  /usr/bin/xcodebuild \
-    -project "$ROOT_DIR/$PROJECT_NAME" \
-    -scheme "$SCHEME_NAME" \
-    -configuration "$CONFIGURATION" \
-    -showBuildSettings 2>/dev/null \
-    | awk '/MARKETING_VERSION = / { print $3; exit }'
+  awk -F ' = |;' '/MARKETING_VERSION = / { print $2; exit }' "$ROOT_DIR/$PROJECT_NAME/project.pbxproj"
 )"
 DMG_NAME="$APP_NAME-$VERSION.dmg"
 ZIP_NAME="$APP_NAME-$VERSION.zip"
@@ -38,6 +33,11 @@ require_xcode() {
 clean_output() {
   rm -rf "$DIST_DIR"
   mkdir -p "$DIST_DIR" "$STAGE_DIR"
+}
+
+sanitize_resource_attributes() {
+  /usr/bin/xattr -cr "$ROOT_DIR/icons" >/dev/null 2>&1 || true
+  /usr/bin/xattr -cr "$DERIVED_DATA_PATH" >/dev/null 2>&1 || true
 }
 
 build_release() {
@@ -90,8 +90,10 @@ EOF
 }
 
 require_xcode
+sanitize_resource_attributes
 clean_output
 build_release
+sanitize_resource_attributes
 stage_app
 create_zip
 create_dmg
