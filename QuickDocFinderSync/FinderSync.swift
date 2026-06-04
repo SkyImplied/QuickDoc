@@ -2,6 +2,41 @@ import Cocoa
 import FinderSync
 import os
 
+private struct CustomTemplateDefinition {
+    let id: String
+    let displayName: String
+    let fileTypeID: String
+    let storedFileName: String
+    let isVisibleInContextMenu: Bool
+
+    init?(plist: [String: Any]) {
+        guard let id = plist["id"] as? String,
+              let displayName = plist["displayName"] as? String,
+              let fileTypeID = plist["fileTypeID"] as? String,
+              let storedFileName = plist["storedFileName"] as? String,
+              !storedFileName.contains("/"),
+              storedFileName != ".",
+              storedFileName != ".." else {
+            return nil
+        }
+
+        self.id = id
+        self.displayName = displayName
+        self.fileTypeID = fileTypeID
+        self.storedFileName = storedFileName
+        self.isVisibleInContextMenu = plist["isVisibleInContextMenu"] as? Bool ?? true
+    }
+}
+
+private typealias SharedSettings = (
+    enabledFileTypes: [String]?,
+    customExtensions: [String]?,
+    customTemplates: [CustomTemplateDefinition]?,
+    menuOrder: [String]?,
+    terminalDirectEnabled: Bool?,
+    pathCopyEnabled: Bool?
+)
+
 final class FinderSync: FIFinderSync {
     private let logger = Logger(subsystem: "com.skyimplied.QuickDoc", category: "FinderSync")
     private var menuDefinitionsByTag: [Int: FileDefinition] = [:]
@@ -39,6 +74,7 @@ final class FinderSync: FIFinderSync {
 
     private static let enabledFileTypesKey = "enabledFileTypes"
     private static let customExtensionsKey = "customExtensions"
+    private static let customTemplatesKey = "customTemplates"
     private static let menuOrderKey = "menuOrder"
     private static let terminalDirectEnabledKey = "terminalDirectEnabled"
     private static let pathCopyEnabledKey = "pathCopyEnabled"
@@ -168,18 +204,65 @@ final class FinderSync: FIFinderSync {
 
     private func buildActionItems() -> [NSMenuItem] {
         var items: [NSMenuItem] = []
+        let sharedSettings = readSharedSettings()
 
         let parent = NSMenuItem(title: "新建文件", action: nil, keyEquivalent: "")
         parent.image = menuIcon
         let submenu = NSMenu(title: "新建文件")
+        var nextTag = 0
 
-        enabledDefinitions().enumerated().forEach { index, definition in
-            let item = NSMenuItem(title: definition.title, action: #selector(createConfiguredFile(_:)), keyEquivalent: "")
-            item.target = self
-            item.tag = index
-            configureIcon(for: item, definition: definition)
-            menuDefinitionsByTag[index] = definition
-            submenu.addItem(item)
+        enabledDefinitions(sharedSettings: sharedSettings).forEach { definition in
+            let templates = contextMenuCustomTemplates(for: definition, sharedSettings: sharedSettings)
+            if templates.isEmpty {
+                addCreateItem(
+                    title: definition.title,
+                    definition: definition,
+                    iconDefinition: definition,
+                    to: submenu,
+                    nextTag: &nextTag
+                )
+                return
+            }
+
+            let typeItem = NSMenuItem(title: definition.title, action: nil, keyEquivalent: "")
+            configureIcon(for: typeItem, definition: definition)
+
+            let templateMenu = NSMenu(title: definition.title)
+            addCreateItem(
+                title: "空白默认文档",
+                definition: definition,
+                iconDefinition: definition,
+                to: templateMenu,
+                nextTag: &nextTag
+            )
+            templates.forEach { template in
+                guard FileManager.default.fileExists(atPath: templateFileURL(for: template).path) else {
+                    let missingItem = NSMenuItem(title: "\(template.displayName)（文件缺失）", action: nil, keyEquivalent: "")
+                    missingItem.isEnabled = false
+                    configureIcon(for: missingItem, definition: definition)
+                    templateMenu.addItem(missingItem)
+                    diagnosticLog("Custom template file missing: \(template.displayName) -> \(templateFileURL(for: template).path)")
+                    return
+                }
+
+                let templateDefinition = FileDefinition(
+                    id: "template.\(template.id)",
+                    title: template.displayName,
+                    baseName: template.displayName,
+                    pathExtension: definition.pathExtension,
+                    templateFileURL: templateFileURL(for: template)
+                )
+                addCreateItem(
+                    title: template.displayName,
+                    definition: templateDefinition,
+                    iconDefinition: definition,
+                    to: templateMenu,
+                    nextTag: &nextTag
+                )
+            }
+
+            typeItem.submenu = templateMenu
+            submenu.addItem(typeItem)
         }
 
         if submenu.items.isEmpty {
@@ -208,6 +291,22 @@ final class FinderSync: FIFinderSync {
         return items
     }
 
+    private func addCreateItem(
+        title: String,
+        definition: FileDefinition,
+        iconDefinition: FileDefinition,
+        to menu: NSMenu,
+        nextTag: inout Int
+    ) {
+        let item = NSMenuItem(title: title, action: #selector(createConfiguredFile(_:)), keyEquivalent: "")
+        item.target = self
+        item.tag = nextTag
+        configureIcon(for: item, definition: iconDefinition)
+        menuDefinitionsByTag[nextTag] = definition
+        nextTag += 1
+        menu.addItem(item)
+    }
+
     private func configureIcon(for item: NSMenuItem, definition: FileDefinition) {
         guard let icon = menuItemIcon(for: definition) else {
             item.image = NSImage(systemSymbolName: "doc", accessibilityDescription: definition.title)
@@ -222,7 +321,16 @@ final class FinderSync: FIFinderSync {
             return cachedIcon
         }
 
-        if let resourceName = Self.builtInIconResourceNames[definition.id],
+        let resourceName: String?
+        if let builtInResourceName = Self.builtInIconResourceNames[definition.id] {
+            resourceName = builtInResourceName
+        } else if definition.id.hasPrefix(Self.customMenuIDPrefix) {
+            resourceName = "空白"
+        } else {
+            resourceName = nil
+        }
+
+        if let resourceName,
            let image = Self.iconImage(named: resourceName, size: NSSize(width: 18, height: 18)) {
             menuItemIconsByID[definition.id] = image
             return image
@@ -262,8 +370,7 @@ final class FinderSync: FIFinderSync {
         return image
     }
 
-    private func enabledDefinitions() -> [FileDefinition] {
-        let sharedSettings = readSharedSettings()
+    private func enabledDefinitions(sharedSettings: SharedSettings) -> [FileDefinition] {
         let enabledIDs = Set(sharedSettings.enabledFileTypes ?? UserDefaults.standard.stringArray(forKey: Self.enabledFileTypesKey) ?? Array(defaultEnabledFileTypeIDs))
         let builtIns = builtInDefinitions.filter { enabledIDs.contains($0.id) }
         let customDefinitions = (sharedSettings.customExtensions ?? UserDefaults.standard.stringArray(forKey: Self.customExtensionsKey) ?? []).map { fileExtension in
@@ -278,6 +385,17 @@ final class FinderSync: FIFinderSync {
         return orderedDefinitions(builtIns + customDefinitions, menuOrder: sharedSettings.menuOrder)
     }
 
+    private func contextMenuCustomTemplates(for definition: FileDefinition, sharedSettings: SharedSettings) -> [CustomTemplateDefinition] {
+        let templates = sharedSettings.customTemplates ?? Self.decodeCustomTemplates(UserDefaults.standard.array(forKey: Self.customTemplatesKey))
+        let matchingTemplates = templates.filter { template in
+            template.fileTypeID == definition.id && template.isVisibleInContextMenu
+        }
+        if !matchingTemplates.isEmpty {
+            diagnosticLog("Found \(matchingTemplates.count) custom template(s) for \(definition.id)")
+        }
+        return matchingTemplates
+    }
+
     private func orderedDefinitions(_ definitions: [FileDefinition], menuOrder: [String]?) -> [FileDefinition] {
         guard let menuOrder else { return definitions }
 
@@ -289,7 +407,7 @@ final class FinderSync: FIFinderSync {
         return orderedDefinitions + remainingDefinitions
     }
 
-    private func readSharedSettings() -> (enabledFileTypes: [String]?, customExtensions: [String]?, menuOrder: [String]?, terminalDirectEnabled: Bool?, pathCopyEnabled: Bool?) {
+    private func readSharedSettings() -> SharedSettings {
         for url in Self.sharedSettingsURLs {
             guard let data = try? Data(contentsOf: url),
                   let payload = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
@@ -299,13 +417,14 @@ final class FinderSync: FIFinderSync {
             return (
                 payload[Self.enabledFileTypesKey] as? [String],
                 payload[Self.customExtensionsKey] as? [String],
+                Self.decodeCustomTemplates(payload[Self.customTemplatesKey]),
                 payload[Self.menuOrderKey] as? [String],
                 payload[Self.terminalDirectEnabledKey] as? Bool,
                 payload[Self.pathCopyEnabledKey] as? Bool
             )
         }
 
-        return (nil, nil, nil, nil, nil)
+        return (nil, nil, nil, nil, nil, nil)
     }
 
     private func terminalDirectEnabled() -> Bool {
@@ -343,6 +462,21 @@ final class FinderSync: FIFinderSync {
     private static var sharedSettingsURL: URL {
         URL(fileURLWithPath: "/Users/\(NSUserName())")
             .appendingPathComponent("Library/Application Support/QuickDoc/settings.plist")
+    }
+
+    private static var customTemplatesDirectory: URL {
+        sharedSettingsURL
+            .deletingLastPathComponent()
+            .appendingPathComponent("Templates", isDirectory: true)
+    }
+
+    private func templateFileURL(for template: CustomTemplateDefinition) -> URL {
+        Self.customTemplatesDirectory.appendingPathComponent(template.storedFileName)
+    }
+
+    private static func decodeCustomTemplates(_ value: Any?) -> [CustomTemplateDefinition] {
+        guard let rawTemplates = value as? [[String: Any]] else { return [] }
+        return rawTemplates.compactMap(CustomTemplateDefinition.init(plist:))
     }
 
     @objc private func createConfiguredFile(_ sender: NSMenuItem) {
@@ -459,7 +593,8 @@ final class FinderSync: FIFinderSync {
 
     private func uniqueFileURL(in directory: URL, definition: FileDefinition) throws -> URL {
         let fileManager = FileManager.default
-        var candidate = directory.appendingPathComponent(definition.baseName)
+        let baseName = sanitizedBaseName(definition.baseName)
+        var candidate = directory.appendingPathComponent(baseName)
         if let pathExtension = definition.pathExtension {
             candidate.appendPathExtension(pathExtension)
         }
@@ -469,7 +604,7 @@ final class FinderSync: FIFinderSync {
         }
 
         for index in 2...999 {
-            var next = directory.appendingPathComponent("\(definition.baseName) \(index)")
+            var next = directory.appendingPathComponent("\(baseName) \(index)")
             if let pathExtension = definition.pathExtension {
                 next.appendPathExtension(pathExtension)
             }
@@ -479,6 +614,17 @@ final class FinderSync: FIFinderSync {
         }
 
         throw CocoaError(.fileWriteFileExists)
+    }
+
+    private func sanitizedBaseName(_ value: String) -> String {
+        var sanitized = value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "/", with: " ")
+            .replacingOccurrences(of: ":", with: " ")
+        while sanitized.contains("  ") {
+            sanitized = sanitized.replacingOccurrences(of: "  ", with: " ")
+        }
+        return sanitized.isEmpty ? "新建文件" : sanitized
     }
 
     private func showError(message: String) {
@@ -536,6 +682,7 @@ private final class FileDefinition: NSObject {
     let baseName: String
     let pathExtension: String?
     private let bundledTemplateExtension: String?
+    private let templateFileURL: URL?
     private let text: String?
     let shouldBeExecutable: Bool
 
@@ -545,6 +692,7 @@ private final class FileDefinition: NSObject {
         baseName: String,
         pathExtension: String?,
         bundledTemplateExtension: String? = nil,
+        templateFileURL: URL? = nil,
         text: String? = nil,
         shouldBeExecutable: Bool = false
     ) {
@@ -553,11 +701,16 @@ private final class FileDefinition: NSObject {
         self.baseName = baseName
         self.pathExtension = pathExtension
         self.bundledTemplateExtension = bundledTemplateExtension
+        self.templateFileURL = templateFileURL
         self.text = text
         self.shouldBeExecutable = shouldBeExecutable
     }
 
     func contents() throws -> Data {
+        if let templateFileURL {
+            return try Data(contentsOf: templateFileURL)
+        }
+
         if let bundledTemplateExtension {
             guard let url = Bundle(for: FileDefinition.self).url(forResource: "blank", withExtension: bundledTemplateExtension) else {
                 throw CocoaError(.fileReadNoSuchFile)

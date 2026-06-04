@@ -3,7 +3,6 @@
 build/
 DerivedData/
 dist/
-docs/
 logo.psd
 logo3.png
 *.xcuserstate

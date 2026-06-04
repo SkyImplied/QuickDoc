@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Create common files directly from Finder's right-click menu and toolbar.</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.5.2"><img src="https://img.shields.io/badge/version-v1.5.2-blue" alt="Version v1.5.2"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.5.4"><img src="https://img.shields.io/badge/version-v1.5.4-blue" alt="Version v1.5.4"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey?logo=apple" alt="Platform macOS 13+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Built with Swift">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.5.2/QuickDoc-1.5.2.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.5.4/QuickDoc-1.5.4.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="Downloads"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/stargazers"><img src="https://img.shields.io/github/stars/SkyImplied/QuickDoc?label=stars&color=yellow" alt="Stars"></a>
   </p>
@@ -16,6 +16,23 @@
 </div>
 
 QuickDoc is a macOS utility built around a Finder Sync extension. It adds a practical `New File` submenu to Finder's context menu, and since v1.3 it also supports adding QuickDoc to the Finder toolbar so file creation can be invoked directly from the toolbar.
+
+## What's New in v1.5.4
+
+- Added custom file templates for enabled file types, so Word, Excel, PowerPoint, TXT, and custom extensions can create files from user-provided templates instead of only blank defaults.
+- Added a dedicated template manager that separates templates by file type and supports custom display names, visibility toggles, ordering, renaming, and deletion.
+- Finder's `New File` menu now expands into a third-level template menu when a file type has visible templates, with `Blank default document` kept as the first option.
+- Custom file types now use the unified blank-file icon, and the template manager only shows file types that are enabled in the main new-file settings.
+
+### Custom file templates
+
+Upload your own template documents, choose the menu name, and decide whether each template should appear in Finder.
+
+![QuickDoc custom file templates](./photos/自定义文件模版.png)
+
+When templates are visible for a file type, Finder shows them in a third-level menu under that type.
+
+![QuickDoc custom template submenu](./photos/自定义文件模版三级菜单.png)
 
 ## What's New in v1.5.2
 
@@ -94,6 +111,7 @@ After replacement succeeds, QuickDoc relaunches automatically and confirms that 
 ## Why QuickDoc
 
 - Create common files directly from Finder without opening another app
+- Create files from your own templates instead of rebuilding the same document styles by hand
 - Show only the file types you actually use
 - Add custom extensions for your own workflow
 - Keep the context menu organized with visual ordering controls
@@ -102,7 +120,7 @@ After replacement succeeds, QuickDoc relaunches automatically and confirms that 
 
 ## Supported File Types
 
-Built-in file types in v1.5.2:
+Built-in file types in v1.5.4:
 
 - TXT
 - Markdown (`.md`)
@@ -146,6 +164,18 @@ QuickDoc can verify whether the Finder Sync extension is enabled and guide you t
 Enable or disable built-in file types, add custom extensions, and edit the menu order from the preview area.
 
 ![QuickDoc new file types](./photos/新建文件类型界面.png)
+
+### Custom file templates
+
+Manage templates by file type, control which templates are visible in Finder, and reorder the submenu display.
+
+![QuickDoc custom file templates](./photos/自定义文件模版.png)
+
+### Template submenu
+
+Visible templates appear under their related file type in Finder's third-level menu.
+
+![QuickDoc custom template submenu](./photos/自定义文件模版三级菜单.png)
 
 ### Finder actions
 
@@ -221,7 +251,7 @@ To package your own `.app`, `.zip`, or `.dmg` from source:
 ./script/package_release.sh
 ```
 
-Artifacts will be generated in `dist/`.
+Artifacts will be generated in `build/release/`.
 
 ## Troubleshooting
 

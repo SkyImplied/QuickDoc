@@ -12,8 +12,10 @@ CONFIGURATION="Debug"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister"
-DERIVED_DATA_PATH="$ROOT_DIR/DerivedData"
-APP_BUNDLE="$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION/$APP_NAME.app"
+BUILD_ROOT="$ROOT_DIR/build"
+DERIVED_DATA_PATH="$BUILD_ROOT/DerivedData"
+PRODUCTS_DIR="$BUILD_ROOT/$CONFIGURATION"
+APP_BUNDLE="$PRODUCTS_DIR/$APP_NAME.app"
 APP_BINARY="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 APP_EXTENSION="$APP_BUNDLE/Contents/PlugIns/$EXTENSION_NAME.appex"
 
@@ -42,13 +44,23 @@ build_app() {
   require_xcode
   pkill -x "$APP_NAME" >/dev/null 2>&1 || true
   pkill -x "$EXTENSION_NAME" >/dev/null 2>&1 || true
+  mkdir -p "$BUILD_ROOT"
 
   /usr/bin/xcodebuild \
     -project "$ROOT_DIR/$PROJECT_NAME" \
     -scheme "$SCHEME_NAME" \
     -configuration "$CONFIGURATION" \
     -derivedDataPath "$DERIVED_DATA_PATH" \
+    SYMROOT="$BUILD_ROOT" \
+    OBJROOT="$BUILD_ROOT/Intermediates" \
+    DSTROOT="$BUILD_ROOT/Install" \
+    SHARED_PRECOMPS_DIR="$BUILD_ROOT/PrecompiledHeaders" \
+    CONFIGURATION_BUILD_DIR="$PRODUCTS_DIR" \
     build
+}
+
+clean_build_products() {
+  rm -rf "$BUILD_ROOT"
 }
 
 refresh_extension_registration() {
@@ -72,33 +84,50 @@ open_app() {
   /usr/bin/open -n "$APP_BUNDLE"
 }
 
-build_app
-refresh_extension_registration
-restart_finder
-
 case "$MODE" in
+  build|--build)
+    build_app
+    ;;
+  clean|--clean)
+    clean_build_products
+    ;;
   run|--run)
+    build_app
+    refresh_extension_registration
+    restart_finder
     open_app
     ;;
   debug|--debug)
+    build_app
+    refresh_extension_registration
+    restart_finder
     /usr/bin/lldb -- "$APP_BINARY"
     ;;
   logs|--logs)
+    build_app
+    refresh_extension_registration
+    restart_finder
     open_app
     /usr/bin/log stream --info --style compact --predicate "process == \"$APP_NAME\" OR process == \"$EXTENSION_NAME\""
     ;;
   telemetry|--telemetry)
+    build_app
+    refresh_extension_registration
+    restart_finder
     open_app
     /usr/bin/log stream --info --style compact --predicate "subsystem == \"$BUNDLE_ID\""
     ;;
   verify|--verify)
+    build_app
+    refresh_extension_registration
+    restart_finder
     open_app
     sleep 1
     pgrep -x "$APP_NAME" >/dev/null
     /usr/bin/pluginkit -m -i "$EXTENSION_BUNDLE_ID" || true
     ;;
   *)
-    echo "usage: $0 [run|--debug|--logs|--telemetry|--verify]" >&2
+    echo "usage: $0 [build|clean|run|--debug|--logs|--telemetry|--verify]" >&2
     exit 2
     ;;
 esac
