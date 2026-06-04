@@ -531,14 +531,28 @@ final class FinderSync: FIFinderSync {
     }
 
     @objc private func copyCurrentPath(_ sender: NSMenuItem) {
-        guard let directory = targetDirectory() else {
-            showError(message: "无法确定目标文件夹。")
+        guard let targetURL = targetURLForPathCopy() else {
+            showError(message: "无法确定要复制的路径。")
             return
         }
 
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(directory.path, forType: .string)
-        diagnosticLog("Copied current path: \(directory.path)")
+        NSPasteboard.general.setString(targetURL.path, forType: .string)
+        diagnosticLog("Copied path: \(targetURL.path)")
+    }
+
+    private func targetURLForPathCopy() -> URL? {
+        let finderController = FIFinderSyncController.default()
+
+        if let selectedURL = finderController.selectedItemURLs()?.first {
+            return selectedURL
+        }
+
+        if let targetedURL = finderController.targetedURL() {
+            return directoryURL(for: targetedURL)
+        }
+
+        return FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
     }
 
     private func targetDirectory() -> URL? {

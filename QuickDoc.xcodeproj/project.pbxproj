@@ -9,6 +9,25 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000001 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* main.swift */; };
 		A10000000000000000000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* AppDelegate.swift */; };
+		E10000000000000000000201 /* QuickDocSettingsTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000101 /* QuickDocSettingsTypes.swift */; };
+		E10000000000000000000202 /* FileTypesCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000102 /* FileTypesCatalog.swift */; };
+		E10000000000000000000203 /* QuickDocIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000103 /* QuickDocIcon.swift */; };
+		E10000000000000000000204 /* QuickDocSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000104 /* QuickDocSettingsView.swift */; };
+		E10000000000000000000205 /* GeneralSettingsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000105 /* GeneralSettingsPage.swift */; };
+		E10000000000000000000206 /* PermissionsAndFinderPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000106 /* PermissionsAndFinderPages.swift */; };
+		E10000000000000000000207 /* AboutPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000107 /* AboutPage.swift */; };
+		E10000000000000000000208 /* LanguageSettingsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000108 /* LanguageSettingsCard.swift */; };
+		E10000000000000000000209 /* SoftwareUpdateSettingsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000109 /* SoftwareUpdateSettingsCard.swift */; };
+		E1000000000000000000020A /* QuickAccessSettingsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000000000000000000010A /* QuickAccessSettingsCard.swift */; };
+		E1000000000000000000020B /* StatusActionCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000000000000000000010B /* StatusActionCards.swift */; };
+		E1000000000000000000020C /* FileTypesCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000000000000000000010C /* FileTypesCard.swift */; };
+		E1000000000000000000020D /* MenuPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000000000000000000010D /* MenuPreviewCard.swift */; };
+		E10000000000000000000213 /* CustomTemplatesCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000113 /* CustomTemplatesCard.swift */; };
+		E1000000000000000000020E /* SettingsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000000000000000000010E /* SettingsComponents.swift */; };
+		E1000000000000000000020F /* SoftwareUpdateModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1000000000000000000010F /* SoftwareUpdateModels.swift */; };
+		E10000000000000000000210 /* QuickDocSettingsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000110 /* QuickDocSettingsModel.swift */; };
+		E10000000000000000000211 /* ProcessSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000111 /* ProcessSupport.swift */; };
+		E10000000000000000000212 /* ViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000112 /* ViewModifiers.swift */; };
 		A10000000000000000000003 /* FinderSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000017 /* FinderSync.swift */; };
 		A10000000000000000000004 /* QuickDocFinderSync.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* QuickDocFinderSync.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A10000000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000025 /* Assets.xcassets */; };
@@ -101,6 +120,25 @@
 		A10000000000000000000014 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A10000000000000000000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000016 /* QuickDoc.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuickDoc.entitlements; sourceTree = "<group>"; };
+		E10000000000000000000101 /* QuickDocSettingsTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDocSettingsTypes.swift; sourceTree = "<group>"; };
+		E10000000000000000000102 /* FileTypesCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTypesCatalog.swift; sourceTree = "<group>"; };
+		E10000000000000000000103 /* QuickDocIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDocIcon.swift; sourceTree = "<group>"; };
+		E10000000000000000000104 /* QuickDocSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDocSettingsView.swift; sourceTree = "<group>"; };
+		E10000000000000000000105 /* GeneralSettingsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsPage.swift; sourceTree = "<group>"; };
+		E10000000000000000000106 /* PermissionsAndFinderPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsAndFinderPages.swift; sourceTree = "<group>"; };
+		E10000000000000000000107 /* AboutPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutPage.swift; sourceTree = "<group>"; };
+		E10000000000000000000108 /* LanguageSettingsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageSettingsCard.swift; sourceTree = "<group>"; };
+		E10000000000000000000109 /* SoftwareUpdateSettingsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoftwareUpdateSettingsCard.swift; sourceTree = "<group>"; };
+		E1000000000000000000010A /* QuickAccessSettingsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAccessSettingsCard.swift; sourceTree = "<group>"; };
+		E1000000000000000000010B /* StatusActionCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusActionCards.swift; sourceTree = "<group>"; };
+		E1000000000000000000010C /* FileTypesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTypesCard.swift; sourceTree = "<group>"; };
+		E1000000000000000000010D /* MenuPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPreviewCard.swift; sourceTree = "<group>"; };
+		E10000000000000000000113 /* CustomTemplatesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTemplatesCard.swift; sourceTree = "<group>"; };
+		E1000000000000000000010E /* SettingsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsComponents.swift; sourceTree = "<group>"; };
+		E1000000000000000000010F /* SoftwareUpdateModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoftwareUpdateModels.swift; sourceTree = "<group>"; };
+		E10000000000000000000110 /* QuickDocSettingsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDocSettingsModel.swift; sourceTree = "<group>"; };
+		E10000000000000000000111 /* ProcessSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessSupport.swift; sourceTree = "<group>"; };
+		E10000000000000000000112 /* ViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModifiers.swift; sourceTree = "<group>"; };
 		A10000000000000000000017 /* FinderSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderSync.swift; sourceTree = "<group>"; };
 		A10000000000000000000018 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000019 /* QuickDocFinderSync.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuickDocFinderSync.entitlements; sourceTree = "<group>"; };
@@ -188,19 +226,94 @@
 		};
 		A10000000000000000000022 /* QuickDoc */ = {
 			isa = PBXGroup;
-			children = (
-				A10000000000000000000013 /* main.swift */,
-				A10000000000000000000014 /* AppDelegate.swift */,
-				A10000000000000000000025 /* Assets.xcassets */,
-				A10000000000000000000015 /* Info.plist */,
-				A10000000000000000000016 /* QuickDoc.entitlements */,
-			);
-			path = QuickDoc;
-			sourceTree = "<group>";
-		};
-		A10000000000000000000023 /* QuickDocFinderSync */ = {
+				children = (
+					A10000000000000000000013 /* main.swift */,
+					A10000000000000000000014 /* AppDelegate.swift */,
+					E10000000000000000000301 /* Models */,
+					E10000000000000000000302 /* Stores */,
+					E10000000000000000000303 /* Services */,
+					E10000000000000000000304 /* Views */,
+					E10000000000000000000305 /* Support */,
+					A10000000000000000000025 /* Assets.xcassets */,
+					A10000000000000000000015 /* Info.plist */,
+					A10000000000000000000016 /* QuickDoc.entitlements */,
+				);
+				path = QuickDoc;
+				sourceTree = "<group>";
+			};
+		E10000000000000000000301 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				E10000000000000000000101 /* QuickDocSettingsTypes.swift */,
+				E10000000000000000000102 /* FileTypesCatalog.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000302 /* Stores */ = {
+			isa = PBXGroup;
+			children = (
+				E10000000000000000000110 /* QuickDocSettingsModel.swift */,
+			);
+			path = Stores;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000303 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E1000000000000000000010F /* SoftwareUpdateModels.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000304 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				E10000000000000000000306 /* Settings */,
+				E10000000000000000000307 /* Shared */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000305 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				E10000000000000000000103 /* QuickDocIcon.swift */,
+				E10000000000000000000111 /* ProcessSupport.swift */,
+				E10000000000000000000112 /* ViewModifiers.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000306 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				E10000000000000000000104 /* QuickDocSettingsView.swift */,
+				E10000000000000000000105 /* GeneralSettingsPage.swift */,
+				E10000000000000000000106 /* PermissionsAndFinderPages.swift */,
+				E10000000000000000000107 /* AboutPage.swift */,
+				E10000000000000000000108 /* LanguageSettingsCard.swift */,
+				E10000000000000000000109 /* SoftwareUpdateSettingsCard.swift */,
+				E1000000000000000000010A /* QuickAccessSettingsCard.swift */,
+				E1000000000000000000010B /* StatusActionCards.swift */,
+				E1000000000000000000010C /* FileTypesCard.swift */,
+				E10000000000000000000113 /* CustomTemplatesCard.swift */,
+				E1000000000000000000010D /* MenuPreviewCard.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000307 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				E1000000000000000000010E /* SettingsComponents.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+			A10000000000000000000023 /* QuickDocFinderSync */ = {
+				isa = PBXGroup;
+				children = (
 				A10000000000000000000017 /* FinderSync.swift */,
 				A10000000000000000000026 /* menu-icon.png */,
 				A10000000000000000000027 /* blank.docx */,
@@ -391,10 +504,29 @@
 		A10000000000000000000051 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = (
-				A10000000000000000000001 /* main.swift in Sources */,
-				A10000000000000000000002 /* AppDelegate.swift in Sources */,
-			);
+				files = (
+					A10000000000000000000001 /* main.swift in Sources */,
+					A10000000000000000000002 /* AppDelegate.swift in Sources */,
+					E10000000000000000000201 /* QuickDocSettingsTypes.swift in Sources */,
+					E10000000000000000000202 /* FileTypesCatalog.swift in Sources */,
+					E10000000000000000000203 /* QuickDocIcon.swift in Sources */,
+					E10000000000000000000204 /* QuickDocSettingsView.swift in Sources */,
+					E10000000000000000000205 /* GeneralSettingsPage.swift in Sources */,
+					E10000000000000000000206 /* PermissionsAndFinderPages.swift in Sources */,
+					E10000000000000000000207 /* AboutPage.swift in Sources */,
+					E10000000000000000000208 /* LanguageSettingsCard.swift in Sources */,
+					E10000000000000000000209 /* SoftwareUpdateSettingsCard.swift in Sources */,
+					E1000000000000000000020A /* QuickAccessSettingsCard.swift in Sources */,
+					E1000000000000000000020B /* StatusActionCards.swift in Sources */,
+					E1000000000000000000020C /* FileTypesCard.swift in Sources */,
+					E10000000000000000000213 /* CustomTemplatesCard.swift in Sources */,
+					E1000000000000000000020D /* MenuPreviewCard.swift in Sources */,
+					E1000000000000000000020E /* SettingsComponents.swift in Sources */,
+					E1000000000000000000020F /* SoftwareUpdateModels.swift in Sources */,
+					E10000000000000000000210 /* QuickDocSettingsModel.swift in Sources */,
+					E10000000000000000000211 /* ProcessSupport.swift in Sources */,
+					E10000000000000000000212 /* ViewModifiers.swift in Sources */,
+				);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A10000000000000000000055 /* Sources */ = {
@@ -437,7 +569,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDoc/Info.plist;
@@ -446,7 +578,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.4;
+				MARKETING_VERSION = 1.5.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc;
 				PRODUCT_NAME = QuickDoc;
 				SWIFT_VERSION = 5.0;
@@ -462,7 +594,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				COMPRESS_PNG_FILES = NO;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDoc/Info.plist;
@@ -471,7 +603,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.4;
+				MARKETING_VERSION = 1.5.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc;
 				PRODUCT_NAME = QuickDoc;
 				SWIFT_VERSION = 5.0;
@@ -485,7 +617,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocFinderSync/QuickDocFinderSync.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocFinderSync/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -494,7 +626,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.4;
+				MARKETING_VERSION = 1.5.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.FinderSync;
 				PRODUCT_NAME = QuickDocFinderSync;
 				SKIP_INSTALL = YES;
@@ -510,7 +642,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocFinderSync/QuickDocFinderSync.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocFinderSync/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -519,7 +651,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.4;
+				MARKETING_VERSION = 1.5.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.FinderSync;
 				PRODUCT_NAME = QuickDocFinderSync;
 				SKIP_INSTALL = YES;
@@ -534,7 +666,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocLoginItem/QuickDocLoginItem.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocLoginItem/Info.plist;
@@ -543,7 +675,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.4;
+				MARKETING_VERSION = 1.5.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.LoginItem;
 				PRODUCT_NAME = QuickDocLoginItem;
 				SKIP_INSTALL = YES;
@@ -557,7 +689,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocLoginItem/QuickDocLoginItem.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocLoginItem/Info.plist;
@@ -566,7 +698,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.4;
+				MARKETING_VERSION = 1.5.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.LoginItem;
 				PRODUCT_NAME = QuickDocLoginItem;
 				SKIP_INSTALL = YES;
