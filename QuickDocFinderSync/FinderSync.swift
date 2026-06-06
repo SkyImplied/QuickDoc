@@ -34,7 +34,8 @@ private typealias SharedSettings = (
     customTemplates: [CustomTemplateDefinition]?,
     menuOrder: [String]?,
     terminalDirectEnabled: Bool?,
-    pathCopyEnabled: Bool?
+    pathCopyEnabled: Bool?,
+    quickActionsEnabled: Bool?
 )
 
 final class FinderSync: FIFinderSync {
@@ -70,6 +71,11 @@ final class FinderSync: FIFinderSync {
         ?? NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "复制当前路径")
         ?? NSImage()
     }()
+    private lazy var quickActionsIcon: NSImage = {
+        Self.iconImage(named: "快捷操作", size: NSSize(width: 18, height: 18))
+        ?? NSImage(systemSymbolName: "wrench.and.screwdriver", accessibilityDescription: "快捷操作")
+        ?? NSImage()
+    }()
     private var menuItemIconsByID: [String: NSImage] = [:]
 
     private static let enabledFileTypesKey = "enabledFileTypes"
@@ -78,6 +84,8 @@ final class FinderSync: FIFinderSync {
     private static let menuOrderKey = "menuOrder"
     private static let terminalDirectEnabledKey = "terminalDirectEnabled"
     private static let pathCopyEnabledKey = "pathCopyEnabled"
+    private static let quickActionsEnabledKey = "quickActionsEnabled"
+    private static let quickDocCutPasteboardType = NSPasteboard.PasteboardType("com.skyimplied.QuickDoc.cut-files")
     private static let customMenuIDPrefix = "custom."
     private static let builtInIconResourceNames: [String: String] = [
         "txt": "txt",
@@ -288,7 +296,40 @@ final class FinderSync: FIFinderSync {
             items.append(pathItem)
         }
 
+        if quickActionsEnabled() {
+            items.append(makeQuickActionsMenuItem())
+        }
+
         return items
+    }
+
+    private func makeQuickActionsMenuItem() -> NSMenuItem {
+        let parent = NSMenuItem(title: "快捷操作", action: nil, keyEquivalent: "")
+        parent.image = quickActionsIcon
+
+        let submenu = NSMenu(title: "快捷操作")
+        let hasSelection = !(FIFinderSyncController.default().selectedItemURLs()?.isEmpty ?? true)
+
+        let copyItem = NSMenuItem(title: "拷贝", action: #selector(copySelectedItems(_:)), keyEquivalent: "")
+        copyItem.target = self
+        copyItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "拷贝")
+        copyItem.isEnabled = hasSelection
+        submenu.addItem(copyItem)
+
+        let pasteItem = NSMenuItem(title: "粘贴", action: #selector(pasteItems(_:)), keyEquivalent: "")
+        pasteItem.target = self
+        pasteItem.image = NSImage(systemSymbolName: "clipboard", accessibilityDescription: "粘贴")
+        pasteItem.isEnabled = !pasteboardFileURLs().isEmpty
+        submenu.addItem(pasteItem)
+
+        let cutItem = NSMenuItem(title: "剪切", action: #selector(cutSelectedItems(_:)), keyEquivalent: "")
+        cutItem.target = self
+        cutItem.image = NSImage(systemSymbolName: "scissors", accessibilityDescription: "剪切")
+        cutItem.isEnabled = hasSelection
+        submenu.addItem(cutItem)
+
+        parent.submenu = submenu
+        return parent
     }
 
     private func addCreateItem(
@@ -420,11 +461,12 @@ final class FinderSync: FIFinderSync {
                 Self.decodeCustomTemplates(payload[Self.customTemplatesKey]),
                 payload[Self.menuOrderKey] as? [String],
                 payload[Self.terminalDirectEnabledKey] as? Bool,
-                payload[Self.pathCopyEnabledKey] as? Bool
+                payload[Self.pathCopyEnabledKey] as? Bool,
+                payload[Self.quickActionsEnabledKey] as? Bool
             )
         }
 
-        return (nil, nil, nil, nil, nil, nil)
+        return (nil, nil, nil, nil, nil, nil, nil)
     }
 
     private func terminalDirectEnabled() -> Bool {
@@ -433,6 +475,10 @@ final class FinderSync: FIFinderSync {
 
     private func pathCopyEnabled() -> Bool {
         readBoolSetting(key: Self.pathCopyEnabledKey, fallback: true)
+    }
+
+    private func quickActionsEnabled() -> Bool {
+        readBoolSetting(key: Self.quickActionsEnabledKey, fallback: true)
     }
 
     private func readBoolSetting(key: String, fallback: Bool) -> Bool {
@@ -541,6 +587,84 @@ final class FinderSync: FIFinderSync {
         diagnosticLog("Copied path: \(targetURL.path)")
     }
 
+    @objc private func copySelectedItems(_ sender: NSMenuItem) {
+        writeSelectedItemsToPasteboard(isCut: false)
+    }
+
+    @objc private func cutSelectedItems(_ sender: NSMenuItem) {
+        writeSelectedItemsToPasteboard(isCut: true)
+    }
+
+    private func writeSelectedItemsToPasteboard(isCut: Bool) {
+        guard let selectedURLs = FIFinderSyncController.default().selectedItemURLs(),
+              !selectedURLs.isEmpty else {
+            showError(message: "请先选择要\(isCut ? "剪切" : "拷贝")的文件或文件夹。")
+            return
+        }
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.writeObjects(selectedURLs as [NSURL])
+        if isCut {
+            pasteboard.setString("cut", forType: Self.quickDocCutPasteboardType)
+        }
+        diagnosticLog("\(isCut ? "Cut" : "Copied") \(selectedURLs.count) item(s)")
+    }
+
+    @objc private func pasteItems(_ sender: NSMenuItem) {
+        let sourceURLs = pasteboardFileURLs()
+        guard !sourceURLs.isEmpty else {
+            showError(message: "剪贴板中没有可粘贴的文件或文件夹。")
+            return
+        }
+        guard let directory = targetDirectory() else {
+            showError(message: "无法确定粘贴目标文件夹。")
+            return
+        }
+
+        let shouldMove = NSPasteboard.general.string(forType: Self.quickDocCutPasteboardType) != nil
+        var pastedURLs: [URL] = []
+        var failures: [String] = []
+
+        for sourceURL in sourceURLs {
+            do {
+                if shouldMove,
+                   sourceURL.deletingLastPathComponent().standardizedFileURL == directory.standardizedFileURL {
+                    pastedURLs.append(sourceURL)
+                    continue
+                }
+
+                let destinationURL = uniqueDestinationURL(in: directory, sourceURL: sourceURL)
+                if shouldMove {
+                    try FileManager.default.moveItem(at: sourceURL, to: destinationURL)
+                } else {
+                    try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+                }
+                pastedURLs.append(destinationURL)
+            } catch {
+                failures.append("\(sourceURL.lastPathComponent)：\(error.localizedDescription)")
+            }
+        }
+
+        if shouldMove && failures.isEmpty {
+            NSPasteboard.general.clearContents()
+        }
+        if !pastedURLs.isEmpty && !directory.isDesktopDirectory {
+            NSWorkspace.shared.activateFileViewerSelecting(pastedURLs)
+        }
+        if !failures.isEmpty {
+            showError(message: "部分项目粘贴失败：\n\(failures.joined(separator: "\n"))")
+        }
+        diagnosticLog("\(shouldMove ? "Moved" : "Pasted") \(pastedURLs.count) item(s) into \(directory.path)")
+    }
+
+    private func pasteboardFileURLs() -> [URL] {
+        let options: [NSPasteboard.ReadingOptionKey: Any] = [
+            .urlReadingFileURLsOnly: true
+        ]
+        return (NSPasteboard.general.readObjects(forClasses: [NSURL.self], options: options) as? [URL]) ?? []
+    }
+
     private func targetURLForPathCopy() -> URL? {
         let finderController = FIFinderSyncController.default()
 
@@ -576,6 +700,25 @@ final class FinderSync: FIFinderSync {
         }
 
         return isDirectory.boolValue ? url : url.deletingLastPathComponent()
+    }
+
+    private func uniqueDestinationURL(in directory: URL, sourceURL: URL) -> URL {
+        let fileManager = FileManager.default
+        let originalName = sourceURL.deletingPathExtension().lastPathComponent
+        let pathExtension = sourceURL.pathExtension
+        var candidate = directory.appendingPathComponent(sourceURL.lastPathComponent)
+        var index = 2
+
+        while fileManager.fileExists(atPath: candidate.path) {
+            let nextName = "\(originalName) \(index)"
+            candidate = directory.appendingPathComponent(nextName)
+            if !pathExtension.isEmpty {
+                candidate.appendPathExtension(pathExtension)
+            }
+            index += 1
+        }
+
+        return candidate
     }
 
     private func openDirectoryInTerminal(_ directory: URL) {

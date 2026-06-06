@@ -235,6 +235,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             self?.settingsModel.pathCopyEnabled = enabled
         })
 
+        otherFeaturesMenu.addItem(persistentToggleMenuItem(
+            title: "快捷操作",
+            isOn: settingsModel.quickActionsEnabled
+        ) { [weak self] enabled in
+            self?.settingsModel.quickActionsEnabled = enabled
+        })
+
         otherFeaturesItem.submenu = otherFeaturesMenu
         menu.addItem(otherFeaturesItem)
 

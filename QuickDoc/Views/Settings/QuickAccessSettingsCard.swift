@@ -5,6 +5,7 @@ struct QuickAccessSettingsCard: View {
         VStack(alignment: .leading, spacing: 22) {
             TerminalDirectSettingsCard()
             PathCopySettingsCard()
+            QuickActionsSettingsCard()
         }
     }
 }
@@ -71,6 +72,43 @@ struct PathCopySettingsCard: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+struct QuickActionsSettingsCard: View {
+    @EnvironmentObject private var model: QuickDocSettingsModel
+
+    var body: some View {
+        GlassSection {
+            VStack(alignment: .leading, spacing: 18) {
+                HStack(alignment: .center, spacing: 14) {
+                    Image(systemName: "wrench.and.screwdriver")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.blue)
+                        .frame(width: 40, height: 40)
+                        .background(Color.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("快捷操作")
+                            .font(.headline)
+                        Text("开启后会在 Finder 右键一级菜单显示“快捷操作”，并提供拷贝、粘贴和剪切。")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                Toggle("启用快捷操作", isOn: $model.quickActionsEnabled)
+
+                HStack(spacing: 18) {
+                    Label("拷贝", systemImage: "doc.on.doc")
+                    Label("粘贴", systemImage: "clipboard")
+                    Label("剪切", systemImage: "scissors")
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
             }
         }
     }

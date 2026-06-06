@@ -67,6 +67,8 @@
 		C10000000000000000000048 /* 文件路径.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003A /* 文件路径.png */; };
 		C10000000000000000000049 /* 工具栏.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003B /* 工具栏.png */; };
 		C1000000000000000000004A /* 菜单栏.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003C /* 菜单栏.png */; };
+		C1000000000000000000004B /* 快捷操作.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003D /* 快捷操作.png */; };
+		C1000000000000000000004C /* 快捷操作.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000003D /* 快捷操作.png */; };
 		D10000000000000000000001 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000013 /* main.swift */; };
 		D10000000000000000000002 /* QuickDocLoginItem.app in Embed Login Items */ = {isa = PBXBuildFile; fileRef = D10000000000000000000011 /* QuickDocLoginItem.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -165,6 +167,7 @@
 		A1000000000000000000003A /* 文件路径.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icons/文件路径.png"; sourceTree = "<group>"; };
 		A1000000000000000000003B /* 工具栏.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icons/工具栏.png"; sourceTree = "<group>"; };
 		A1000000000000000000003C /* 菜单栏.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icons/菜单栏.png"; sourceTree = "<group>"; };
+		A1000000000000000000003D /* 快捷操作.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "icons/快捷操作.png"; sourceTree = "<group>"; };
 		D10000000000000000000011 /* QuickDocLoginItem.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuickDocLoginItem.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D10000000000000000000013 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		D10000000000000000000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -219,6 +222,7 @@
 				A1000000000000000000003A /* 文件路径.png */,
 				A1000000000000000000003B /* 工具栏.png */,
 				A1000000000000000000003C /* 菜单栏.png */,
+				A1000000000000000000003D /* 快捷操作.png */,
 				A10000000000000000000020 /* README.md */,
 				A10000000000000000000024 /* Products */,
 			);
@@ -468,6 +472,7 @@
 				C10000000000000000000045 /* 终端直达.png in Resources */,
 				C10000000000000000000047 /* 文件路径.png in Resources */,
 				C1000000000000000000004A /* 菜单栏.png in Resources */,
+				C1000000000000000000004B /* 快捷操作.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -495,6 +500,7 @@
 				C10000000000000000000046 /* 终端直达.png in Resources */,
 				C10000000000000000000048 /* 文件路径.png in Resources */,
 				C10000000000000000000049 /* 工具栏.png in Resources */,
+				C1000000000000000000004C /* 快捷操作.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -569,7 +575,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDoc/Info.plist;
@@ -578,7 +584,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.5;
+				MARKETING_VERSION = 1.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc;
 				PRODUCT_NAME = QuickDoc;
 				SWIFT_VERSION = 5.0;
@@ -594,7 +600,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				COMPRESS_PNG_FILES = NO;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDoc/Info.plist;
@@ -603,7 +609,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.5;
+				MARKETING_VERSION = 1.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc;
 				PRODUCT_NAME = QuickDoc;
 				SWIFT_VERSION = 5.0;
@@ -617,7 +623,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocFinderSync/QuickDocFinderSync.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocFinderSync/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -626,7 +632,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.5;
+				MARKETING_VERSION = 1.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.FinderSync;
 				PRODUCT_NAME = QuickDocFinderSync;
 				SKIP_INSTALL = YES;
@@ -642,7 +648,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocFinderSync/QuickDocFinderSync.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocFinderSync/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -651,7 +657,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.5;
+				MARKETING_VERSION = 1.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.FinderSync;
 				PRODUCT_NAME = QuickDocFinderSync;
 				SKIP_INSTALL = YES;
@@ -666,7 +672,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocLoginItem/QuickDocLoginItem.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocLoginItem/Info.plist;
@@ -675,7 +681,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.5;
+				MARKETING_VERSION = 1.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.LoginItem;
 				PRODUCT_NAME = QuickDocLoginItem;
 				SKIP_INSTALL = YES;
@@ -689,7 +695,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocLoginItem/QuickDocLoginItem.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 13;
+				CURRENT_PROJECT_VERSION = 14;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocLoginItem/Info.plist;
@@ -698,7 +704,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.5.5;
+				MARKETING_VERSION = 1.5.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.LoginItem;
 				PRODUCT_NAME = QuickDocLoginItem;
 				SKIP_INSTALL = YES;

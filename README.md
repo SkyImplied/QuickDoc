@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Create common files directly from Finder's right-click menu and toolbar.</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.5.5"><img src="https://img.shields.io/badge/version-v1.5.5-blue" alt="Version v1.5.5"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.5.6"><img src="https://img.shields.io/badge/version-v1.5.6-blue" alt="Version v1.5.6"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey?logo=apple" alt="Platform macOS 13+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Built with Swift">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.5.5/QuickDoc-1.5.5.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.5.6/QuickDoc-1.5.6.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="Downloads"></a>
   </p>
   <p>
@@ -15,6 +15,22 @@
 </div>
 
 QuickDoc is a macOS utility built around a Finder Sync extension. It adds a practical `New File` submenu to Finder's context menu, and since v1.3 it also supports adding QuickDoc to the Finder toolbar so file creation can be invoked directly from the toolbar.
+
+## What's New in v1.5.6
+
+- Added an optional `快捷操作` submenu to Finder's top-level context menu.
+- Quickly copy, paste, or cut selected files and folders directly from the Finder context menu.
+- Added a dedicated General settings section and menu bar toggle for enabling or disabling Quick Actions.
+
+### Finder Quick Actions
+
+<p align="center">
+  <img src="./photos/支持拷贝粘贴和剪切.png" alt="QuickDoc Finder copy, paste, and cut actions" width="520">
+</p>
+
+### Quick Actions Settings
+
+![QuickDoc Quick Actions settings](./photos/快捷操作界面.png)
 
 ## What's New in v1.5.5
 
@@ -121,11 +137,12 @@ After replacement succeeds, QuickDoc relaunches automatically and confirms that 
 - Add custom extensions for your own workflow
 - Keep the context menu organized with visual ordering controls
 - Open the current folder in your selected terminal app or copy its path from the same right-click menu
+- Copy, paste, or cut Finder items from the optional Quick Actions submenu
 - Avoid overwriting files by automatically appending numeric suffixes when names already exist
 
 ## Supported File Types
 
-Built-in file types in v1.5.5:
+Built-in file types in v1.5.6:
 
 - TXT
 - Markdown (`.md`)
@@ -196,7 +213,7 @@ If Finder does not refresh immediately, QuickDoc provides a one-click restart ac
 4. Right-click a folder background, selected folder, or the Desktop in Finder
 5. Choose `新建文件` and create the file you want
 
-If enabled in settings, `在终端中打开` and `复制当前路径` will also appear in the top-level Finder context menu.
+If enabled in settings, `在终端中打开`, `复制当前路径`, and `快捷操作` will also appear in the top-level Finder context menu.
 
 `在终端中打开` uses the terminal app selected in General settings. You can choose a third-party terminal app or restore the system Terminal at any time.
 
