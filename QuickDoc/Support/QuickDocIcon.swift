@@ -1,6 +1,12 @@
 import Cocoa
 
 enum QuickDocIcon {
+    private struct CacheKey: Hashable {
+        let resourceName: String
+        let width: Int
+        let height: Int
+    }
+
     private static let builtInIconResourceNames: [String: String] = [
         "txt": "txt",
         "md": "md",
@@ -15,6 +21,7 @@ enum QuickDocIcon {
         "sh": "shell",
         "rtf": "rtf"
     ]
+    @MainActor private static var cache: [CacheKey: NSImage] = [:]
 
     @MainActor
     static func icon(for id: String, size: NSSize) -> NSImage? {
@@ -27,12 +34,22 @@ enum QuickDocIcon {
             return nil
         }
 
+        let cacheKey = CacheKey(
+            resourceName: resourceName,
+            width: Int(size.width.rounded()),
+            height: Int(size.height.rounded())
+        )
+        if let cachedImage = cache[cacheKey] {
+            return cachedImage
+        }
+
         guard let url = Bundle.main.url(forResource: resourceName, withExtension: "png"),
               let image = NSImage(contentsOf: url) else {
             return nil
         }
         image.size = size
         image.isTemplate = false
+        cache[cacheKey] = image
         return image
     }
 }

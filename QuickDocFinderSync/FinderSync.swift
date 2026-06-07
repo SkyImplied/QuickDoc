@@ -85,6 +85,8 @@ final class FinderSync: FIFinderSync {
     private static let terminalDirectEnabledKey = "terminalDirectEnabled"
     private static let pathCopyEnabledKey = "pathCopyEnabled"
     private static let quickActionsEnabledKey = "quickActionsEnabled"
+    private static let diagnosticsEnabled = ProcessInfo.processInfo.environment["QUICKDOC_FINDER_DIAGNOSTICS"] == "1"
+    private static let maximumDiagnosticLogSize: UInt64 = 1_000_000
     private static let quickDocCutPasteboardType = NSPasteboard.PasteboardType("com.skyimplied.QuickDoc.cut-files")
     private static let customMenuIDPrefix = "custom."
     private static let builtInIconResourceNames: [String: String] = [
@@ -108,45 +110,17 @@ final class FinderSync: FIFinderSync {
     private static func monitoredDirectoryURLs() -> [URL] {
         let fileManager = FileManager.default
         let userHomeURL = URL(fileURLWithPath: "/Users/\(NSUserName())", isDirectory: true)
-        var urls = [
+        let urls = [
             userHomeURL,
             URL(fileURLWithPath: "/Volumes", isDirectory: true)
         ]
 
-        let commonUserDirectories = [
-            "Desktop",
-            "Documents",
-            "Downloads",
-            "Movies",
-            "Music",
-            "Pictures"
-        ]
-        urls.append(contentsOf: commonUserDirectories.map {
-            userHomeURL.appendingPathComponent($0, isDirectory: true)
-        })
-
-        // Finder Sync needs the real filesystem location for iCloud Drive, not
-        // just the sidebar label shown in Finder.
-        let iCloudCandidateURLs = [
-            userHomeURL
-                .appendingPathComponent("Library", isDirectory: true)
-                .appendingPathComponent("Mobile Documents", isDirectory: true)
-                .appendingPathComponent("com~apple~CloudDocs", isDirectory: true),
-            userHomeURL
-                .appendingPathComponent("Library", isDirectory: true)
-                .appendingPathComponent("Mobile Documents", isDirectory: true)
-        ]
-        urls.append(contentsOf: iCloudCandidateURLs)
-
-        var seenPaths: Set<String> = []
         return urls.filter { url in
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory),
-                  isDirectory.boolValue,
-                  !seenPaths.contains(url.path) else {
+                  isDirectory.boolValue else {
                 return false
             }
-            seenPaths.insert(url.path)
             return true
         }
     }
@@ -282,21 +256,21 @@ final class FinderSync: FIFinderSync {
         parent.submenu = submenu
         items.append(parent)
 
-        if terminalDirectEnabled() {
+        if settingValue(sharedSettings.terminalDirectEnabled, key: Self.terminalDirectEnabledKey, fallback: true) {
             let terminalItem = NSMenuItem(title: "在终端中打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
             terminalItem.target = self
             terminalItem.image = terminalIcon
             items.append(terminalItem)
         }
 
-        if pathCopyEnabled() {
+        if settingValue(sharedSettings.pathCopyEnabled, key: Self.pathCopyEnabledKey, fallback: true) {
             let pathItem = NSMenuItem(title: "复制当前路径", action: #selector(copyCurrentPath(_:)), keyEquivalent: "")
             pathItem.target = self
             pathItem.image = pathCopyIcon
             items.append(pathItem)
         }
 
-        if quickActionsEnabled() {
+        if settingValue(sharedSettings.quickActionsEnabled, key: Self.quickActionsEnabledKey, fallback: true) {
             items.append(makeQuickActionsMenuItem())
         }
 
@@ -469,30 +443,8 @@ final class FinderSync: FIFinderSync {
         return (nil, nil, nil, nil, nil, nil, nil)
     }
 
-    private func terminalDirectEnabled() -> Bool {
-        readBoolSetting(key: Self.terminalDirectEnabledKey, fallback: true)
-    }
-
-    private func pathCopyEnabled() -> Bool {
-        readBoolSetting(key: Self.pathCopyEnabledKey, fallback: true)
-    }
-
-    private func quickActionsEnabled() -> Bool {
-        readBoolSetting(key: Self.quickActionsEnabledKey, fallback: true)
-    }
-
-    private func readBoolSetting(key: String, fallback: Bool) -> Bool {
-        for url in Self.sharedSettingsURLs {
-            guard let data = try? Data(contentsOf: url),
-                  let payload = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
-                  let value = payload[key] as? Bool else {
-                continue
-            }
-
-            return value
-        }
-
-        return UserDefaults.standard.object(forKey: key) as? Bool ?? fallback
+    private func settingValue(_ sharedValue: Bool?, key: String, fallback: Bool) -> Bool {
+        sharedValue ?? UserDefaults.standard.object(forKey: key) as? Bool ?? fallback
     }
 
     private static var sharedSettingsURLs: [URL] {
@@ -793,6 +745,8 @@ final class FinderSync: FIFinderSync {
     }
 
     private func diagnosticLog(_ message: String) {
+        guard Self.diagnosticsEnabled else { return }
+
         let timestamp = ISO8601DateFormatter().string(from: Date())
         let line = "[\(timestamp)] \(message)\n"
 
@@ -805,9 +759,12 @@ final class FinderSync: FIFinderSync {
                     try data.write(to: url)
                 } else {
                     let handle = try FileHandle(forWritingTo: url)
-                    try handle.seekToEnd()
+                    defer { try? handle.close() }
+                    let currentSize = try handle.seekToEnd()
+                    if currentSize >= Self.maximumDiagnosticLogSize {
+                        try handle.truncate(atOffset: 0)
+                    }
                     try handle.write(contentsOf: data)
-                    try handle.close()
                 }
                 return
             } catch {

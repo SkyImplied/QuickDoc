@@ -12,7 +12,7 @@ final class QuickDocSettingsModel: ObservableObject {
         let style: NSAlert.Style
     }
 
-    struct ExtensionStatus {
+    struct ExtensionStatus: Equatable {
         let isConfirmed: Bool
 
         var badgeTitle: String {
@@ -92,6 +92,8 @@ final class QuickDocSettingsModel: ObservableObject {
     @Published private(set) var selectedTerminalAppPath: String {
         didSet {
             UserDefaults.standard.set(selectedTerminalAppPath, forKey: Self.selectedTerminalAppPathKey)
+            cachedTerminalApplicationIcon = nil
+            cachedTerminalApplicationIconPath = nil
         }
     }
 
@@ -119,6 +121,8 @@ final class QuickDocSettingsModel: ObservableObject {
     let appVersion: String
     var onDisplayModeDidChange: ((QuickDocDisplayMode) -> Void)?
     private var notificationObservers: [NSObjectProtocol] = []
+    private var cachedTerminalApplicationIcon: NSImage?
+    private var cachedTerminalApplicationIconPath: String?
     private var isSynchronizingLaunchAtLogin = false
     private static let displayModeKey = "displayMode"
     private static let silentLaunchAtLoginKey = "silentLaunchAtLogin"
@@ -212,8 +216,17 @@ final class QuickDocSettingsModel: ObservableObject {
     }
 
     var selectedTerminalApplicationIcon: NSImage {
-        selectedTerminalApplication?.icon
+        let iconPath = selectedTerminalApplicationURL?.path
+        if cachedTerminalApplicationIconPath == iconPath,
+           let cachedTerminalApplicationIcon {
+            return cachedTerminalApplicationIcon
+        }
+
+        let icon = selectedTerminalApplication?.icon
             ?? Self.systemTerminalApplication.icon
+        cachedTerminalApplicationIconPath = iconPath
+        cachedTerminalApplicationIcon = icon
+        return icon
     }
 
     var hasCustomTerminalApplication: Bool {
@@ -526,7 +539,9 @@ final class QuickDocSettingsModel: ObservableObject {
     }
 
     func refreshExtensionStatus() {
-        extensionStatus = ExtensionStatus(isConfirmed: FIFinderSyncController.isExtensionEnabled)
+        let refreshedStatus = ExtensionStatus(isConfirmed: FIFinderSyncController.isExtensionEnabled)
+        guard refreshedStatus != extensionStatus else { return }
+        extensionStatus = refreshedStatus
     }
 
     func requestDisplayModeChange(_ newMode: QuickDocDisplayMode) {

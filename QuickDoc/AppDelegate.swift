@@ -45,6 +45,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private static let loginLaunchHost = "launch-at-login"
     private var initialWindowWorkItem: DispatchWorkItem?
     private var shouldSuppressInitialWindow = false
+    private lazy var cachedStatusBarImage: NSImage? = {
+        guard let url = Bundle.main.url(forResource: "菜单栏", withExtension: "png"),
+              let image = NSImage(contentsOf: url) else {
+            return nil
+        }
+        image.size = NSSize(width: 18, height: 18)
+        image.isTemplate = true
+        return image
+    }()
 
     override init() {
         super.init()
@@ -89,8 +98,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        sender.orderOut(nil)
-        return false
+        true
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard let closingWindow = notification.object as? NSWindow,
+              closingWindow === window else {
+            return
+        }
+
+        // The settings UI contains many material-backed views. Release the
+        // hosting tree while the app continues running in the background.
+        closingWindow.contentView = nil
+        closingWindow.delegate = nil
+        window = nil
     }
 
     private func showMainWindow() {
@@ -173,13 +194,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func statusBarImage() -> NSImage? {
-        guard let url = Bundle.main.url(forResource: "菜单栏", withExtension: "png"),
-              let image = NSImage(contentsOf: url) else {
-            return nil
-        }
-        image.size = NSSize(width: 18, height: 18)
-        image.isTemplate = true
-        return image
+        cachedStatusBarImage
     }
 
     private func presentStatusMenu() {
