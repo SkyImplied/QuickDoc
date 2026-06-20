@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Create common files directly from Finder's right-click menu and toolbar.</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.5.6"><img src="https://img.shields.io/badge/version-v1.5.6-blue" alt="Version v1.5.6"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.6.0"><img src="https://img.shields.io/badge/version-v1.6.0-blue" alt="Version v1.6.0"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey?logo=apple" alt="Platform macOS 13+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Built with Swift">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.5.6/QuickDoc-1.5.6.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.6.0/QuickDoc-1.6.0.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="Downloads"></a>
   </p>
   <p>
@@ -16,21 +16,23 @@
 
 QuickDoc is a macOS utility built around a Finder Sync extension. It adds a practical `New File` submenu to Finder's context menu, and since v1.3 it also supports adding QuickDoc to the Finder toolbar so file creation can be invoked directly from the toolbar.
 
-## What's New in v1.5.6
+## What's New in v1.6.0
 
-- Added an optional `快捷操作` submenu to Finder's top-level context menu.
-- Quickly copy, paste, or cut selected files and folders directly from the Finder context menu.
-- Added a dedicated General settings section and menu bar toggle for enabling or disabling Quick Actions.
+- Fixed copy and cut actions when invoking QuickDoc from the Finder toolbar in cloud drive and external drive folders.
+- Added Finder right-click menu support for external drives. Older versions only supported external drive access through the toolbar. Due to Apple platform restrictions, cloud drive folders do not yet support direct right-click invocation; please continue using the toolbar there.
+- Improved the DMG installation window with a cleaner drag-to-install layout.
 
-### Finder Quick Actions
+### External Drive Right-Click Menu
 
 <p align="center">
-  <img src="./photos/支持拷贝粘贴和剪切.png" alt="QuickDoc Finder copy, paste, and cut actions" width="520">
+  <img src="./photos/支持外置硬盘访达调用右键菜单功能.png" alt="QuickDoc Finder right-click menu on external drives" width="680">
 </p>
 
-### Quick Actions Settings
+### Improved DMG Installer
 
-![QuickDoc Quick Actions settings](./photos/快捷操作界面.png)
+<p align="center">
+  <img src="./photos/改进的dmg安装界面.png" alt="QuickDoc improved DMG installer" width="680">
+</p>
 
 ## What's New in v1.5.5
 
@@ -142,7 +144,7 @@ After replacement succeeds, QuickDoc relaunches automatically and confirms that 
 
 ## Supported File Types
 
-Built-in file types in v1.5.6:
+Built-in file types in v1.6.0:
 
 - TXT
 - Markdown (`.md`)

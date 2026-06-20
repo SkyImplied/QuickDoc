@@ -41,6 +41,7 @@ private typealias SharedSettings = (
 final class FinderSync: FIFinderSync {
     private let logger = Logger(subsystem: "com.skyimplied.QuickDoc", category: "FinderSync")
     private var menuDefinitionsByTag: [Int: FileDefinition] = [:]
+    private var workspaceObservers: [NSObjectProtocol] = []
     private lazy var menuIcon: NSImage = {
         if let image = Self.iconImage(named: "新建文件icon", size: NSSize(width: 18, height: 18)) {
             return image
@@ -89,6 +90,7 @@ final class FinderSync: FIFinderSync {
     private static let maximumDiagnosticLogSize: UInt64 = 1_000_000
     private static let quickDocCutPasteboardType = NSPasteboard.PasteboardType("com.skyimplied.QuickDoc.cut-files")
     private static let customMenuIDPrefix = "custom."
+    private static let finderBundleIdentifier = "com.apple.finder"
     private static let builtInIconResourceNames: [String: String] = [
         "txt": "txt",
         "md": "md",
@@ -109,16 +111,54 @@ final class FinderSync: FIFinderSync {
 
     private static func monitoredDirectoryURLs() -> [URL] {
         let fileManager = FileManager.default
-        let userHomeURL = URL(fileURLWithPath: "/Users/\(NSUserName())", isDirectory: true)
-        let urls = [
-            userHomeURL,
-            URL(fileURLWithPath: "/Volumes", isDirectory: true)
+        let homeURL = URL(fileURLWithPath: "/Users/\(NSUserName())", isDirectory: true)
+        let volumesURL = URL(fileURLWithPath: "/Volumes", isDirectory: true)
+        var urls = [
+            homeURL,
+            homeURL.appendingPathComponent("Desktop", isDirectory: true),
+            homeURL.appendingPathComponent("Documents", isDirectory: true),
+            homeURL.appendingPathComponent("Downloads", isDirectory: true),
+            volumesURL
         ]
 
-        return urls.filter { url in
+        if let mountedVolumes = fileManager.mountedVolumeURLs(
+            includingResourceValuesForKeys: [.volumeURLKey],
+            options: [.skipHiddenVolumes]
+        ) {
+            urls.append(contentsOf: mountedVolumes)
+        }
+
+        if let volumeChildren = directoryChildren(at: volumesURL) {
+            urls.append(contentsOf: volumeChildren)
+        }
+
+        var seenPaths = Set<String>()
+        return urls.compactMap { url in
+            let standardizedURL = url.standardizedFileURL
             var isDirectory: ObjCBool = false
-            guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory),
-                  isDirectory.boolValue else {
+            guard fileManager.fileExists(atPath: standardizedURL.path, isDirectory: &isDirectory),
+                  isDirectory.boolValue,
+                  seenPaths.insert(standardizedURL.path).inserted else {
+                return nil
+            }
+            return standardizedURL
+        }
+    }
+
+    private static func directoryChildren(at directory: URL) -> [URL]? {
+        let resourceKeys: Set<URLResourceKey> = [.isDirectoryKey, .isPackageKey]
+        guard let children = try? FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: Array(resourceKeys),
+            options: [.skipsHiddenFiles]
+        ) else {
+            return nil
+        }
+
+        return children.filter { child in
+            guard let values = try? child.resourceValues(forKeys: resourceKeys),
+                  values.isDirectory == true,
+                  values.isPackage != true else {
                 return false
             }
             return true
@@ -144,10 +184,16 @@ final class FinderSync: FIFinderSync {
 
     override init() {
         super.init()
-        let monitoredURLs = Self.monitoredDirectoryURLs()
-        FIFinderSyncController.default().directoryURLs = Set(monitoredURLs)
+        refreshMonitoredDirectories(reason: "initial load")
+        observeMountedVolumeChanges()
         logger.info("QuickDoc Finder Sync extension loaded")
-        diagnosticLog("QuickDoc Finder Sync extension loaded; monitoring \(monitoredURLs.map(\.path).joined(separator: ", "))")
+        diagnosticLog("QuickDoc Finder Sync extension loaded")
+    }
+
+    deinit {
+        workspaceObservers.forEach {
+            NSWorkspace.shared.notificationCenter.removeObserver($0)
+        }
     }
 
     override var toolbarItemName: String {
@@ -163,28 +209,69 @@ final class FinderSync: FIFinderSync {
     }
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu? {
+        refreshMonitoredDirectories(reason: "menu request \(menuKind.rawValue)")
         diagnosticLog("Finder requested menu kind \(menuKind.rawValue)")
         switch menuKind {
         case .contextualMenuForContainer, .contextualMenuForItems, .toolbarItemMenu:
-            return makeNewFileMenu()
+            return makeNewFileMenu(menuKind: menuKind)
         default:
             return nil
         }
     }
 
-    private func makeNewFileMenu() -> NSMenu {
+    override func beginObservingDirectory(at url: URL) {
+        diagnosticLog("Begin observing directory: \(url.path)")
+        refreshMonitoredDirectories(reason: "begin observing \(url.path)")
+    }
+
+    private func observeMountedVolumeChanges() {
+        let notificationCenter = NSWorkspace.shared.notificationCenter
+        let mountedObserver = notificationCenter.addObserver(
+            forName: NSWorkspace.didMountNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            let path = notification.userInfo?[NSWorkspace.volumeURLUserInfoKey] as? URL
+            self?.refreshMonitoredDirectories(reason: "volume mounted \(path?.path ?? "")")
+        }
+
+        let unmountedObserver = notificationCenter.addObserver(
+            forName: NSWorkspace.didUnmountNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            let path = notification.userInfo?[NSWorkspace.volumeURLUserInfoKey] as? URL
+            self?.refreshMonitoredDirectories(reason: "volume unmounted \(path?.path ?? "")")
+        }
+
+        workspaceObservers.append(contentsOf: [mountedObserver, unmountedObserver])
+    }
+
+    private func refreshMonitoredDirectories(reason: String) {
+        let monitoredURLs = Self.monitoredDirectoryURLs()
+        let monitoredURLSet = Set(monitoredURLs)
+        let finderSyncController = FIFinderSyncController.default()
+        guard finderSyncController.directoryURLs != monitoredURLSet else {
+            return
+        }
+
+        finderSyncController.directoryURLs = monitoredURLSet
+        diagnosticLog("Refreshed monitored directories for \(reason); count=\(monitoredURLs.count); paths=\(monitoredURLs.map(\.path).joined(separator: ", "))")
+    }
+
+    private func makeNewFileMenu(menuKind: FIMenuKind) -> NSMenu {
         diagnosticLog("Building Finder menu")
         let menu = NSMenu(title: "QuickDoc")
         menuDefinitionsByTag.removeAll()
 
-        let actionItems = buildActionItems()
+        let actionItems = buildActionItems(menuKind: menuKind)
         actionItems.forEach { menu.addItem($0) }
 
         diagnosticLog("Finder menu contains \(actionItems.count) top-level item(s)")
         return menu
     }
 
-    private func buildActionItems() -> [NSMenuItem] {
+    private func buildActionItems(menuKind: FIMenuKind) -> [NSMenuItem] {
         var items: [NSMenuItem] = []
         let sharedSettings = readSharedSettings()
 
@@ -271,18 +358,18 @@ final class FinderSync: FIFinderSync {
         }
 
         if settingValue(sharedSettings.quickActionsEnabled, key: Self.quickActionsEnabledKey, fallback: true) {
-            items.append(makeQuickActionsMenuItem())
+            items.append(makeQuickActionsMenuItem(menuKind: menuKind))
         }
 
         return items
     }
 
-    private func makeQuickActionsMenuItem() -> NSMenuItem {
+    private func makeQuickActionsMenuItem(menuKind: FIMenuKind) -> NSMenuItem {
         let parent = NSMenuItem(title: "快捷操作", action: nil, keyEquivalent: "")
         parent.image = quickActionsIcon
 
         let submenu = NSMenu(title: "快捷操作")
-        let hasSelection = !(FIFinderSyncController.default().selectedItemURLs()?.isEmpty ?? true)
+        let hasSelection = menuKind == .toolbarItemMenu || !selectedItemURLs().isEmpty
 
         let copyItem = NSMenuItem(title: "拷贝", action: #selector(copySelectedItems(_:)), keyEquivalent: "")
         copyItem.target = self
@@ -548,8 +635,8 @@ final class FinderSync: FIFinderSync {
     }
 
     private func writeSelectedItemsToPasteboard(isCut: Bool) {
-        guard let selectedURLs = FIFinderSyncController.default().selectedItemURLs(),
-              !selectedURLs.isEmpty else {
+        let selectedURLs = selectedItemURLs()
+        guard !selectedURLs.isEmpty else {
             showError(message: "请先选择要\(isCut ? "剪切" : "拷贝")的文件或文件夹。")
             return
         }
@@ -620,7 +707,7 @@ final class FinderSync: FIFinderSync {
     private func targetURLForPathCopy() -> URL? {
         let finderController = FIFinderSyncController.default()
 
-        if let selectedURL = finderController.selectedItemURLs()?.first {
+        if let selectedURL = selectedItemURLs().first {
             return selectedURL
         }
 
@@ -638,11 +725,69 @@ final class FinderSync: FIFinderSync {
             return directoryURL(for: targetedURL)
         }
 
-        if let selectedURL = finderController.selectedItemURLs()?.first {
+        if let selectedURL = selectedItemURLs().first {
             return directoryURL(for: selectedURL)
         }
 
         return FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
+    }
+
+    private func selectedItemURLs() -> [URL] {
+        if let selectedURLs = FIFinderSyncController.default().selectedItemURLs(),
+           !selectedURLs.isEmpty {
+            return selectedURLs.map(\.standardizedFileURL)
+        }
+
+        let fallbackURLs = finderSelectionURLsViaAppleScript()
+        if !fallbackURLs.isEmpty {
+            diagnosticLog("Resolved \(fallbackURLs.count) selected item(s) via Finder AppleScript fallback")
+        }
+        return fallbackURLs
+    }
+
+    private func finderSelectionURLsViaAppleScript() -> [URL] {
+        let scriptSource = """
+        tell application id "\(Self.finderBundleIdentifier)"
+            set selectedItems to selection
+            set selectedPaths to {}
+            repeat with selectedItem in selectedItems
+                try
+                    set end of selectedPaths to POSIX path of (selectedItem as alias)
+                end try
+            end repeat
+            return selectedPaths
+        end tell
+        """
+
+        guard let script = NSAppleScript(source: scriptSource) else {
+            diagnosticLog("Unable to create Finder selection AppleScript")
+            return []
+        }
+
+        var errorInfo: NSDictionary?
+        let descriptor = script.executeAndReturnError(&errorInfo)
+        if let errorInfo {
+            diagnosticLog("Finder selection AppleScript failed: \(errorInfo)")
+            return []
+        }
+
+        return Self.stringValues(from: descriptor).map {
+            URL(fileURLWithPath: $0).standardizedFileURL
+        }
+    }
+
+    private static func stringValues(from descriptor: NSAppleEventDescriptor) -> [String] {
+        guard descriptor.descriptorType == typeAEList else {
+            return descriptor.stringValue.map { [$0] } ?? []
+        }
+
+        guard descriptor.numberOfItems > 0 else {
+            return []
+        }
+
+        return (1...descriptor.numberOfItems).compactMap { index in
+            descriptor.atIndex(index)?.stringValue
+        }
     }
 
     private func directoryURL(for url: URL) -> URL {

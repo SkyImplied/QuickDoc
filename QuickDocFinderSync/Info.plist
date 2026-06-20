@@ -29,5 +29,7 @@
 		<key>NSExtensionPrincipalClass</key>
 		<string>$(PRODUCT_MODULE_NAME).FinderSync</string>
 	</dict>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>QuickDoc 需要读取 Finder 当前选择，以便在 iCloud 云盘和外置硬盘等位置执行拷贝、剪切和路径复制。</string>
 </dict>
 </plist>
