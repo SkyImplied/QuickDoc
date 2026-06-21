@@ -167,7 +167,10 @@ Default-enabled types are `TXT`, `Markdown`, `Word`, `Excel`, `CSV`, `PowerPoint
 
 The general page manages launch behavior, display mode, right-click quick actions such as `Open in Terminal` and `Copy Current Path`, custom terminal app selection, and in-app update checks.
 
-![QuickDoc general settings](./photos/通用设置界面.png)
+<p align="center">
+  <img src="./photos/通用设置界面1.png" alt="QuickDoc general settings" width="420">
+  <img src="./photos/通用设置界面2.png" alt="QuickDoc general settings details" width="420">
+</p>
 
 ### Finder context menu
 
@@ -183,29 +186,43 @@ QuickDoc can verify whether the Finder Sync extension is enabled and guide you t
 
 ![QuickDoc permissions and extensions](./photos/权限与扩展界面.png)
 
-### New file types and menu preview
+### New file types and templates
 
-Enable or disable built-in file types, add custom extensions, and edit the menu order from the preview area.
+Enable or disable built-in file types, add custom extensions, manage templates, and edit the menu order from the preview area.
 
-![QuickDoc new file types](./photos/新建文件类型界面.png)
+<p align="center">
+  <img src="./photos/新建文件类型界面1.png" alt="QuickDoc new file types" width="420">
+  <img src="./photos/新建文件类型界面2.png" alt="QuickDoc new file templates" width="420">
+</p>
+
+### Menu bar shortcuts
+
+Configure Finder new-file types and optional quick actions directly from the menu bar.
+
+<p align="center">
+  <img src="./photos/菜单栏界面.png" alt="QuickDoc menu bar shortcuts" width="420">
+</p>
 
 ### Custom file templates
 
-Manage templates by file type, control which templates are visible in Finder, and reorder the submenu display.
+Manage templates by file type, control which templates are visible in Finder, and use template submenus from Finder.
 
-![QuickDoc custom file templates](./photos/自定义文件模版.png)
-
-### Template submenu
-
-Visible templates appear under their related file type in Finder's third-level menu.
-
-![QuickDoc custom template submenu](./photos/自定义文件模版三级菜单.png)
+<p align="center">
+  <img src="./photos/自定义文件模版.png" alt="QuickDoc custom file templates" width="420">
+  <img src="./photos/自定义文件模版三级菜单.png" alt="QuickDoc custom template submenu" width="420">
+</p>
 
 ### Finder actions
 
 If Finder does not refresh immediately, QuickDoc provides a one-click restart action to reload the extension.
 
 ![QuickDoc Finder actions](./photos/访达操作界面.png)
+
+### About
+
+The About page collects the app overview, version, and contact entry points.
+
+![QuickDoc About page](./photos/关于界面.png)
 
 ## How It Works
 
