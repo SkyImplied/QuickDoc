@@ -9,8 +9,9 @@ CONFIGURATION="Release"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_ROOT="$ROOT_DIR/build"
 DERIVED_DATA_PATH="$BUILD_ROOT/ReleaseDerivedData"
-DIST_DIR="$BUILD_ROOT/release"
-STAGE_DIR="$DIST_DIR/dmg-root"
+RELEASE_WORK_DIR="$BUILD_ROOT/release"
+DIST_DIR="$ROOT_DIR/dist"
+STAGE_DIR="$RELEASE_WORK_DIR/dmg-root"
 BACKGROUND_DIR="$STAGE_DIR/.background"
 BACKGROUND_IMAGE="$BACKGROUND_DIR/dmg-background.png"
 APP_BUNDLE="$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION/$APP_NAME.app"
@@ -34,8 +35,16 @@ require_xcode() {
 }
 
 clean_output() {
-  rm -rf "$DIST_DIR"
+  rm -rf "$RELEASE_WORK_DIR" "$DIST_DIR"
   mkdir -p "$DIST_DIR" "$STAGE_DIR" "$BACKGROUND_DIR"
+}
+
+clean_release_intermediates() {
+  rm -rf "$DERIVED_DATA_PATH" "$RELEASE_WORK_DIR"
+}
+
+clean_dist_intermediates() {
+  rm -rf "$DIST_DIR/$APP_NAME.app"
 }
 
 sanitize_resource_attributes() {
@@ -149,7 +158,6 @@ EOF
 summarize() {
   cat <<EOF
 Release artifacts created:
-  $DIST_DIR/$APP_NAME.app
   $DIST_DIR/$ZIP_NAME
   $DIST_DIR/$DMG_NAME
 
@@ -167,4 +175,6 @@ sanitize_resource_attributes
 stage_app
 create_zip
 create_dmg
+clean_dist_intermediates
+clean_release_intermediates
 summarize

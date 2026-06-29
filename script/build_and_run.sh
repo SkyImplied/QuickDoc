@@ -57,10 +57,25 @@ build_app() {
     SHARED_PRECOMPS_DIR="$BUILD_ROOT/PrecompiledHeaders" \
     CONFIGURATION_BUILD_DIR="$PRODUCTS_DIR" \
     build
+
+  prune_intermediate_build_products
 }
 
 clean_build_products() {
   rm -rf "$BUILD_ROOT"
+}
+
+prune_intermediate_build_products() {
+  rm -rf \
+    "$DERIVED_DATA_PATH" \
+    "$BUILD_ROOT/Intermediates" \
+    "$BUILD_ROOT/Install" \
+    "$BUILD_ROOT/PrecompiledHeaders"
+  rm -f "$BUILD_ROOT/.DS_Store" "$PRODUCTS_DIR/.DS_Store"
+
+  if [[ -d "$PRODUCTS_DIR" ]]; then
+    find "$PRODUCTS_DIR" -mindepth 1 -maxdepth 1 ! -name "$APP_NAME.app" -exec rm -rf {} +
+  fi
 }
 
 refresh_extension_registration() {

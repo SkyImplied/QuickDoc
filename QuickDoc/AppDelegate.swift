@@ -43,8 +43,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var statusItem: NSStatusItem?
     private static let terminalPathQueryKey = "path"
     private static let loginLaunchHost = "launch-at-login"
+    private static let suppressInitialWindowEnvironmentKey = "QUICKDOC_SUPPRESS_INITIAL_WINDOW"
     private var initialWindowWorkItem: DispatchWorkItem?
-    private var shouldSuppressInitialWindow = false
+    private var shouldSuppressInitialWindow = ProcessInfo.processInfo.environment[suppressInitialWindowEnvironmentKey] == "1"
     private lazy var cachedStatusBarImage: NSImage? = {
         guard let url = Bundle.main.url(forResource: "菜单栏", withExtension: "png"),
               let image = NSImage(contentsOf: url) else {

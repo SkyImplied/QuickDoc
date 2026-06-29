@@ -6,6 +6,28 @@ import UniformTypeIdentifiers
 
 @MainActor
 final class QuickDocSettingsModel: ObservableObject {
+    private struct GitHubReleaseResponse: Decodable {
+        let tagName: String
+        let body: String?
+        let assets: [GitHubReleaseAssetResponse]
+
+        enum CodingKeys: String, CodingKey {
+            case tagName = "tag_name"
+            case body
+            case assets
+        }
+    }
+
+    private struct GitHubReleaseAssetResponse: Decodable {
+        let name: String
+        let downloadURL: URL
+
+        enum CodingKeys: String, CodingKey {
+            case name
+            case downloadURL = "browser_download_url"
+        }
+    }
+
     struct AlertContent {
         let title: String
         let message: String
@@ -94,6 +116,7 @@ final class QuickDocSettingsModel: ObservableObject {
             UserDefaults.standard.set(selectedTerminalAppPath, forKey: Self.selectedTerminalAppPathKey)
             cachedTerminalApplicationIcon = nil
             cachedTerminalApplicationIconPath = nil
+            writeSharedSettings()
         }
     }
 
@@ -137,6 +160,7 @@ final class QuickDocSettingsModel: ObservableObject {
     private static let bundleIdentifier = "com.skyimplied.QuickDoc"
     private static let loginItemIdentifier = "com.skyimplied.QuickDoc.LoginItem"
     private static let systemTerminalBundleIdentifier = "com.apple.Terminal"
+    private static let latestReleaseAPIURL = URL(string: "https://api.github.com/repos/SkyImplied/QuickDoc/releases/latest")!
     private static let latestReleaseURL = URL(string: "https://github.com/SkyImplied/QuickDoc/releases/latest")!
     private static let systemTerminalApplication = TerminalApplicationOption(
         title: "系统终端",
@@ -615,7 +639,7 @@ final class QuickDocSettingsModel: ObservableObject {
             return
         }
 
-        guard confirmSoftwareUpdate(version: latestVersion) else {
+        guard confirmSoftwareUpdate(version: latestVersion, releaseNotes: release.body) else {
             softwareUpdateState = .idle
             return
         }
@@ -639,17 +663,85 @@ final class QuickDocSettingsModel: ObservableObject {
         }
     }
 
-    private func confirmSoftwareUpdate(version: String) -> Bool {
+    private func confirmSoftwareUpdate(version: String, releaseNotes: String) -> Bool {
         let alert = NSAlert()
         alert.messageText = "发现新版本 v\(version)"
         alert.informativeText = "是否立即下载并安装新版本？确认后 QuickDoc 会自动下载更新，在替换完成后重新打开并提示升级成功。"
         alert.alertStyle = .informational
+        alert.accessoryView = releaseNotesAccessoryView(version: version, releaseNotes: releaseNotes)
         alert.addButton(withTitle: "确认更新")
         alert.addButton(withTitle: "暂不更新")
         return alert.runModal() == .alertFirstButtonReturn
     }
 
+    private func releaseNotesAccessoryView(version: String, releaseNotes: String) -> NSView {
+        let notes = Self.normalizedReleaseNotes(releaseNotes)
+        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 460, height: 180))
+        textView.string = "v\(version) 更新内容\n\n\(notes)"
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.drawsBackground = false
+        textView.textContainerInset = NSSize(width: 8, height: 8)
+        textView.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        textView.textColor = .labelColor
+        textView.textContainer?.widthTracksTextView = true
+        textView.textContainer?.containerSize = NSSize(width: 460, height: CGFloat.greatestFiniteMagnitude)
+        textView.autoresizingMask = [.width]
+
+        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 460, height: 180))
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
+        scrollView.borderType = .bezelBorder
+        scrollView.documentView = textView
+        return scrollView
+    }
+
+    private static func normalizedReleaseNotes(_ value: String) -> String {
+        let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty else {
+            return "此版本暂未填写发布说明。"
+        }
+
+        return String(normalized.prefix(4_000))
+    }
+
     private func fetchLatestRelease() async throws -> GitHubRelease {
+        do {
+            return try await fetchLatestReleaseFromAPI()
+        } catch {
+            return try await fetchLatestReleaseFromRedirect()
+        }
+    }
+
+    private func fetchLatestReleaseFromAPI() async throws -> GitHubRelease {
+        var request = URLRequest(url: Self.latestReleaseAPIURL)
+        request.setValue("QuickDoc/\(appVersion)", forHTTPHeaderField: "User-Agent")
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode) else {
+            throw SoftwareUpdateError.invalidReleaseResponse
+        }
+
+        let apiRelease: GitHubReleaseResponse
+        do {
+            apiRelease = try JSONDecoder().decode(GitHubReleaseResponse.self, from: data)
+        } catch {
+            throw SoftwareUpdateError.invalidReleaseResponse
+        }
+
+        return GitHubRelease(
+            tagName: apiRelease.tagName,
+            body: apiRelease.body ?? "",
+            assets: apiRelease.assets.map {
+                GitHubReleaseAsset(name: $0.name, downloadURL: $0.downloadURL)
+            }
+        )
+    }
+
+    private func fetchLatestReleaseFromRedirect() async throws -> GitHubRelease {
         var request = URLRequest(url: Self.latestReleaseURL)
         request.setValue("QuickDoc/\(appVersion)", forHTTPHeaderField: "User-Agent")
 
@@ -672,6 +764,7 @@ final class QuickDocSettingsModel: ObservableObject {
 
         return GitHubRelease(
             tagName: tagName,
+            body: "",
             assets: [GitHubReleaseAsset(name: "QuickDoc-\(version).zip", downloadURL: downloadURL)]
         )
     }
@@ -1080,6 +1173,7 @@ final class QuickDocSettingsModel: ObservableObject {
             Self.customTemplatesKey: customTemplates.map(\.plistRepresentation),
             Self.menuOrderKey: menuOrder,
             Self.terminalDirectEnabledKey: terminalDirectEnabled,
+            Self.selectedTerminalAppPathKey: selectedTerminalAppPath,
             Self.pathCopyEnabledKey: pathCopyEnabled,
             Self.quickActionsEnabledKey: quickActionsEnabled
         ]
@@ -1100,12 +1194,13 @@ final class QuickDocSettingsModel: ObservableObject {
         customTemplates: [CustomTemplate]?,
         menuOrder: [String]?,
         terminalDirectEnabled: Bool?,
+        selectedTerminalAppPath: String?,
         pathCopyEnabled: Bool?,
         quickActionsEnabled: Bool?
     ) {
         guard let data = try? Data(contentsOf: sharedSettingsURL),
               let payload = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
-            return (nil, nil, nil, nil, nil, nil, nil)
+            return (nil, nil, nil, nil, nil, nil, nil, nil)
         }
 
         return (
@@ -1114,6 +1209,7 @@ final class QuickDocSettingsModel: ObservableObject {
             decodeCustomTemplates(payload[customTemplatesKey]),
             payload[menuOrderKey] as? [String],
             payload[terminalDirectEnabledKey] as? Bool,
+            payload[selectedTerminalAppPathKey] as? String,
             payload[pathCopyEnabledKey] as? Bool,
             payload[quickActionsEnabledKey] as? Bool
         )

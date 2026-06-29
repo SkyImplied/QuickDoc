@@ -34,6 +34,7 @@ private typealias SharedSettings = (
     customTemplates: [CustomTemplateDefinition]?,
     menuOrder: [String]?,
     terminalDirectEnabled: Bool?,
+    selectedTerminalAppPath: String?,
     pathCopyEnabled: Bool?,
     quickActionsEnabled: Bool?
 )
@@ -84,6 +85,7 @@ final class FinderSync: FIFinderSync {
     private static let customTemplatesKey = "customTemplates"
     private static let menuOrderKey = "menuOrder"
     private static let terminalDirectEnabledKey = "terminalDirectEnabled"
+    private static let selectedTerminalAppPathKey = "selectedTerminalAppPath"
     private static let pathCopyEnabledKey = "pathCopyEnabled"
     private static let quickActionsEnabledKey = "quickActionsEnabled"
     private static let diagnosticsEnabled = ProcessInfo.processInfo.environment["QUICKDOC_FINDER_DIAGNOSTICS"] == "1"
@@ -91,6 +93,8 @@ final class FinderSync: FIFinderSync {
     private static let quickDocCutPasteboardType = NSPasteboard.PasteboardType("com.skyimplied.QuickDoc.cut-files")
     private static let customMenuIDPrefix = "custom."
     private static let finderBundleIdentifier = "com.apple.finder"
+    private static let mainAppBundleIdentifier = "com.skyimplied.QuickDoc"
+    private static let systemTerminalBundleIdentifier = "com.apple.Terminal"
     private static let builtInIconResourceNames: [String: String] = [
         "txt": "txt",
         "md": "md",
@@ -522,12 +526,13 @@ final class FinderSync: FIFinderSync {
                 Self.decodeCustomTemplates(payload[Self.customTemplatesKey]),
                 payload[Self.menuOrderKey] as? [String],
                 payload[Self.terminalDirectEnabledKey] as? Bool,
+                payload[Self.selectedTerminalAppPathKey] as? String,
                 payload[Self.pathCopyEnabledKey] as? Bool,
                 payload[Self.quickActionsEnabledKey] as? Bool
             )
         }
 
-        return (nil, nil, nil, nil, nil, nil, nil)
+        return (nil, nil, nil, nil, nil, nil, nil, nil)
     }
 
     private func settingValue(_ sharedValue: Bool?, key: String, fallback: Bool) -> Bool {
@@ -819,30 +824,60 @@ final class FinderSync: FIFinderSync {
     }
 
     private func openDirectoryInTerminal(_ directory: URL) {
-        var components = URLComponents()
-        components.scheme = "quickdoc"
-        components.host = "open-terminal"
-        components.queryItems = [
-            URLQueryItem(name: "path", value: directory.path)
-        ]
-
-        guard let quickDocURL = components.url else {
-            showError(message: "无法生成终端打开请求。")
+        guard let terminalURL = terminalApplicationURL(sharedSettings: readSharedSettings()) else {
+            showError(message: "未找到可用终端应用。")
             return
         }
 
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true
+        configuration.addsToRecentItems = false
         configuration.promptsUserIfNeeded = true
 
-        NSWorkspace.shared.open(quickDocURL, configuration: configuration) { [weak self] _, error in
+        NSWorkspace.shared.open([directory], withApplicationAt: terminalURL, configuration: configuration) { [weak self] runningApplication, error in
             if let error {
-                self?.showError(message: "唤起 QuickDoc 失败：\(error.localizedDescription)")
+                self?.showError(message: "打开终端失败：\(error.localizedDescription)")
                 return
             }
 
-            self?.diagnosticLog("Delegated terminal open request for path: \(directory.path)")
+            runningApplication?.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+            self?.diagnosticLog("Opened terminal directly for path: \(directory.path)")
         }
+    }
+
+    private func terminalApplicationURL(sharedSettings: SharedSettings) -> URL? {
+        if let selectedPath = validTerminalApplicationPath(sharedSettings.selectedTerminalAppPath) {
+            return URL(fileURLWithPath: selectedPath, isDirectory: true)
+        }
+
+        if let selectedPath = validTerminalApplicationPath(legacySelectedTerminalAppPath()) {
+            return URL(fileURLWithPath: selectedPath, isDirectory: true)
+        }
+
+        return NSWorkspace.shared.urlForApplication(withBundleIdentifier: Self.systemTerminalBundleIdentifier)
+    }
+
+    private func validTerminalApplicationPath(_ path: String?) -> String? {
+        guard let selectedPath = path?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !selectedPath.isEmpty,
+              FileManager.default.fileExists(atPath: selectedPath) else {
+            return nil
+        }
+
+        return selectedPath
+    }
+
+    private func legacySelectedTerminalAppPath() -> String? {
+        let preferencesURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Preferences")
+            .appendingPathComponent("\(Self.mainAppBundleIdentifier).plist")
+
+        guard let data = try? Data(contentsOf: preferencesURL),
+              let payload = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
+            return nil
+        }
+
+        return payload[Self.selectedTerminalAppPathKey] as? String
     }
 
     private func uniqueFileURL(in directory: URL, definition: FileDefinition) throws -> URL {

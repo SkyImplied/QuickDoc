@@ -39,6 +39,7 @@ enum SoftwareUpdateState: Equatable {
 
 struct GitHubRelease {
     let tagName: String
+    let body: String
     let assets: [GitHubReleaseAsset]
 }
 
