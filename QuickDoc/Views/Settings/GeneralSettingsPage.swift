@@ -80,6 +80,7 @@ struct DisplayModeSettingsCard: View {
                                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                                     .stroke(model.displayMode == mode ? Color.accentColor.opacity(0.35) : Color.secondary.opacity(0.12), lineWidth: 1)
                             }
+                            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
                         .buttonStyle(.plain)
                     }
