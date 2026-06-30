@@ -120,7 +120,7 @@ When a newer version is available, QuickDoc asks for confirmation before downloa
 
 After replacement succeeds, QuickDoc relaunches automatically and confirms that the upgrade is complete.
 
-![QuickDoc software update completed](./photos/软件更新成功.png)
+![QuickDoc software update completed](./photos/软件检查更新成功.png)
 
 ## What's New in v1.3.1
 
