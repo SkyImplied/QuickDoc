@@ -4,7 +4,7 @@
   <p>从 Finder 右键菜单和工具栏直接新建常用文件。</p>
   <p>
     <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.6.1"><img src="https://img.shields.io/badge/version-v1.6.1-blue" alt="版本 v1.6.1"></a>
-    <img src="https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey?logo=apple" alt="平台 macOS 13+">
+    <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="平台 macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="使用 Swift 构建">
     <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.6.1/QuickDoc-1.6.1.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下载 DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="下载量"></a>

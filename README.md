@@ -4,7 +4,7 @@
   <p>Create common files directly from Finder's right-click menu and toolbar.</p>
   <p>
     <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.6.1"><img src="https://img.shields.io/badge/version-v1.6.1-blue" alt="Version v1.6.1"></a>
-    <img src="https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey?logo=apple" alt="Platform macOS 13+">
+    <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="Platform macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Built with Swift">
     <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.6.1/QuickDoc-1.6.1.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="Downloads"></a>
