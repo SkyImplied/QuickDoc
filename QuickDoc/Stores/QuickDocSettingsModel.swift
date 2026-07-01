@@ -134,6 +134,13 @@ final class QuickDocSettingsModel: ObservableObject {
         }
     }
 
+    @Published var quickActionsExpanded: Bool {
+        didSet {
+            UserDefaults.standard.set(quickActionsExpanded, forKey: Self.quickActionsExpandedKey)
+            writeSharedSettings()
+        }
+    }
+
     @Published private var menuOrder: [String] {
         didSet {
             UserDefaults.standard.set(menuOrder, forKey: Self.menuOrderKey)
@@ -153,6 +160,7 @@ final class QuickDocSettingsModel: ObservableObject {
     private static let selectedTerminalAppPathKey = "selectedTerminalAppPath"
     private static let pathCopyEnabledKey = "pathCopyEnabled"
     private static let quickActionsEnabledKey = "quickActionsEnabled"
+    private static let quickActionsExpandedKey = "quickActionsExpanded"
     private static let enabledFileTypesKey = "enabledFileTypes"
     private static let customExtensionsKey = "customExtensions"
     private static let customTemplatesKey = "customTemplates"
@@ -177,6 +185,7 @@ final class QuickDocSettingsModel: ObservableObject {
             Self.selectedTerminalAppPathKey: "",
             Self.pathCopyEnabledKey: true,
             Self.quickActionsEnabledKey: true,
+            Self.quickActionsExpandedKey: false,
             Self.enabledFileTypesKey: defaultTypes,
             Self.customExtensionsKey: [],
             Self.customTemplatesKey: [],
@@ -193,6 +202,7 @@ final class QuickDocSettingsModel: ObservableObject {
         selectedTerminalAppPath = UserDefaults.standard.string(forKey: Self.selectedTerminalAppPathKey) ?? ""
         pathCopyEnabled = sharedSettings.pathCopyEnabled ?? UserDefaults.standard.object(forKey: Self.pathCopyEnabledKey) as? Bool ?? true
         quickActionsEnabled = sharedSettings.quickActionsEnabled ?? UserDefaults.standard.object(forKey: Self.quickActionsEnabledKey) as? Bool ?? true
+        quickActionsExpanded = sharedSettings.quickActionsExpanded ?? UserDefaults.standard.object(forKey: Self.quickActionsExpandedKey) as? Bool ?? false
         let storedCustomExtensions = sharedSettings.customExtensions ?? UserDefaults.standard.stringArray(forKey: Self.customExtensionsKey) ?? []
         let storedCustomTemplates = sharedSettings.customTemplates
             ?? Self.decodeCustomTemplates(UserDefaults.standard.array(forKey: Self.customTemplatesKey))
@@ -1175,7 +1185,8 @@ final class QuickDocSettingsModel: ObservableObject {
             Self.terminalDirectEnabledKey: terminalDirectEnabled,
             Self.selectedTerminalAppPathKey: selectedTerminalAppPath,
             Self.pathCopyEnabledKey: pathCopyEnabled,
-            Self.quickActionsEnabledKey: quickActionsEnabled
+            Self.quickActionsEnabledKey: quickActionsEnabled,
+            Self.quickActionsExpandedKey: quickActionsExpanded
         ]
 
         do {
@@ -1196,11 +1207,12 @@ final class QuickDocSettingsModel: ObservableObject {
         terminalDirectEnabled: Bool?,
         selectedTerminalAppPath: String?,
         pathCopyEnabled: Bool?,
-        quickActionsEnabled: Bool?
+        quickActionsEnabled: Bool?,
+        quickActionsExpanded: Bool?
     ) {
         guard let data = try? Data(contentsOf: sharedSettingsURL),
               let payload = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
-            return (nil, nil, nil, nil, nil, nil, nil, nil)
+            return (nil, nil, nil, nil, nil, nil, nil, nil, nil)
         }
 
         return (
@@ -1211,7 +1223,8 @@ final class QuickDocSettingsModel: ObservableObject {
             payload[terminalDirectEnabledKey] as? Bool,
             payload[selectedTerminalAppPathKey] as? String,
             payload[pathCopyEnabledKey] as? Bool,
-            payload[quickActionsEnabledKey] as? Bool
+            payload[quickActionsEnabledKey] as? Bool,
+            payload[quickActionsExpandedKey] as? Bool
         )
     }
 

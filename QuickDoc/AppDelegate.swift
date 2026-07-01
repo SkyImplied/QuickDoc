@@ -258,6 +258,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             self?.settingsModel.quickActionsEnabled = enabled
         })
 
+        otherFeaturesMenu.addItem(persistentToggleMenuItem(
+            title: "展开快捷操作",
+            isOn: settingsModel.quickActionsExpanded
+        ) { [weak self] enabled in
+            self?.settingsModel.quickActionsExpanded = enabled
+        })
+
         otherFeaturesItem.submenu = otherFeaturesMenu
         menu.addItem(otherFeaturesItem)
 

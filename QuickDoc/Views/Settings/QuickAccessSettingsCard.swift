@@ -93,7 +93,7 @@ struct QuickActionsSettingsCard: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("快捷操作")
                             .font(.headline)
-                        Text("开启后会在 Finder 右键一级菜单显示“快捷操作”，并提供拷贝、粘贴和剪切。")
+                        Text("开启后可在 Finder 右键菜单使用拷贝、粘贴和剪切，并选择折叠或展开显示。")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -101,6 +101,14 @@ struct QuickActionsSettingsCard: View {
                 }
 
                 Toggle("启用快捷操作", isOn: $model.quickActionsEnabled)
+
+                Toggle("展开快捷操作", isOn: $model.quickActionsExpanded)
+                    .disabled(!model.quickActionsEnabled)
+
+                Text(model.quickActionsExpanded ? "展开后，拷贝、粘贴和剪切会直接显示在 Finder 右键一级菜单。" : "折叠时，Finder 右键一级菜单会显示“快捷操作”，展开后再显示拷贝、粘贴和剪切。")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 18) {
                     Label("拷贝", systemImage: "doc.on.doc")

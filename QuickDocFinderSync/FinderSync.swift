@@ -36,7 +36,8 @@ private typealias SharedSettings = (
     terminalDirectEnabled: Bool?,
     selectedTerminalAppPath: String?,
     pathCopyEnabled: Bool?,
-    quickActionsEnabled: Bool?
+    quickActionsEnabled: Bool?,
+    quickActionsExpanded: Bool?
 )
 
 final class FinderSync: FIFinderSync {
@@ -88,6 +89,7 @@ final class FinderSync: FIFinderSync {
     private static let selectedTerminalAppPathKey = "selectedTerminalAppPath"
     private static let pathCopyEnabledKey = "pathCopyEnabled"
     private static let quickActionsEnabledKey = "quickActionsEnabled"
+    private static let quickActionsExpandedKey = "quickActionsExpanded"
     private static let diagnosticsEnabled = ProcessInfo.processInfo.environment["QUICKDOC_FINDER_DIAGNOSTICS"] == "1"
     private static let maximumDiagnosticLogSize: UInt64 = 1_000_000
     private static let quickDocCutPasteboardType = NSPasteboard.PasteboardType("com.skyimplied.QuickDoc.cut-files")
@@ -362,7 +364,11 @@ final class FinderSync: FIFinderSync {
         }
 
         if settingValue(sharedSettings.quickActionsEnabled, key: Self.quickActionsEnabledKey, fallback: true) {
-            items.append(makeQuickActionsMenuItem(menuKind: menuKind))
+            if settingValue(sharedSettings.quickActionsExpanded, key: Self.quickActionsExpandedKey, fallback: false) {
+                items.append(contentsOf: makeQuickActionMenuItems(menuKind: menuKind))
+            } else {
+                items.append(makeQuickActionsMenuItem(menuKind: menuKind))
+            }
         }
 
         return items
@@ -373,28 +379,31 @@ final class FinderSync: FIFinderSync {
         parent.image = quickActionsIcon
 
         let submenu = NSMenu(title: "快捷操作")
+        makeQuickActionMenuItems(menuKind: menuKind).forEach { submenu.addItem($0) }
+
+        parent.submenu = submenu
+        return parent
+    }
+
+    private func makeQuickActionMenuItems(menuKind: FIMenuKind) -> [NSMenuItem] {
         let hasSelection = menuKind == .toolbarItemMenu || !selectedItemURLs().isEmpty
 
         let copyItem = NSMenuItem(title: "拷贝", action: #selector(copySelectedItems(_:)), keyEquivalent: "")
         copyItem.target = self
         copyItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "拷贝")
         copyItem.isEnabled = hasSelection
-        submenu.addItem(copyItem)
 
         let pasteItem = NSMenuItem(title: "粘贴", action: #selector(pasteItems(_:)), keyEquivalent: "")
         pasteItem.target = self
         pasteItem.image = NSImage(systemSymbolName: "clipboard", accessibilityDescription: "粘贴")
         pasteItem.isEnabled = !pasteboardFileURLs().isEmpty
-        submenu.addItem(pasteItem)
 
         let cutItem = NSMenuItem(title: "剪切", action: #selector(cutSelectedItems(_:)), keyEquivalent: "")
         cutItem.target = self
         cutItem.image = NSImage(systemSymbolName: "scissors", accessibilityDescription: "剪切")
         cutItem.isEnabled = hasSelection
-        submenu.addItem(cutItem)
 
-        parent.submenu = submenu
-        return parent
+        return [copyItem, pasteItem, cutItem]
     }
 
     private func addCreateItem(
@@ -528,11 +537,12 @@ final class FinderSync: FIFinderSync {
                 payload[Self.terminalDirectEnabledKey] as? Bool,
                 payload[Self.selectedTerminalAppPathKey] as? String,
                 payload[Self.pathCopyEnabledKey] as? Bool,
-                payload[Self.quickActionsEnabledKey] as? Bool
+                payload[Self.quickActionsEnabledKey] as? Bool,
+                payload[Self.quickActionsExpandedKey] as? Bool
             )
         }
 
-        return (nil, nil, nil, nil, nil, nil, nil, nil)
+        return (nil, nil, nil, nil, nil, nil, nil, nil, nil)
     }
 
     private func settingValue(_ sharedValue: Bool?, key: String, fallback: Bool) -> Bool {
