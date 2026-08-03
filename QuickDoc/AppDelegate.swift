@@ -43,9 +43,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var statusItem: NSStatusItem?
     private static let terminalPathQueryKey = "path"
     private static let loginLaunchHost = "launch-at-login"
+    private static let permanentDeleteHost = "permanent-delete"
+    private static let permanentDeleteRequestQueryKey = "request"
     private static let suppressInitialWindowEnvironmentKey = "QUICKDOC_SUPPRESS_INITIAL_WINDOW"
     private var initialWindowWorkItem: DispatchWorkItem?
     private var shouldSuppressInitialWindow = ProcessInfo.processInfo.environment[suppressInitialWindowEnvironmentKey] == "1"
+    private var isHandlingPermanentDeleteRequest = false
     private lazy var cachedStatusBarImage: NSImage? = {
         guard let url = Bundle.main.url(forResource: "菜单栏", withExtension: "png"),
               let image = NSImage(contentsOf: url) else {
@@ -67,6 +70,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if Self.hasPendingPermanentDeleteRequests {
+            shouldSuppressInitialWindow = true
+        }
+
         settingsModel.onDisplayModeDidChange = { [weak self] mode in
             self?.applyDisplayMode(mode)
         }
@@ -88,6 +95,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        guard !isHandlingPermanentDeleteRequest,
+              !Self.hasPendingPermanentDeleteRequests else {
+            logger.info("Suppressed settings window while handling permanent deletion")
+            return false
+        }
+
         if !flag {
             showMainWindow()
         }
@@ -373,6 +386,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return
         }
 
+        if url.host == Self.permanentDeleteHost {
+            isHandlingPermanentDeleteRequest = true
+            shouldSuppressInitialWindow = true
+            cancelInitialWindowPresentation()
+            handlePermanentDeleteRequest(from: url)
+            return
+        }
+
         guard url.host == "open-terminal",
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let encodedPath = components.queryItems?.first(where: { $0.name == Self.terminalPathQueryKey })?.value,
@@ -385,6 +406,144 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         cancelInitialWindowPresentation()
         logger.info("Received terminal open request for \(path, privacy: .public)")
         openTerminal(atPath: path)
+    }
+
+    private func handlePermanentDeleteRequest(from actionURL: URL) {
+        guard let components = URLComponents(url: actionURL, resolvingAgainstBaseURL: false),
+              let requestValue = components.queryItems?.first(where: {
+                  $0.name == Self.permanentDeleteRequestQueryKey
+              })?.value,
+              let requestID = UUID(uuidString: requestValue) else {
+            logger.error("Ignored malformed permanent deletion request URL")
+            presentPermanentDeleteError("删除请求无效，请重试。")
+            finishPermanentDeleteRequest()
+            return
+        }
+
+        let requestURL = Self.permanentDeleteRequestsDirectory
+            .appendingPathComponent("\(requestID.uuidString).plist")
+        let fileManager = FileManager.default
+
+        do {
+            let data = try Data(contentsOf: requestURL)
+            try? fileManager.removeItem(at: requestURL)
+            guard let payload = try PropertyListSerialization.propertyList(
+                from: data,
+                options: [],
+                format: nil
+            ) as? [String: Any],
+                  let paths = payload["paths"] as? [String] else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+
+            var seenPaths = Set<String>()
+            let itemURLs = paths.compactMap { path -> URL? in
+                guard path.hasPrefix("/") else { return nil }
+                let itemURL = URL(fileURLWithPath: path).standardizedFileURL
+                guard itemURL.path != "/", seenPaths.insert(itemURL.path).inserted else { return nil }
+                return itemURL
+            }
+            guard itemURLs.count == paths.count, !itemURLs.isEmpty else {
+                throw CocoaError(.fileReadInvalidFileName)
+            }
+
+            DispatchQueue.main.async { [weak self] in
+                self?.presentPermanentDeleteConfirmation(for: itemURLs)
+            }
+        } catch {
+            try? fileManager.removeItem(at: requestURL)
+            logger.error("Unable to read permanent deletion request: \(error.localizedDescription, privacy: .public)")
+            presentPermanentDeleteError("无法读取删除请求：\(error.localizedDescription)")
+            finishPermanentDeleteRequest()
+        }
+    }
+
+    private func presentPermanentDeleteConfirmation(for itemURLs: [URL]) {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.messageText = itemURLs.count == 1
+            ? "确认彻底删除此项目？"
+            : "确认彻底删除这 \(itemURLs.count) 个项目？"
+
+        let visiblePaths = itemURLs.prefix(5).map { "• \($0.path)" }
+        let remainingCount = itemURLs.count - visiblePaths.count
+        let selectionSummary = visiblePaths.joined(separator: "\n")
+            + (remainingCount > 0 ? "\n• 以及另外 \(remainingCount) 个项目" : "")
+        alert.informativeText = "这些项目会被立即永久删除，不会移入废纸篓，也无法通过“撤销”恢复。请确认你了解此操作的风险。\n\n\(selectionSummary)"
+        alert.alertStyle = .critical
+
+        let deleteButton = alert.addButton(withTitle: "彻底删除")
+        deleteButton.hasDestructiveAction = true
+        deleteButton.keyEquivalent = ""
+
+        let cancelButton = alert.addButton(withTitle: "取消")
+        cancelButton.keyEquivalent = "\r"
+
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            logger.info("Permanent deletion cancelled")
+            finishPermanentDeleteRequest()
+            return
+        }
+
+        var failures: [String] = []
+        var deletedCount = 0
+        for itemURL in itemURLs {
+            do {
+                try FileManager.default.removeItem(at: itemURL)
+                deletedCount += 1
+            } catch {
+                failures.append("\(itemURL.lastPathComponent)：\(error.localizedDescription)")
+            }
+        }
+
+        logger.info("Permanently deleted \(deletedCount) of \(itemURLs.count) requested item(s)")
+        if !failures.isEmpty {
+            presentPermanentDeleteError("部分项目未能彻底删除：\n\(failures.joined(separator: "\n"))")
+        }
+        finishPermanentDeleteRequest()
+    }
+
+    private func finishPermanentDeleteRequest() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.isHandlingPermanentDeleteRequest = false
+        }
+    }
+
+    private func presentPermanentDeleteError(_ message: String) {
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)
+            let alert = NSAlert()
+            alert.messageText = "QuickDoc"
+            alert.informativeText = message
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "好的")
+            alert.runModal()
+        }
+    }
+
+    private static var permanentDeleteRequestsDirectory: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/QuickDoc/PermanentDeleteRequests", isDirectory: true)
+    }
+
+    private static var hasPendingPermanentDeleteRequests: Bool {
+        guard let requestFiles = try? FileManager.default.contentsOfDirectory(
+            at: permanentDeleteRequestsDirectory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else {
+            return false
+        }
+        let recentRequestCutoff = Date().addingTimeInterval(-120)
+        return requestFiles.contains { requestURL in
+            guard requestURL.pathExtension == "plist",
+                  let values = try? requestURL.resourceValues(forKeys: [.contentModificationDateKey]),
+                  let modificationDate = values.contentModificationDate else {
+                return false
+            }
+            return modificationDate >= recentRequestCutoff
+        }
     }
 
     private func openTerminal(atPath path: String) {
@@ -428,7 +587,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         cancelInitialWindowPresentation()
 
         let workItem = DispatchWorkItem { [weak self] in
-            guard let self, !self.shouldSuppressInitialWindow else { return }
+            guard let self,
+                  !self.shouldSuppressInitialWindow,
+                  !self.isHandlingPermanentDeleteRequest,
+                  !Self.hasPendingPermanentDeleteRequests else {
+                return
+            }
             self.showMainWindow()
         }
         initialWindowWorkItem = workItem

@@ -37,7 +37,11 @@ private typealias SharedSettings = (
     selectedTerminalAppPath: String?,
     pathCopyEnabled: Bool?,
     quickActionsEnabled: Bool?,
-    quickActionsExpanded: Bool?
+    quickActionsExpanded: Bool?,
+    copyActionEnabled: Bool?,
+    pasteActionEnabled: Bool?,
+    cutActionEnabled: Bool?,
+    permanentDeleteEnabled: Bool?
 )
 
 final class FinderSync: FIFinderSync {
@@ -79,6 +83,26 @@ final class FinderSync: FIFinderSync {
         ?? NSImage(systemSymbolName: "wrench.and.screwdriver", accessibilityDescription: "快捷操作")
         ?? NSImage()
     }()
+    private lazy var copyActionIcon: NSImage = {
+        Self.iconImage(named: "复制", size: NSSize(width: 18, height: 18))
+        ?? NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "拷贝")
+        ?? NSImage()
+    }()
+    private lazy var pasteActionIcon: NSImage = {
+        Self.iconImage(named: "粘贴", size: NSSize(width: 18, height: 18))
+        ?? NSImage(systemSymbolName: "clipboard", accessibilityDescription: "粘贴")
+        ?? NSImage()
+    }()
+    private lazy var cutActionIcon: NSImage = {
+        Self.iconImage(named: "剪切", size: NSSize(width: 18, height: 18))
+        ?? NSImage(systemSymbolName: "scissors", accessibilityDescription: "剪切")
+        ?? NSImage()
+    }()
+    private lazy var permanentDeleteIcon: NSImage = {
+        Self.iconImage(named: "彻底删除", size: NSSize(width: 18, height: 18))
+        ?? NSImage(systemSymbolName: "trash.slash", accessibilityDescription: "彻底删除")
+        ?? NSImage()
+    }()
     private var menuItemIconsByID: [String: NSImage] = [:]
 
     private static let enabledFileTypesKey = "enabledFileTypes"
@@ -90,9 +114,16 @@ final class FinderSync: FIFinderSync {
     private static let pathCopyEnabledKey = "pathCopyEnabled"
     private static let quickActionsEnabledKey = "quickActionsEnabled"
     private static let quickActionsExpandedKey = "quickActionsExpanded"
+    private static let copyActionEnabledKey = "copyActionEnabled"
+    private static let pasteActionEnabledKey = "pasteActionEnabled"
+    private static let cutActionEnabledKey = "cutActionEnabled"
+    private static let permanentDeleteEnabledKey = "permanentDeleteEnabled"
     private static let diagnosticsEnabled = ProcessInfo.processInfo.environment["QUICKDOC_FINDER_DIAGNOSTICS"] == "1"
     private static let maximumDiagnosticLogSize: UInt64 = 1_000_000
     private static let quickDocCutPasteboardType = NSPasteboard.PasteboardType("com.skyimplied.QuickDoc.cut-files")
+    private static let finderNodeReferencePasteboardType = NSPasteboard.PasteboardType("com.apple.finder.noderef")
+    private static let permanentDeleteHost = "permanent-delete"
+    private static let permanentDeleteRequestQueryKey = "request"
     private static let customMenuIDPrefix = "custom."
     private static let finderBundleIdentifier = "com.apple.finder"
     private static let mainAppBundleIdentifier = "com.skyimplied.QuickDoc"
@@ -363,47 +394,69 @@ final class FinderSync: FIFinderSync {
             items.append(pathItem)
         }
 
-        if settingValue(sharedSettings.quickActionsEnabled, key: Self.quickActionsEnabledKey, fallback: true) {
+        let quickActionItems = makeQuickActionMenuItems(menuKind: menuKind, sharedSettings: sharedSettings)
+        if !quickActionItems.isEmpty {
             if settingValue(sharedSettings.quickActionsExpanded, key: Self.quickActionsExpandedKey, fallback: false) {
-                items.append(contentsOf: makeQuickActionMenuItems(menuKind: menuKind))
+                items.append(contentsOf: quickActionItems)
             } else {
-                items.append(makeQuickActionsMenuItem(menuKind: menuKind))
+                items.append(makeQuickActionsMenuItem(items: quickActionItems))
             }
         }
 
         return items
     }
 
-    private func makeQuickActionsMenuItem(menuKind: FIMenuKind) -> NSMenuItem {
+    private func makeQuickActionsMenuItem(items: [NSMenuItem]) -> NSMenuItem {
         let parent = NSMenuItem(title: "快捷操作", action: nil, keyEquivalent: "")
         parent.image = quickActionsIcon
 
         let submenu = NSMenu(title: "快捷操作")
-        makeQuickActionMenuItems(menuKind: menuKind).forEach { submenu.addItem($0) }
+        items.forEach { submenu.addItem($0) }
 
         parent.submenu = submenu
         return parent
     }
 
-    private func makeQuickActionMenuItems(menuKind: FIMenuKind) -> [NSMenuItem] {
-        let hasSelection = menuKind == .toolbarItemMenu || !selectedItemURLs().isEmpty
+    private func makeQuickActionMenuItems(menuKind: FIMenuKind, sharedSettings: SharedSettings) -> [NSMenuItem] {
+        let hasSelectedItems = !selectedItemURLs().isEmpty
+        let hasSelection = menuKind == .toolbarItemMenu || hasSelectedItems
+        var items: [NSMenuItem] = []
 
-        let copyItem = NSMenuItem(title: "拷贝", action: #selector(copySelectedItems(_:)), keyEquivalent: "")
-        copyItem.target = self
-        copyItem.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "拷贝")
-        copyItem.isEnabled = hasSelection
+        if settingValue(sharedSettings.quickActionsEnabled, key: Self.quickActionsEnabledKey, fallback: true) {
+            if settingValue(sharedSettings.copyActionEnabled, key: Self.copyActionEnabledKey, fallback: true) {
+                let copyItem = NSMenuItem(title: "拷贝", action: #selector(copySelectedItems(_:)), keyEquivalent: "")
+                copyItem.target = self
+                copyItem.image = copyActionIcon
+                copyItem.isEnabled = hasSelection
+                items.append(copyItem)
+            }
 
-        let pasteItem = NSMenuItem(title: "粘贴", action: #selector(pasteItems(_:)), keyEquivalent: "")
-        pasteItem.target = self
-        pasteItem.image = NSImage(systemSymbolName: "clipboard", accessibilityDescription: "粘贴")
-        pasteItem.isEnabled = !pasteboardFileURLs().isEmpty
+            if settingValue(sharedSettings.pasteActionEnabled, key: Self.pasteActionEnabledKey, fallback: true) {
+                let pasteItem = NSMenuItem(title: "粘贴", action: #selector(pasteItems(_:)), keyEquivalent: "")
+                pasteItem.target = self
+                pasteItem.image = pasteActionIcon
+                pasteItem.isEnabled = !pasteboardFileURLs().isEmpty
+                items.append(pasteItem)
+            }
 
-        let cutItem = NSMenuItem(title: "剪切", action: #selector(cutSelectedItems(_:)), keyEquivalent: "")
-        cutItem.target = self
-        cutItem.image = NSImage(systemSymbolName: "scissors", accessibilityDescription: "剪切")
-        cutItem.isEnabled = hasSelection
+            if settingValue(sharedSettings.cutActionEnabled, key: Self.cutActionEnabledKey, fallback: true) {
+                let cutItem = NSMenuItem(title: "剪切", action: #selector(cutSelectedItems(_:)), keyEquivalent: "")
+                cutItem.target = self
+                cutItem.image = cutActionIcon
+                cutItem.isEnabled = hasSelection
+                items.append(cutItem)
+            }
+        }
 
-        return [copyItem, pasteItem, cutItem]
+        if settingValue(sharedSettings.permanentDeleteEnabled, key: Self.permanentDeleteEnabledKey, fallback: false) {
+            let deleteItem = NSMenuItem(title: "彻底删除", action: #selector(permanentlyDeleteSelectedItems(_:)), keyEquivalent: "")
+            deleteItem.target = self
+            deleteItem.image = permanentDeleteIcon
+            deleteItem.isEnabled = hasSelectedItems
+            items.append(deleteItem)
+        }
+
+        return items
     }
 
     private func addCreateItem(
@@ -538,11 +591,15 @@ final class FinderSync: FIFinderSync {
                 payload[Self.selectedTerminalAppPathKey] as? String,
                 payload[Self.pathCopyEnabledKey] as? Bool,
                 payload[Self.quickActionsEnabledKey] as? Bool,
-                payload[Self.quickActionsExpandedKey] as? Bool
+                payload[Self.quickActionsExpandedKey] as? Bool,
+                payload[Self.copyActionEnabledKey] as? Bool,
+                payload[Self.pasteActionEnabledKey] as? Bool,
+                payload[Self.cutActionEnabledKey] as? Bool,
+                payload[Self.permanentDeleteEnabledKey] as? Bool
             )
         }
 
-        return (nil, nil, nil, nil, nil, nil, nil, nil, nil)
+        return (nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
     }
 
     private func settingValue(_ sharedValue: Bool?, key: String, fallback: Bool) -> Bool {
@@ -568,6 +625,12 @@ final class FinderSync: FIFinderSync {
         sharedSettingsURL
             .deletingLastPathComponent()
             .appendingPathComponent("Templates", isDirectory: true)
+    }
+
+    private static var permanentDeleteRequestsDirectory: URL {
+        sharedSettingsURL
+            .deletingLastPathComponent()
+            .appendingPathComponent("PermanentDeleteRequests", isDirectory: true)
     }
 
     private func templateFileURL(for template: CustomTemplateDefinition) -> URL {
@@ -649,6 +712,51 @@ final class FinderSync: FIFinderSync {
         writeSelectedItemsToPasteboard(isCut: true)
     }
 
+    @objc private func permanentlyDeleteSelectedItems(_ sender: NSMenuItem) {
+        let selectedURLs = selectedItemURLs()
+        guard !selectedURLs.isEmpty else {
+            showError(message: "请先选择要彻底删除的文件或文件夹。")
+            return
+        }
+
+        do {
+            let requestID = UUID()
+            let requestDirectory = Self.permanentDeleteRequestsDirectory
+            try FileManager.default.createDirectory(
+                at: requestDirectory,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700]
+            )
+
+            let payload: [String: Any] = [
+                "paths": selectedURLs.map(\.path),
+                "createdAt": Date()
+            ]
+            let requestData = try PropertyListSerialization.data(
+                fromPropertyList: payload,
+                format: .binary,
+                options: 0
+            )
+            let requestURL = requestDirectory.appendingPathComponent("\(requestID.uuidString).plist")
+            try requestData.write(to: requestURL, options: .atomic)
+
+            var components = URLComponents()
+            components.scheme = "quickdoc"
+            components.host = Self.permanentDeleteHost
+            components.queryItems = [
+                URLQueryItem(name: Self.permanentDeleteRequestQueryKey, value: requestID.uuidString)
+            ]
+            guard let actionURL = components.url, NSWorkspace.shared.open(actionURL) else {
+                try? FileManager.default.removeItem(at: requestURL)
+                throw CocoaError(.fileNoSuchFile)
+            }
+            diagnosticLog("Submitted permanent deletion request for \(selectedURLs.count) selected item(s)")
+        } catch {
+            logger.error("Unable to submit permanent deletion request: \(error.localizedDescription, privacy: .public)")
+            showError(message: "无法启动彻底删除操作：\(error.localizedDescription)")
+        }
+    }
+
     private func writeSelectedItemsToPasteboard(isCut: Bool) {
         let selectedURLs = selectedItemURLs()
         guard !selectedURLs.isEmpty else {
@@ -659,6 +767,7 @@ final class FinderSync: FIFinderSync {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.writeObjects(selectedURLs as [NSURL])
+        pasteboard.setData(Data([1]), forType: Self.finderNodeReferencePasteboardType)
         if isCut {
             pasteboard.setString("cut", forType: Self.quickDocCutPasteboardType)
         }

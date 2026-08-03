@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>从 Finder 右键菜单和工具栏直接新建常用文件。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.6.4"><img src="https://img.shields.io/badge/version-v1.6.4-blue" alt="版本 v1.6.4"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.6.5"><img src="https://img.shields.io/badge/version-v1.6.5-blue" alt="版本 v1.6.5"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="平台 macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="使用 Swift 构建">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.6.4/QuickDoc-1.6.4.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下载 DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.6.5/QuickDoc-1.6.5.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下载 DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="下载量"></a>
   </p>
   <p>
@@ -15,6 +15,13 @@
 </div>
 
 QuickDoc 是一个围绕 macOS Finder Sync 扩展构建的效率工具。它会在 Finder 右键菜单中加入一个实用的“新建文件”子菜单；从 v1.3 开始，它还支持把 QuickDoc 添加到 Finder 工具栏，从工具栏直接调用新建文件能力。
+
+## v1.6.5 更新亮点
+
+- 支持自定义显示或隐藏拷贝、粘贴和剪切。
+- 拷贝、粘贴和剪切的 icon 图标风格统一化更新。
+- 新增“彻底删除”某文件或文件夹功能，执行前会提示永久删除风险并要求确认。
+- 拷贝、粘贴、剪切、彻底删除可统一收纳于“快捷操作”，或单独展示在一级菜单。
 
 ## v1.6.4 更新亮点
 
@@ -159,7 +166,7 @@ QuickDoc 是一个围绕 macOS Finder Sync 扩展构建的效率工具。它会�
 
 ## 支持的新建文件类型
 
-v1.6.4 内置支持：
+v1.6.5 内置支持：
 
 - TXT
 - Markdown（`.md`）
@@ -247,7 +254,7 @@ QuickDoc 会检查 Finder Sync 扩展是否已经启用，并引导你进入正�
 4. 在 Finder 的文件夹空白处、选中的文件夹上，或桌面上点击右键
 5. 选择 `新建文件`，创建你需要的文件
 
-如果你在设置中开启了相关开关，Finder 顶层右键菜单中还会额外出现 `在终端中打开` 和 `复制当前路径`。快捷操作可选择折叠在 `快捷操作` 内，也可展开为顶层的 `拷贝`、`粘贴` 和 `剪切`。
+如果你在设置中开启了相关开关，Finder 顶层右键菜单中还会额外出现 `在终端中打开` 和 `复制当前路径`。拷贝、粘贴、剪切、彻底删除可以分别启用或关闭，并可统一收纳在 `快捷操作` 内，或者展开为一级菜单项。
 
 `在终端中打开` 会使用“通用”设置页里选定的终端 App。你可以随时选择第三方终端，也可以恢复为系统终端。
 

@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Finder の右クリックメニューとツールバーから一般的なファイルを直接作成できます。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.6.4"><img src="https://img.shields.io/badge/version-v1.6.4-blue" alt="バージョン v1.6.4"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.6.5"><img src="https://img.shields.io/badge/version-v1.6.5-blue" alt="バージョン v1.6.5"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="プラットフォーム macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Swift で開発">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.6.4/QuickDoc-1.6.4.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.6.5/QuickDoc-1.6.5.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="ダウンロード数"></a>
   </p>
   <p>
@@ -15,6 +15,13 @@
 </div>
 
 QuickDoc は macOS の Finder Sync 拡張機能を活用したユーティリティです。Finder のコンテキストメニューに実用的な「新建文件」サブメニューを追加します。v1.3 以降では Finder のツールバーにも QuickDoc を追加でき、ツールバーから直接ファイルを作成できます。
+
+## v1.6.5 の新機能
+
+- コピー、ペースト、カットを個別に表示または非表示にできるようになりました。
+- コピー、ペースト、カットのアイコンを統一されたスタイルに更新しました。
+- ファイルやフォルダを完全に削除する機能を追加し、実行前にリスクを示す確認画面を表示します。
+- コピー、ペースト、カット、完全削除を「快捷操作」にまとめるか、Finder の第1階層メニューに個別表示できます。
 
 ## v1.6.4 の新機能
 
@@ -152,7 +159,7 @@ Finder の新規ファイル形式とオプションのクイックアクショ�
 
 ## 対応ファイル形式
 
-v1.6.4 に組み込まれているファイル形式：
+v1.6.5 に組み込まれているファイル形式：
 
 - TXT
 - Markdown（`.md`）
@@ -240,7 +247,7 @@ About ページには、アプリの概要、バージョン、連絡先への�
 4. Finder のフォルダ背景、選択したフォルダ、またはデスクトップを右クリック
 5. `新建文件` を選択し、必要なファイルを作成
 
-設定で有効にすると、Finder のトップレベルのコンテキストメニューに `在终端中打开` と `复制当前路径` も表示されます。
+設定で有効にすると、Finder のトップレベルのコンテキストメニューに `在终端中打开` と `复制当前路径` も表示されます。コピー、ペースト、カット、完全削除は個別に有効化でき、「快捷操作」にまとめるか、第1階層メニューへ展開できます。
 
 ## インストール
 

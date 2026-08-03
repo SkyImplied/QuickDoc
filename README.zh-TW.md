@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>直接從 Finder 右鍵選單和工具列建立常用檔案。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.6.4"><img src="https://img.shields.io/badge/version-v1.6.4-blue" alt="版本 v1.6.4"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.6.5"><img src="https://img.shields.io/badge/version-v1.6.5-blue" alt="版本 v1.6.5"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="平台 macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="使用 Swift 建置">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.6.4/QuickDoc-1.6.4.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下載 DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.6.5/QuickDoc-1.6.5.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下載 DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="下載次數"></a>
   </p>
   <p>
@@ -15,6 +15,13 @@
 </div>
 
 QuickDoc 是一款以 macOS Finder Sync 擴充功能為核心的效率工具。它會在 Finder 右鍵選單中加入實用的「新建文件」子選單；從 v1.3 開始，也支援將 QuickDoc 加入 Finder 工具列，直接從工具列建立新檔案。
+
+## v1.6.5 更新亮點
+
+- 支援分別顯示或隱藏拷貝、貼上與剪下。
+- 統一更新拷貝、貼上與剪下的圖示風格。
+- 新增「徹底刪除」檔案或資料夾功能，執行前會提示永久刪除風險並要求確認。
+- 拷貝、貼上、剪下與徹底刪除可統一收納於「快捷操作」，或個別顯示在第一層選單。
 
 ## v1.6.4 更新亮點
 
@@ -152,7 +159,7 @@ QuickDoc 是一款以 macOS Finder Sync 擴充功能為核心的效率工具。�
 
 ## 支援的新建檔案類型
 
-v1.6.4 內建支援：
+v1.6.5 內建支援：
 
 - TXT
 - Markdown（`.md`）
@@ -240,7 +247,7 @@ QuickDoc 會檢查 Finder Sync 擴充功能是否已啟用，並引導你前往�
 4. 在 Finder 的資料夾空白處、選取的資料夾上，或桌面上點擊右鍵
 5. 選擇 `新建文件`，建立需要的檔案
 
-若在設定中啟用了相關開關，Finder 頂層右鍵選單還會出現 `在终端中打开` 與 `复制当前路径`。
+若在設定中啟用了相關開關，Finder 頂層右鍵選單還會出現 `在终端中打开` 與 `复制当前路径`。拷貝、貼上、剪下與徹底刪除可分別啟用或停用，並可統一收納於 `快捷操作`，或展開為第一層選單項目。
 
 ## 安裝方式
 

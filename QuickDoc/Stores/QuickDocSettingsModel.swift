@@ -141,6 +141,34 @@ final class QuickDocSettingsModel: ObservableObject {
         }
     }
 
+    @Published var copyActionEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(copyActionEnabled, forKey: Self.copyActionEnabledKey)
+            writeSharedSettings()
+        }
+    }
+
+    @Published var pasteActionEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(pasteActionEnabled, forKey: Self.pasteActionEnabledKey)
+            writeSharedSettings()
+        }
+    }
+
+    @Published var cutActionEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(cutActionEnabled, forKey: Self.cutActionEnabledKey)
+            writeSharedSettings()
+        }
+    }
+
+    @Published var permanentDeleteEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(permanentDeleteEnabled, forKey: Self.permanentDeleteEnabledKey)
+            writeSharedSettings()
+        }
+    }
+
     @Published private var menuOrder: [String] {
         didSet {
             UserDefaults.standard.set(menuOrder, forKey: Self.menuOrderKey)
@@ -161,6 +189,10 @@ final class QuickDocSettingsModel: ObservableObject {
     private static let pathCopyEnabledKey = "pathCopyEnabled"
     private static let quickActionsEnabledKey = "quickActionsEnabled"
     private static let quickActionsExpandedKey = "quickActionsExpanded"
+    private static let copyActionEnabledKey = "copyActionEnabled"
+    private static let pasteActionEnabledKey = "pasteActionEnabled"
+    private static let cutActionEnabledKey = "cutActionEnabled"
+    private static let permanentDeleteEnabledKey = "permanentDeleteEnabled"
     private static let enabledFileTypesKey = "enabledFileTypes"
     private static let customExtensionsKey = "customExtensions"
     private static let customTemplatesKey = "customTemplates"
@@ -186,6 +218,10 @@ final class QuickDocSettingsModel: ObservableObject {
             Self.pathCopyEnabledKey: true,
             Self.quickActionsEnabledKey: true,
             Self.quickActionsExpandedKey: false,
+            Self.copyActionEnabledKey: true,
+            Self.pasteActionEnabledKey: true,
+            Self.cutActionEnabledKey: true,
+            Self.permanentDeleteEnabledKey: false,
             Self.enabledFileTypesKey: defaultTypes,
             Self.customExtensionsKey: [],
             Self.customTemplatesKey: [],
@@ -203,6 +239,10 @@ final class QuickDocSettingsModel: ObservableObject {
         pathCopyEnabled = sharedSettings.pathCopyEnabled ?? UserDefaults.standard.object(forKey: Self.pathCopyEnabledKey) as? Bool ?? true
         quickActionsEnabled = sharedSettings.quickActionsEnabled ?? UserDefaults.standard.object(forKey: Self.quickActionsEnabledKey) as? Bool ?? true
         quickActionsExpanded = sharedSettings.quickActionsExpanded ?? UserDefaults.standard.object(forKey: Self.quickActionsExpandedKey) as? Bool ?? false
+        copyActionEnabled = sharedSettings.copyActionEnabled ?? UserDefaults.standard.object(forKey: Self.copyActionEnabledKey) as? Bool ?? true
+        pasteActionEnabled = sharedSettings.pasteActionEnabled ?? UserDefaults.standard.object(forKey: Self.pasteActionEnabledKey) as? Bool ?? true
+        cutActionEnabled = sharedSettings.cutActionEnabled ?? UserDefaults.standard.object(forKey: Self.cutActionEnabledKey) as? Bool ?? true
+        permanentDeleteEnabled = sharedSettings.permanentDeleteEnabled ?? UserDefaults.standard.object(forKey: Self.permanentDeleteEnabledKey) as? Bool ?? false
         let storedCustomExtensions = sharedSettings.customExtensions ?? UserDefaults.standard.stringArray(forKey: Self.customExtensionsKey) ?? []
         let storedCustomTemplates = sharedSettings.customTemplates
             ?? Self.decodeCustomTemplates(UserDefaults.standard.array(forKey: Self.customTemplatesKey))
@@ -1186,7 +1226,11 @@ final class QuickDocSettingsModel: ObservableObject {
             Self.selectedTerminalAppPathKey: selectedTerminalAppPath,
             Self.pathCopyEnabledKey: pathCopyEnabled,
             Self.quickActionsEnabledKey: quickActionsEnabled,
-            Self.quickActionsExpandedKey: quickActionsExpanded
+            Self.quickActionsExpandedKey: quickActionsExpanded,
+            Self.copyActionEnabledKey: copyActionEnabled,
+            Self.pasteActionEnabledKey: pasteActionEnabled,
+            Self.cutActionEnabledKey: cutActionEnabled,
+            Self.permanentDeleteEnabledKey: permanentDeleteEnabled
         ]
 
         do {
@@ -1208,11 +1252,15 @@ final class QuickDocSettingsModel: ObservableObject {
         selectedTerminalAppPath: String?,
         pathCopyEnabled: Bool?,
         quickActionsEnabled: Bool?,
-        quickActionsExpanded: Bool?
+        quickActionsExpanded: Bool?,
+        copyActionEnabled: Bool?,
+        pasteActionEnabled: Bool?,
+        cutActionEnabled: Bool?,
+        permanentDeleteEnabled: Bool?
     ) {
         guard let data = try? Data(contentsOf: sharedSettingsURL),
               let payload = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
-            return (nil, nil, nil, nil, nil, nil, nil, nil, nil)
+            return (nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
         }
 
         return (
@@ -1224,7 +1272,11 @@ final class QuickDocSettingsModel: ObservableObject {
             payload[selectedTerminalAppPathKey] as? String,
             payload[pathCopyEnabledKey] as? Bool,
             payload[quickActionsEnabledKey] as? Bool,
-            payload[quickActionsExpandedKey] as? Bool
+            payload[quickActionsExpandedKey] as? Bool,
+            payload[copyActionEnabledKey] as? Bool,
+            payload[pasteActionEnabledKey] as? Bool,
+            payload[cutActionEnabledKey] as? Bool,
+            payload[permanentDeleteEnabledKey] as? Bool
         )
     }
 
