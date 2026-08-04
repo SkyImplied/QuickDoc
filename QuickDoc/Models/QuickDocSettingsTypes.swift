@@ -83,6 +83,49 @@ enum QuickDocDisplayMode: String, CaseIterable, Identifiable {
     }
 }
 
+enum QuickDocAppearanceMode: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: return "跟随系统"
+        case .light: return "浅色"
+        case .dark: return "深色"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .system: return "随 macOS 自动切换"
+        case .light: return "始终使用浅色外观"
+        case .dark: return "始终使用深色外观"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .system: return "circle.lefthalf.filled"
+        case .light: return "sun.max.fill"
+        case .dark: return "moon.fill"
+        }
+    }
+
+    var appearance: NSAppearance? {
+        switch self {
+        case .system:
+            return nil
+        case .light:
+            return NSAppearance(named: .aqua)
+        case .dark:
+            return NSAppearance(named: .darkAqua)
+        }
+    }
+}
+
 struct FileType: Identifiable, Hashable {
     let id: String
     let title: String

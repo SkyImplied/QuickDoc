@@ -77,6 +77,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         settingsModel.onDisplayModeDidChange = { [weak self] mode in
             self?.applyDisplayMode(mode)
         }
+        settingsModel.onAppearanceModeDidChange = { [weak self] mode in
+            self?.applyAppearanceMode(mode)
+        }
+        applyAppearanceMode(settingsModel.appearanceMode)
         applyDisplayMode(settingsModel.displayMode)
         if let completedUpdateVersion = SoftwareUpdateCompletionStore.consumeVersion() {
             showMainWindow()
@@ -174,6 +178,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if NSApp.activationPolicy() != targetPolicy {
             NSApp.setActivationPolicy(targetPolicy)
         }
+    }
+
+    private func applyAppearanceMode(_ mode: QuickDocAppearanceMode) {
+        NSApp.appearance = mode.appearance
+        window?.appearance = mode.appearance
     }
 
     private func updateStatusItemVisibility(for mode: QuickDocDisplayMode) {

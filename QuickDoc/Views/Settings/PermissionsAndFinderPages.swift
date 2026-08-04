@@ -5,6 +5,7 @@ struct PermissionsPage: View {
         VStack(alignment: .leading, spacing: 22) {
             PageHeader(title: "权限与扩展", subtitle: "确认 Finder Sync 扩展已在系统设置中启用。")
             PermissionStatusCard()
+            PermissionWalkthroughCard()
         }
     }
 }

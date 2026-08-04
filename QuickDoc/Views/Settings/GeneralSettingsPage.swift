@@ -27,6 +27,7 @@ struct GeneralSettingsPage: View {
             DisplayModeSettingsCard()
             QuickAccessSettingsCard()
             LanguageSettingsCard()
+            AppearanceSettingsCard()
             SoftwareUpdateSettingsCard()
         }
     }

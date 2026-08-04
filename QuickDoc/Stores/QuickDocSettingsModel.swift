@@ -78,6 +78,13 @@ final class QuickDocSettingsModel: ObservableObject {
         }
     }
 
+    @Published private(set) var appearanceMode: QuickDocAppearanceMode {
+        didSet {
+            UserDefaults.standard.set(appearanceMode.rawValue, forKey: Self.appearanceModeKey)
+            onAppearanceModeDidChange?(appearanceMode)
+        }
+    }
+
     @Published private(set) var extensionStatus = ExtensionStatus(isConfirmed: false)
     @Published private(set) var isRestartingFinder = false
     @Published private(set) var softwareUpdateState = SoftwareUpdateState.idle
@@ -178,11 +185,13 @@ final class QuickDocSettingsModel: ObservableObject {
 
     let appVersion: String
     var onDisplayModeDidChange: ((QuickDocDisplayMode) -> Void)?
+    var onAppearanceModeDidChange: ((QuickDocAppearanceMode) -> Void)?
     private var notificationObservers: [NSObjectProtocol] = []
     private var cachedTerminalApplicationIcon: NSImage?
     private var cachedTerminalApplicationIconPath: String?
     private var isSynchronizingLaunchAtLogin = false
     private static let displayModeKey = "displayMode"
+    private static let appearanceModeKey = "appearanceMode"
     private static let silentLaunchAtLoginKey = "silentLaunchAtLogin"
     private static let terminalDirectEnabledKey = "terminalDirectEnabled"
     private static let selectedTerminalAppPathKey = "selectedTerminalAppPath"
@@ -212,6 +221,7 @@ final class QuickDocSettingsModel: ObservableObject {
         let defaultTypes = quickDocFileTypes.filter(\.enabledByDefault).map(\.id)
         UserDefaults.standard.register(defaults: [
             Self.displayModeKey: QuickDocDisplayMode.menuBarOnly.rawValue,
+            Self.appearanceModeKey: QuickDocAppearanceMode.system.rawValue,
             Self.silentLaunchAtLoginKey: false,
             Self.terminalDirectEnabledKey: true,
             Self.selectedTerminalAppPathKey: "",
@@ -234,6 +244,9 @@ final class QuickDocSettingsModel: ObservableObject {
         displayMode = QuickDocDisplayMode(
             rawValue: UserDefaults.standard.string(forKey: Self.displayModeKey) ?? QuickDocDisplayMode.menuBarOnly.rawValue
         ) ?? .menuBarOnly
+        appearanceMode = QuickDocAppearanceMode(
+            rawValue: UserDefaults.standard.string(forKey: Self.appearanceModeKey) ?? QuickDocAppearanceMode.system.rawValue
+        ) ?? .system
         terminalDirectEnabled = sharedSettings.terminalDirectEnabled ?? UserDefaults.standard.object(forKey: Self.terminalDirectEnabledKey) as? Bool ?? true
         selectedTerminalAppPath = UserDefaults.standard.string(forKey: Self.selectedTerminalAppPathKey) ?? ""
         pathCopyEnabled = sharedSettings.pathCopyEnabled ?? UserDefaults.standard.object(forKey: Self.pathCopyEnabledKey) as? Bool ?? true
@@ -633,6 +646,11 @@ final class QuickDocSettingsModel: ObservableObject {
         }
 
         displayMode = newMode
+    }
+
+    func setAppearanceMode(_ newMode: QuickDocAppearanceMode) {
+        guard newMode != appearanceMode else { return }
+        appearanceMode = newMode
     }
 
     func restartFinder() {

@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Create common files directly from Finder's right-click menu and toolbar.</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.6.5"><img src="https://img.shields.io/badge/version-v1.6.5-blue" alt="Version v1.6.5"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.7.0"><img src="https://img.shields.io/badge/version-v1.7.0-blue" alt="Version v1.7.0"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="Platform macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Built with Swift">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.6.5/QuickDoc-1.6.5.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.7.0/QuickDoc-1.7.0.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="Downloads"></a>
   </p>
   <p>
@@ -15,6 +15,11 @@
 </div>
 
 QuickDoc is a macOS utility built around a Finder Sync extension. It adds a practical `New File` submenu to Finder's context menu, and since v1.3 it also supports adding QuickDoc to the Finder toolbar so file creation can be invoked directly from the toolbar.
+
+## What's New in v1.7.0
+
+- Added Light, Dark, and Follow System appearance modes.
+- Added an interactive extension-permission walkthrough card for clearer setup guidance.
 
 ## What's New in v1.6.5
 
@@ -166,7 +171,7 @@ After replacement succeeds, QuickDoc relaunches automatically and confirms that 
 
 ## Supported File Types
 
-Built-in file types in v1.6.5:
+Built-in file types in v1.7.0:
 
 - TXT
 - Markdown (`.md`)
