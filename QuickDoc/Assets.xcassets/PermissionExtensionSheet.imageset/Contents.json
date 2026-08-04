@@ -6,8 +6,15 @@
       "scale" : "1x"
     },
     {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "permission-extension-sheet-dark.png",
       "idiom" : "universal",
-      "scale" : "2x"
+      "scale" : "1x"
     }
   ],
   "info" : {

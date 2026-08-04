@@ -104,6 +104,7 @@ private enum PermissionWalkthroughStep: Int, CaseIterable, Identifiable {
 }
 
 private struct SystemSettingsWalkthrough: View {
+    @Environment(\.colorScheme) private var colorScheme
     let step: PermissionWalkthroughStep
     let reduceMotion: Bool
 
@@ -131,11 +132,11 @@ private struct SystemSettingsWalkthrough: View {
             .clipped()
         }
         .frame(height: 470)
-        .background(Color(red: 0.96, green: 0.96, blue: 0.965))
+        .background(SystemSettingsDemoPalette.paneBackground(for: colorScheme))
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.black.opacity(0.12), lineWidth: 1)
+                .stroke(SystemSettingsDemoPalette.border(for: colorScheme), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.08), radius: 12, y: 5)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.7), value: step)
@@ -145,6 +146,8 @@ private struct SystemSettingsWalkthrough: View {
 }
 
 private struct SystemSettingsSidebar: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 9) {
@@ -161,7 +164,10 @@ private struct SystemSettingsSidebar: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 10)
                 .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
-                .background(Color.black.opacity(0.075), in: RoundedRectangle(cornerRadius: 9))
+                .background(
+                    SystemSettingsDemoPalette.searchFieldBackground(for: colorScheme),
+                    in: RoundedRectangle(cornerRadius: 9)
+                )
                 .padding(.horizontal, 14)
 
             VStack(spacing: 5) {
@@ -172,7 +178,7 @@ private struct SystemSettingsSidebar: View {
 
             Spacer()
         }
-        .background(.ultraThinMaterial)
+        .background(SystemSettingsDemoPalette.sidebarBackground(for: colorScheme))
     }
 }
 
@@ -201,6 +207,7 @@ private struct SettingsSidebarRow: View {
 }
 
 private struct ExtensionSettingsPane: View {
+    @Environment(\.colorScheme) private var colorScheme
     let step: PermissionWalkthroughStep
 
     var body: some View {
@@ -261,10 +268,13 @@ private struct ExtensionSettingsPane: View {
 
                 SystemServiceRow()
             }
-            .background(Color.white.opacity(0.82), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(
+                SystemSettingsDemoPalette.groupBackground(for: colorScheme),
+                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+            )
             .overlay {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.black.opacity(0.07), lineWidth: 1)
+                    .stroke(SystemSettingsDemoPalette.border(for: colorScheme), lineWidth: 1)
             }
             .padding(.horizontal, 20)
 
@@ -276,11 +286,13 @@ private struct ExtensionSettingsPane: View {
 
             Spacer()
         }
-        .background(Color(red: 0.965, green: 0.965, blue: 0.975))
+        .background(SystemSettingsDemoPalette.paneBackground(for: colorScheme))
     }
 }
 
 private struct ExtensionScopeSwitcher: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         HStack(spacing: 0) {
             Text("按 App")
@@ -298,8 +310,46 @@ private struct ExtensionScopeSwitcher: View {
         }
         .font(.system(size: 14, weight: .semibold))
         .frame(height: 34)
-        .background(Color.black.opacity(0.075))
+        .background(SystemSettingsDemoPalette.segmentedControlBackground(for: colorScheme))
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+private enum SystemSettingsDemoPalette {
+    static func paneBackground(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color(red: 0.105, green: 0.12, blue: 0.16)
+            : Color(red: 0.965, green: 0.965, blue: 0.975)
+    }
+
+    static func sidebarBackground(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color(red: 0.13, green: 0.19, blue: 0.23)
+            : Color(red: 0.90, green: 0.93, blue: 0.95)
+    }
+
+    static func groupBackground(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color(red: 0.145, green: 0.16, blue: 0.205)
+            : Color.white.opacity(0.84)
+    }
+
+    static func searchFieldBackground(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color.black.opacity(0.18)
+            : Color.black.opacity(0.075)
+    }
+
+    static func segmentedControlBackground(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.10)
+            : Color.black.opacity(0.075)
+    }
+
+    static func border(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.12)
+            : Color.black.opacity(0.10)
     }
 }
 
