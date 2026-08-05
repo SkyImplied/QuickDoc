@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Finder の右クリックメニューとツールバーから一般的なファイルを直接作成できます。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.7.1"><img src="https://img.shields.io/badge/version-v1.7.1-blue" alt="バージョン v1.7.1"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.7.5"><img src="https://img.shields.io/badge/version-v1.7.5-blue" alt="バージョン v1.7.5"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="プラットフォーム macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Swift で開発">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.7.1/QuickDoc-1.7.1.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.7.5/QuickDoc-1.7.5.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="ダウンロード数"></a>
   </p>
   <p>
@@ -15,6 +15,25 @@
 </div>
 
 QuickDoc は macOS の Finder Sync 拡張機能を活用したユーティリティです。Finder のコンテキストメニューに実用的な「新建文件」サブメニューを追加します。v1.3 以降では Finder のツールバーにも QuickDoc を追加でき、ツールバーから直接ファイルを作成できます。
+
+## v1.7.5 の新機能
+
+### バグ修正
+
+- 重大な安全上の問題を修正しました。何も選択していない状態で Finder の空白部分からコピー、カット、または完全削除を実行しても、現在のフォルダやその中の全ファイルを誤操作しなくなりました。
+- ファイルまたはフォルダを選択した後、コピー、カット、完全削除が反応しない問題を修正しました。
+- 完全削除の実行後に QuickDoc のアイコンが Dock に表示される問題を修正しました。
+- 操作対象と選択状況の検証を強化し、空白部分から危険なファイル操作が誤って実行されることを防止しました。
+
+### アプリの改善とビジュアル刷新
+
+- カード、アイコン、余白、操作スタイルを統一し、画面全体のデザインを刷新しました。
+- サイドバーを再整理し、「効率ツール」などの機能を独立したカテゴリにまとめました。
+- 一般設定、効率ツール、新規ファイル形式、カスタムテンプレート、メニュープレビューを再設計しました。
+- Finder の右クリックメニューとメニューバー操作を紹介するアニメーションデモを追加しました。
+- コピー、ペースト、カットの配置を改善し、Finder 標準のクリップボード操作とは連携しないことを明示しました。
+- ターミナル選択、パスのコピー、表示方法、ソフトウェア更新の説明を改善しました。
+- 情報の見やすさ、操作の安全性、全体的な使いやすさを向上しました。
 
 ## v1.7.1 の新機能
 
@@ -168,7 +187,7 @@ Finder の新規ファイル形式とオプションのクイックアクショ�
 
 ## 対応ファイル形式
 
-v1.7.1 に組み込まれているファイル形式：
+v1.7.5 に組み込まれているファイル形式：
 
 - TXT
 - Markdown（`.md`）

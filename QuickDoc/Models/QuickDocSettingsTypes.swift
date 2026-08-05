@@ -2,6 +2,7 @@ import Cocoa
 
 enum SettingsPage: String, CaseIterable, Identifiable {
     case general
+    case efficiencyTools
     case permissions
     case fileTypes
     case finder
@@ -12,6 +13,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .general: return "通用"
+        case .efficiencyTools: return "效率工具"
         case .permissions: return "权限与扩展"
         case .fileTypes: return "新建文件类型"
         case .finder: return "访达操作"
@@ -22,6 +24,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .general: return "gearshape"
+        case .efficiencyTools: return "bolt.fill"
         case .permissions: return "checkmark.shield"
         case .fileTypes: return "doc.text"
         case .finder: return "folder"

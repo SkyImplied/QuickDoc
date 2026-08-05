@@ -11,44 +11,32 @@ struct CustomTemplatesCard: View {
 
     var body: some View {
         GlassSection {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack(alignment: .top, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("自定义文件模板")
-                            .font(.headline)
-                        Text("按文件类型分别管理模板。每个类型都有自己的上传、显示、排序和隐藏设置。")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    Text("\(model.customTemplates.count) 个模板")
-                        .font(.callout.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(.thinMaterial, in: Capsule())
-                }
+            VStack(alignment: .leading, spacing: 20) {
+                sectionHeader
 
                 if model.templateFileTypes.isEmpty {
-                    Text("请先添加至少一种带后缀的文件类型。")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
+                    emptyFileTypesView
                 } else {
-                    HStack(alignment: .top, spacing: 18) {
+                    HStack(alignment: .top, spacing: 0) {
                         templateTypeList
-                            .frame(width: 260)
+                            .frame(width: 232)
 
                         Divider()
-                            .frame(minHeight: 430)
 
                         if let selectedType {
                             templateTypeDetail(for: selectedType)
                                 .frame(maxWidth: .infinity, alignment: .topLeading)
                         }
                     }
+                    .background(
+                        Color.primary.opacity(0.025),
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
         }
@@ -61,6 +49,49 @@ struct CustomTemplatesCard: View {
         }
     }
 
+    private var sectionHeader: some View {
+        HStack(alignment: .center, spacing: 14) {
+            Image(systemName: "doc.on.doc.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 42, height: 42)
+                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("自定义文件模板")
+                    .font(.headline)
+                Text("选择一种文件类型，添加常用模板并设置它们在 Finder 右键菜单中的顺序。")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 16)
+
+            Label("\(model.customTemplates.count) 个", systemImage: "square.stack.3d.up")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.primary.opacity(0.06), in: Capsule())
+        }
+    }
+
+    private var emptyFileTypesView: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "doc.badge.plus")
+                .font(.system(size: 28))
+                .foregroundStyle(.secondary)
+            Text("还没有可管理的文件类型")
+                .font(.callout.weight(.semibold))
+            Text("请先在上方启用内置类型，或添加一种自定义后缀。")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 180)
+        .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
     private var selectedType: TemplateFileType? {
         if let selectedFileTypeID,
            let type = model.templateFileTypes.first(where: { $0.id == selectedFileTypeID }) {
@@ -71,99 +102,142 @@ struct CustomTemplatesCard: View {
     }
 
     private var templateTypeList: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(model.templateFileTypes) { type in
-                Button {
-                    selectedFileTypeID = type.id
-                } label: {
-                    HStack(spacing: 10) {
-                        templateIcon(for: type)
-                            .frame(width: 20, height: 20)
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("文件类型")
+                    .font(.callout.weight(.semibold))
+                Text("选择要管理的类型")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 4)
 
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(type.title)
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                            Text(templateSummary(for: type.id))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-
-                        Spacer(minLength: 0)
-
-                        if model.customTemplates(for: type.id).count > 0 {
-                            Text("\(model.customTemplates(for: type.id).count)")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(isSelected(type) ? Color.accentColor : .secondary)
-                                .frame(minWidth: 24)
-                                .padding(.vertical, 3)
-                                .background(.thinMaterial, in: Capsule())
-                        }
+            ScrollView {
+                LazyVStack(spacing: 4) {
+                    ForEach(model.templateFileTypes) { type in
+                        templateTypeRow(for: type)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(isSelected(type) ? Color.accentColor.opacity(0.12) : Color.clear)
-                    )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(isSelected(type) ? Color.accentColor.opacity(0.35) : Color.secondary.opacity(0.10), lineWidth: 1)
-                    }
-                    .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .padding(14)
+        .frame(minHeight: 470, maxHeight: 620, alignment: .top)
+    }
+
+    private func templateTypeRow(for type: TemplateFileType) -> some View {
+        let templates = model.customTemplates(for: type.id)
+        let visibleCount = templates.filter(\.isVisibleInContextMenu).count
+
+        return Button {
+            selectedFileTypeID = type.id
+        } label: {
+            HStack(spacing: 10) {
+                templateIcon(for: type)
+                    .frame(width: 22, height: 22)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(type.title)
+                        .font(.callout.weight(isSelected(type) ? .semibold : .medium))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    Text(templates.isEmpty ? "尚无模板" : "\(visibleCount) 个显示")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 4)
+
+                if !templates.isEmpty {
+                    Text("\(templates.count)")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(isSelected(type) ? Color.accentColor : Color.secondary)
+                        .frame(minWidth: 22, minHeight: 20)
+                        .background(Color.primary.opacity(0.06), in: Capsule())
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                isSelected(type) ? Color.accentColor.opacity(0.13) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+            )
+            .overlay(alignment: .leading) {
+                if isSelected(type) {
+                    Capsule()
+                        .fill(Color.accentColor)
+                        .frame(width: 3, height: 22)
+                        .padding(.leading, 2)
+                }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private func templateTypeDetail(for type: TemplateFileType) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
+        let templates = model.customTemplates(for: type.id)
+        let visibleCount = templates.filter(\.isVisibleInContextMenu).count
+
+        return VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .center, spacing: 12) {
                 templateIcon(for: type)
-                    .frame(width: 30, height: 30)
+                    .frame(width: 34, height: 34)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(type.title)
-                        .font(.title3.weight(.semibold))
-                    Text("Finder 右键：新建文件 > \(menuTitle(for: type)) > 模板")
-                        .font(.callout)
+                    HStack(spacing: 8) {
+                        Text(type.title)
+                            .font(.title3.weight(.semibold))
+                        Text(".\(type.pathExtension.lowercased())")
+                            .font(.caption.monospaced().weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(Color.primary.opacity(0.06), in: Capsule())
+                    }
+
+                    Label("新建文件  ›  \(menuTitle(for: type))", systemImage: "menucard")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
 
-                Spacer(minLength: 0)
+                Spacer(minLength: 12)
+
+                Button {
+                    chooseTemplateFile(for: type)
+                } label: {
+                    Label("添加模板", systemImage: "plus")
+                }
+                .glassButtonStyle(prominent: templates.isEmpty)
             }
 
-            composer(for: type)
+            if selectedTemplateURL != nil {
+                templateComposer(for: type)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
 
             Divider()
 
-            let templates = model.customTemplates(for: type.id)
-            if templates.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("这个类型还没有模板", systemImage: "tray")
-                        .font(.callout.weight(.semibold))
-                    Text("添加模板后，\(menuTitle(for: type)) 会自动变成三级菜单，里面会先显示空白默认文档，再显示你的模板。")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.vertical, 10)
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Text("显示顺序")
-                            .font(.callout.weight(.semibold))
-                        Spacer()
-                        Text("\(templates.filter(\.isVisibleInContextMenu).count) 个会显示在右键菜单")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+            HStack {
+                Text("已添加模板")
+                    .font(.callout.weight(.semibold))
 
+                Spacer()
+
+                if !templates.isEmpty {
+                    Text("\(visibleCount) / \(templates.count) 个显示在右键菜单")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if templates.isEmpty {
+                emptyTemplatesView(for: type)
+            } else {
+                LazyVStack(spacing: 8) {
                     ForEach(Array(templates.enumerated()), id: \.element.id) { index, template in
                         CustomTemplateRow(
                             rank: index + 1,
@@ -176,48 +250,95 @@ struct CustomTemplatesCard: View {
                 }
             }
         }
+        .padding(18)
+        .animation(.easeInOut(duration: 0.18), value: selectedTemplateURL)
     }
 
-    private func composer(for type: TemplateFileType) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 12) {
-                Label(selectedTemplateURL?.lastPathComponent ?? "尚未选择 .\(type.pathExtension) 模板", systemImage: "doc")
-                    .font(.callout.weight(.medium))
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+    private func emptyTemplatesView(for type: TemplateFileType) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: "tray")
+                .font(.system(size: 26))
+                .foregroundStyle(.secondary)
+            Text("还没有 .\(type.pathExtension) 模板")
+                .font(.callout.weight(.semibold))
+            Text("添加后可直接从 Finder 右键菜单创建带有预设内容的新文件。")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 230)
+    }
 
-                Button {
-                    chooseTemplateFile(for: type)
-                } label: {
-                    Label(selectedTemplateURL == nil ? "选择文件" : "重新选择", systemImage: "folder")
+    private func templateComposer(for type: TemplateFileType) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                Image(systemName: "doc.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 34, height: 34)
+                    .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("添加新模板")
+                        .font(.callout.weight(.semibold))
+                    Text(selectedTemplateURL?.lastPathComponent ?? "未选择文件")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-                .glassButtonStyle()
+
+                Spacer(minLength: 8)
+
+                Button("更换文件") {
+                    chooseTemplateFile(for: type)
+                }
+                .buttonStyle(.borderless)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("右键菜单显示名称")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                TextField("例如：合同模板", text: $templateDisplayName)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit {
+                        if canAddTemplate(for: type) {
+                            addTemplate(for: type)
+                        }
+                    }
             }
 
             HStack(spacing: 12) {
-                TextField("右键菜单显示名，例如 合同模板", text: $templateDisplayName)
-                    .textFieldStyle(.roundedBorder)
-
-                Toggle("显示", isOn: $shouldShowInContextMenu)
+                Toggle("添加后显示在 Finder 右键菜单", isOn: $shouldShowInContextMenu)
                     .toggleStyle(.checkbox)
-                    .fixedSize()
+
+                Spacer(minLength: 8)
+
+                Button("取消") {
+                    resetComposer()
+                }
+                .buttonStyle(.borderless)
 
                 Button {
                     addTemplate(for: type)
                 } label: {
-                    Label("添加", systemImage: "plus")
+                    Text("添加模板")
                 }
                 .glassButtonStyle(prominent: true)
                 .disabled(!canAddTemplate(for: type))
             }
 
             Text(addTemplateHint(for: type))
-                .font(.callout)
-                .foregroundStyle(.secondary)
+                .font(.caption)
+                .foregroundStyle(canAddTemplate(for: type) ? Color.secondary : Color.orange)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .stroke(Color.accentColor.opacity(0.18), lineWidth: 1)
+        }
     }
 
     private func canAddTemplate(for type: TemplateFileType) -> Bool {
@@ -228,15 +349,19 @@ struct CustomTemplatesCard: View {
 
     private func addTemplateHint(for type: TemplateFileType) -> String {
         guard let selectedTemplateURL else {
-            return "这里只添加 .\(type.pathExtension) 模板，文件会复制到 QuickDoc 的应用支持目录，原文件保留不变。"
+            return "请选择一个 .\(type.pathExtension) 文件。"
         }
 
         let selectedExtension = selectedTemplateURL.pathExtension.lowercased()
         guard selectedExtension == type.pathExtension else {
-            return "当前文件是 .\(selectedExtension.isEmpty ? "无后缀" : selectedExtension)，请为 \(type.title) 选择 .\(type.pathExtension) 文件。"
+            return "当前文件是 .\(selectedExtension.isEmpty ? "无后缀" : selectedExtension)，请改选 .\(type.pathExtension) 文件。"
         }
 
-        return "添加后会出现在 \(menuTitle(for: type)) 的三级菜单里，可继续调整排序或暂时隐藏。"
+        guard !templateDisplayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return "请输入模板在右键菜单中的显示名称。"
+        }
+
+        return "文件会复制到 QuickDoc 的模板目录，原文件保持不变。"
     }
 
     private func ensureSelectedFileType() {
@@ -285,7 +410,7 @@ struct CustomTemplatesCard: View {
     }
 
     private func resetComposer() {
-        self.selectedTemplateURL = nil
+        selectedTemplateURL = nil
         templateDisplayName = ""
         shouldShowInContextMenu = true
     }
@@ -294,20 +419,13 @@ struct CustomTemplatesCard: View {
         selectedType?.id == type.id
     }
 
-    private func templateSummary(for fileTypeID: String) -> String {
-        let templates = model.customTemplates(for: fileTypeID)
-        guard !templates.isEmpty else { return "无模板" }
-        let visibleCount = templates.filter(\.isVisibleInContextMenu).count
-        return "\(visibleCount)/\(templates.count) 显示"
-    }
-
     private func menuTitle(for type: TemplateFileType) -> String {
         model.menuTitle(forTemplateFileTypeID: type.id) ?? "新建 \(type.pathExtension.uppercased()) 文件"
     }
 
     @ViewBuilder
     private func templateIcon(for type: TemplateFileType) -> some View {
-        if let image = QuickDocIcon.icon(for: type.id, size: NSSize(width: 20, height: 20)) {
+        if let image = QuickDocIcon.icon(for: type.id, size: NSSize(width: 22, height: 22)) {
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -327,40 +445,36 @@ struct CustomTemplateRow: View {
     let canMoveDown: Bool
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 11) {
             Text("\(rank)")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 24, height: 24)
-                .background(.regularMaterial, in: Circle())
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.tertiary)
+                .frame(width: 18)
 
             Toggle("", isOn: Binding(
                 get: { template.isVisibleInContextMenu },
                 set: { model.setCustomTemplate(template.id, visibleInContextMenu: $0) }
             ))
-            .toggleStyle(.switch)
+            .toggleStyle(.checkbox)
             .labelsHidden()
+            .help(template.isVisibleInContextMenu ? "在右键菜单中显示" : "已从右键菜单隐藏")
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
+            Image(systemName: fileExists ? "doc.fill" : "doc.badge.ellipsis")
+                .font(.system(size: 15))
+                .foregroundStyle(fileExists ? Color.accentColor : Color.red)
+                .frame(width: 30, height: 30)
+                .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 7) {
                     Text(template.displayName)
-                        .font(.callout.weight(.semibold))
+                        .font(.callout.weight(.medium))
                         .lineLimit(1)
 
                     if !fileExists {
-                        Text("文件缺失")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.red)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 2)
-                            .background(Color.red.opacity(0.12), in: Capsule())
+                        statusBadge("文件缺失", color: .red)
                     } else if !template.isVisibleInContextMenu {
-                        Text("暂不显示")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 2)
-                            .background(.thinMaterial, in: Capsule())
+                        statusBadge("已隐藏", color: .secondary)
                     }
                 }
 
@@ -371,41 +485,72 @@ struct CustomTemplateRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 6) {
+            Menu {
                 Button {
                     model.moveCustomTemplate(template.id, direction: .up)
                 } label: {
-                    Image(systemName: "chevron.up")
+                    Label("上移", systemImage: "arrow.up")
                 }
                 .disabled(!canMoveUp)
-                .help("上移")
 
                 Button {
                     model.moveCustomTemplate(template.id, direction: .down)
                 } label: {
-                    Image(systemName: "chevron.down")
+                    Label("下移", systemImage: "arrow.down")
                 }
                 .disabled(!canMoveDown)
-                .help("下移")
+
+                Divider()
 
                 Button {
                     model.renameCustomTemplate(template.id)
                 } label: {
-                    Image(systemName: "pencil")
+                    Label("重命名", systemImage: "pencil")
                 }
-                .help("重命名")
 
                 Button(role: .destructive) {
                     model.removeCustomTemplate(template.id)
                 } label: {
-                    Image(systemName: "trash")
+                    Label("删除模板", systemImage: "trash")
                 }
-                .help("删除模板")
+            } label: {
+                Image(systemName: "ellipsis")
+                    .frame(width: 26, height: 26)
+                    .contentShape(Rectangle())
             }
-            .buttonStyle(.borderless)
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("更多操作")
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .contextMenu {
+            Button("重命名") {
+                model.renameCustomTemplate(template.id)
+            }
+            Button("上移") {
+                model.moveCustomTemplate(template.id, direction: .up)
+            }
+            .disabled(!canMoveUp)
+            Button("下移") {
+                model.moveCustomTemplate(template.id, direction: .down)
+            }
+            .disabled(!canMoveDown)
+            Divider()
+            Button("删除模板", role: .destructive) {
+                model.removeCustomTemplate(template.id)
+            }
+        }
+    }
+
+    private func statusBadge(_ text: String, color: Color) -> some View {
+        Text(text)
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(color)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(color.opacity(0.10), in: Capsule())
     }
 }

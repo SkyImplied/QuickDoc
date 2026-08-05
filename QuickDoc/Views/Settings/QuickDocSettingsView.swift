@@ -78,6 +78,8 @@ struct QuickDocSettingsView: View {
         switch selection ?? .general {
         case .general:
             GeneralSettingsPage()
+        case .efficiencyTools:
+            EfficiencyToolsPage()
         case .permissions:
             PermissionsPage()
         case .fileTypes:

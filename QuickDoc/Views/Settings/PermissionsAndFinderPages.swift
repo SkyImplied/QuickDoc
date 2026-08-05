@@ -24,8 +24,9 @@ struct FileTypesPage: View {
 struct FinderActionsPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            PageHeader(title: "访达操作", subtitle: "当右键菜单未刷新时，重启 Finder 可强制重新载入扩展。")
+            PageHeader(title: "访达操作", subtitle: "重新载入 Finder 扩展，并预览 QuickDoc 在右键菜单与菜单栏中的实际使用方式。")
             FinderRestartCard()
+            FinderExperienceDemoCard()
         }
     }
 }

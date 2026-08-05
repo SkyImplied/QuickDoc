@@ -44,9 +44,16 @@ private typealias SharedSettings = (
     permanentDeleteEnabled: Bool?
 )
 
+private struct FinderActionSelection {
+    let urls: [URL]
+    let context: String?
+}
+
 final class FinderSync: FIFinderSync {
     private let logger = Logger(subsystem: "com.skyimplied.QuickDoc", category: "FinderSync")
     private var menuDefinitionsByTag: [Int: FileDefinition] = [:]
+    private var actionSelectionsByTag: [Int: FinderActionSelection] = [:]
+    private var nextActionSelectionTag = 10_000
     private var workspaceObservers: [NSObjectProtocol] = []
     private lazy var menuIcon: NSImage = {
         if let image = Self.iconImage(named: "新建文件icon", size: NSSize(width: 18, height: 18)) {
@@ -300,6 +307,7 @@ final class FinderSync: FIFinderSync {
         diagnosticLog("Building Finder menu")
         let menu = NSMenu(title: "QuickDoc")
         menuDefinitionsByTag.removeAll()
+        actionSelectionsByTag.removeAll()
 
         let actionItems = buildActionItems(menuKind: menuKind)
         actionItems.forEach { menu.addItem($0) }
@@ -418,8 +426,8 @@ final class FinderSync: FIFinderSync {
     }
 
     private func makeQuickActionMenuItems(menuKind: FIMenuKind, sharedSettings: SharedSettings) -> [NSMenuItem] {
-        let hasSelectedItems = !selectedItemURLs().isEmpty
-        let hasSelection = menuKind == .toolbarItemMenu || hasSelectedItems
+        let actionSelection = actionSelection(for: menuKind)
+        let hasSelection = !actionSelection.urls.isEmpty
         var items: [NSMenuItem] = []
 
         if settingValue(sharedSettings.quickActionsEnabled, key: Self.quickActionsEnabledKey, fallback: true) {
@@ -427,6 +435,7 @@ final class FinderSync: FIFinderSync {
                 let copyItem = NSMenuItem(title: "拷贝", action: #selector(copySelectedItems(_:)), keyEquivalent: "")
                 copyItem.target = self
                 copyItem.image = copyActionIcon
+                bind(actionSelection, to: copyItem)
                 copyItem.isEnabled = hasSelection
                 items.append(copyItem)
             }
@@ -443,6 +452,7 @@ final class FinderSync: FIFinderSync {
                 let cutItem = NSMenuItem(title: "剪切", action: #selector(cutSelectedItems(_:)), keyEquivalent: "")
                 cutItem.target = self
                 cutItem.image = cutActionIcon
+                bind(actionSelection, to: cutItem)
                 cutItem.isEnabled = hasSelection
                 items.append(cutItem)
             }
@@ -452,11 +462,19 @@ final class FinderSync: FIFinderSync {
             let deleteItem = NSMenuItem(title: "彻底删除", action: #selector(permanentlyDeleteSelectedItems(_:)), keyEquivalent: "")
             deleteItem.target = self
             deleteItem.image = permanentDeleteIcon
-            deleteItem.isEnabled = hasSelectedItems
+            bind(actionSelection, to: deleteItem)
+            deleteItem.isEnabled = hasSelection
             items.append(deleteItem)
         }
 
         return items
+    }
+
+    private func bind(_ selection: FinderActionSelection, to item: NSMenuItem) {
+        let tag = nextActionSelectionTag
+        nextActionSelectionTag += 1
+        item.tag = tag
+        actionSelectionsByTag[tag] = selection
     }
 
     private func addCreateItem(
@@ -705,19 +723,21 @@ final class FinderSync: FIFinderSync {
     }
 
     @objc private func copySelectedItems(_ sender: NSMenuItem) {
-        writeSelectedItemsToPasteboard(isCut: false)
+        writeSelectedItemsToPasteboard(from: sender, isCut: false)
     }
 
     @objc private func cutSelectedItems(_ sender: NSMenuItem) {
-        writeSelectedItemsToPasteboard(isCut: true)
+        writeSelectedItemsToPasteboard(from: sender, isCut: true)
     }
 
     @objc private func permanentlyDeleteSelectedItems(_ sender: NSMenuItem) {
-        let selectedURLs = selectedItemURLs()
-        guard !selectedURLs.isEmpty else {
+        guard let selection = actionSelectionsByTag[sender.tag],
+              let selectionContext = selection.context,
+              !selection.urls.isEmpty else {
             showError(message: "请先选择要彻底删除的文件或文件夹。")
             return
         }
+        let selectedURLs = selection.urls
 
         do {
             let requestID = UUID()
@@ -730,6 +750,7 @@ final class FinderSync: FIFinderSync {
 
             let payload: [String: Any] = [
                 "paths": selectedURLs.map(\.path),
+                "selectionContext": selectionContext,
                 "createdAt": Date()
             ]
             let requestData = try PropertyListSerialization.data(
@@ -757,12 +778,14 @@ final class FinderSync: FIFinderSync {
         }
     }
 
-    private func writeSelectedItemsToPasteboard(isCut: Bool) {
-        let selectedURLs = selectedItemURLs()
-        guard !selectedURLs.isEmpty else {
+    private func writeSelectedItemsToPasteboard(from sender: NSMenuItem, isCut: Bool) {
+        guard let selection = actionSelectionsByTag[sender.tag],
+              selection.context != nil,
+              !selection.urls.isEmpty else {
             showError(message: "请先选择要\(isCut ? "剪切" : "拷贝")的文件或文件夹。")
             return
         }
+        let selectedURLs = selection.urls
 
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
@@ -867,6 +890,37 @@ final class FinderSync: FIFinderSync {
             diagnosticLog("Resolved \(fallbackURLs.count) selected item(s) via Finder AppleScript fallback")
         }
         return fallbackURLs
+    }
+
+    private func actionSelection(for menuKind: FIMenuKind) -> FinderActionSelection {
+        let context: String?
+        switch menuKind {
+        case .contextualMenuForItems:
+            context = "items"
+        case .toolbarItemMenu:
+            context = "toolbar"
+        default:
+            // Finder may report the current folder as its selection when the
+            // contextual menu comes from an empty area. Never treat that
+            // container as an explicit file selection.
+            context = nil
+        }
+
+        guard context != nil else {
+            return FinderActionSelection(urls: [], context: nil)
+        }
+
+        var urls = selectedItemURLs()
+        if menuKind == .toolbarItemMenu,
+           let currentDirectoryURL = FIFinderSyncController.default().targetedURL()?.standardizedFileURL {
+            let originalCount = urls.count
+            urls.removeAll { $0.standardizedFileURL == currentDirectoryURL }
+            if urls.count != originalCount {
+                diagnosticLog("Ignored the current Finder directory reported as a toolbar selection")
+            }
+        }
+
+        return FinderActionSelection(urls: urls, context: context)
     }
 
     private func finderSelectionURLsViaAppleScript() -> [URL] {

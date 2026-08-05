@@ -49,6 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var initialWindowWorkItem: DispatchWorkItem?
     private var shouldSuppressInitialWindow = ProcessInfo.processInfo.environment[suppressInitialWindowEnvironmentKey] == "1"
     private var isHandlingPermanentDeleteRequest = false
+    private var isSuppressingDockForPermanentDeleteLaunch = false
     private lazy var cachedStatusBarImage: NSImage? = {
         guard let url = Bundle.main.url(forResource: "菜单栏", withExtension: "png"),
               let image = NSImage(contentsOf: url) else {
@@ -70,18 +71,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if Self.hasPendingPermanentDeleteRequests {
+        let isLaunchingForPermanentDelete = isHandlingPermanentDeleteRequest || Self.hasPendingPermanentDeleteRequests
+        if isLaunchingForPermanentDelete {
             shouldSuppressInitialWindow = true
+            isHandlingPermanentDeleteRequest = true
+            isSuppressingDockForPermanentDeleteLaunch = true
         }
 
         settingsModel.onDisplayModeDidChange = { [weak self] mode in
-            self?.applyDisplayMode(mode)
+            guard let self else { return }
+            self.applyDisplayMode(mode, suppressDock: self.isSuppressingDockForPermanentDeleteLaunch)
         }
         settingsModel.onAppearanceModeDidChange = { [weak self] mode in
             self?.applyAppearanceMode(mode)
         }
         applyAppearanceMode(settingsModel.appearanceMode)
-        applyDisplayMode(settingsModel.displayMode)
+        applyDisplayMode(settingsModel.displayMode, suppressDock: isSuppressingDockForPermanentDeleteLaunch)
         if let completedUpdateVersion = SoftwareUpdateCompletionStore.consumeVersion() {
             showMainWindow()
             DispatchQueue.main.async { [weak self] in
@@ -171,10 +176,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return window
     }
 
-    private func applyDisplayMode(_ mode: QuickDocDisplayMode) {
+    private func applyDisplayMode(_ mode: QuickDocDisplayMode, suppressDock: Bool = false) {
         updateStatusItemVisibility(for: mode)
 
-        let targetPolicy = mode.activationPolicy
+        let targetPolicy: NSApplication.ActivationPolicy = suppressDock ? .accessory : mode.activationPolicy
         if NSApp.activationPolicy() != targetPolicy {
             NSApp.setActivationPolicy(targetPolicy)
         }
@@ -441,7 +446,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 options: [],
                 format: nil
             ) as? [String: Any],
-                  let paths = payload["paths"] as? [String] else {
+                  let paths = payload["paths"] as? [String],
+                  let selectionContext = payload["selectionContext"] as? String,
+                  ["items", "toolbar"].contains(selectionContext) else {
                 throw CocoaError(.fileReadCorruptFile)
             }
 
@@ -515,7 +522,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func finishPermanentDeleteRequest() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.isHandlingPermanentDeleteRequest = false
+            guard let self else { return }
+            self.isHandlingPermanentDeleteRequest = false
+            if self.isSuppressingDockForPermanentDeleteLaunch {
+                self.isSuppressingDockForPermanentDeleteLaunch = false
+                self.applyDisplayMode(self.settingsModel.displayMode)
+            }
         }
     }
 
