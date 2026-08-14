@@ -45,6 +45,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private static let loginLaunchHost = "launch-at-login"
     private static let permanentDeleteHost = "permanent-delete"
     private static let permanentDeleteRequestQueryKey = "request"
+    private static let finderErrorHost = "finder-error"
+    private static let finderErrorMessageQueryKey = "message"
     private static let suppressInitialWindowEnvironmentKey = "QUICKDOC_SUPPRESS_INITIAL_WINDOW"
     private var initialWindowWorkItem: DispatchWorkItem?
     private var shouldSuppressInitialWindow = ProcessInfo.processInfo.environment[suppressInitialWindowEnvironmentKey] == "1"
@@ -408,6 +410,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return
         }
 
+        if url.host == Self.finderErrorHost,
+           let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+           let message = components.queryItems?.first(where: {
+               $0.name == Self.finderErrorMessageQueryKey
+           })?.value,
+           !message.isEmpty {
+            shouldSuppressInitialWindow = true
+            cancelInitialWindowPresentation()
+            presentFinderActionError(message)
+            return
+        }
+
         guard url.host == "open-terminal",
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let encodedPath = components.queryItems?.first(where: { $0.name == Self.terminalPathQueryKey })?.value,
@@ -532,6 +546,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     private func presentPermanentDeleteError(_ message: String) {
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)
+            let alert = NSAlert()
+            alert.messageText = "QuickDoc"
+            alert.informativeText = message
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "好的")
+            alert.runModal()
+        }
+    }
+
+    private func presentFinderActionError(_ message: String) {
         DispatchQueue.main.async {
             NSApp.activate(ignoringOtherApps: true)
             let alert = NSAlert()

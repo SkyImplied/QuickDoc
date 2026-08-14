@@ -54,7 +54,7 @@ final class FinderSync: FIFinderSync {
     private var menuDefinitionsByTag: [Int: FileDefinition] = [:]
     private var actionSelectionsByTag: [Int: FinderActionSelection] = [:]
     private var nextActionSelectionTag = 10_000
-    private var workspaceObservers: [NSObjectProtocol] = []
+    private var menuTargetDirectoryURL: URL?
     private lazy var menuIcon: NSImage = {
         if let image = Self.iconImage(named: "新建文件icon", size: NSSize(width: 18, height: 18)) {
             return image
@@ -131,6 +131,8 @@ final class FinderSync: FIFinderSync {
     private static let finderNodeReferencePasteboardType = NSPasteboard.PasteboardType("com.apple.finder.noderef")
     private static let permanentDeleteHost = "permanent-delete"
     private static let permanentDeleteRequestQueryKey = "request"
+    private static let finderErrorHost = "finder-error"
+    private static let finderErrorMessageQueryKey = "message"
     private static let customMenuIDPrefix = "custom."
     private static let finderBundleIdentifier = "com.apple.finder"
     private static let mainAppBundleIdentifier = "com.skyimplied.QuickDoc"
@@ -157,55 +159,16 @@ final class FinderSync: FIFinderSync {
         let fileManager = FileManager.default
         let homeURL = URL(fileURLWithPath: "/Users/\(NSUserName())", isDirectory: true)
         let volumesURL = URL(fileURLWithPath: "/Volumes", isDirectory: true)
-        var urls = [
-            homeURL,
-            homeURL.appendingPathComponent("Desktop", isDirectory: true),
-            homeURL.appendingPathComponent("Documents", isDirectory: true),
-            homeURL.appendingPathComponent("Downloads", isDirectory: true),
-            volumesURL
-        ]
 
-        if let mountedVolumes = fileManager.mountedVolumeURLs(
-            includingResourceValuesForKeys: [.volumeURLKey],
-            options: [.skipHiddenVolumes]
-        ) {
-            urls.append(contentsOf: mountedVolumes)
-        }
-
-        if let volumeChildren = directoryChildren(at: volumesURL) {
-            urls.append(contentsOf: volumeChildren)
-        }
-
-        var seenPaths = Set<String>()
-        return urls.compactMap { url in
+        // Keep mounted volumes out of the root set. Finder replaces the sidebar
+        // icon of every monitored root with the containing app's icon. /Volumes
+        // intentionally does not provide contextual menus across mount boundaries;
+        // external volumes are supported through the global toolbar item instead.
+        return [homeURL, volumesURL].filter { url in
             let standardizedURL = url.standardizedFileURL
             var isDirectory: ObjCBool = false
-            guard fileManager.fileExists(atPath: standardizedURL.path, isDirectory: &isDirectory),
-                  isDirectory.boolValue,
-                  seenPaths.insert(standardizedURL.path).inserted else {
-                return nil
-            }
-            return standardizedURL
-        }
-    }
-
-    private static func directoryChildren(at directory: URL) -> [URL]? {
-        let resourceKeys: Set<URLResourceKey> = [.isDirectoryKey, .isPackageKey]
-        guard let children = try? FileManager.default.contentsOfDirectory(
-            at: directory,
-            includingPropertiesForKeys: Array(resourceKeys),
-            options: [.skipsHiddenFiles]
-        ) else {
-            return nil
-        }
-
-        return children.filter { child in
-            guard let values = try? child.resourceValues(forKeys: resourceKeys),
-                  values.isDirectory == true,
-                  values.isPackage != true else {
-                return false
-            }
-            return true
+            return fileManager.fileExists(atPath: standardizedURL.path, isDirectory: &isDirectory)
+                && isDirectory.boolValue
         }
     }
 
@@ -229,15 +192,8 @@ final class FinderSync: FIFinderSync {
     override init() {
         super.init()
         refreshMonitoredDirectories(reason: "initial load")
-        observeMountedVolumeChanges()
         logger.info("QuickDoc Finder Sync extension loaded")
         diagnosticLog("QuickDoc Finder Sync extension loaded")
-    }
-
-    deinit {
-        workspaceObservers.forEach {
-            NSWorkspace.shared.notificationCenter.removeObserver($0)
-        }
     }
 
     override var toolbarItemName: String {
@@ -268,29 +224,6 @@ final class FinderSync: FIFinderSync {
         refreshMonitoredDirectories(reason: "begin observing \(url.path)")
     }
 
-    private func observeMountedVolumeChanges() {
-        let notificationCenter = NSWorkspace.shared.notificationCenter
-        let mountedObserver = notificationCenter.addObserver(
-            forName: NSWorkspace.didMountNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            let path = notification.userInfo?[NSWorkspace.volumeURLUserInfoKey] as? URL
-            self?.refreshMonitoredDirectories(reason: "volume mounted \(path?.path ?? "")")
-        }
-
-        let unmountedObserver = notificationCenter.addObserver(
-            forName: NSWorkspace.didUnmountNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            let path = notification.userInfo?[NSWorkspace.volumeURLUserInfoKey] as? URL
-            self?.refreshMonitoredDirectories(reason: "volume unmounted \(path?.path ?? "")")
-        }
-
-        workspaceObservers.append(contentsOf: [mountedObserver, unmountedObserver])
-    }
-
     private func refreshMonitoredDirectories(reason: String) {
         let monitoredURLs = Self.monitoredDirectoryURLs()
         let monitoredURLSet = Set(monitoredURLs)
@@ -308,6 +241,7 @@ final class FinderSync: FIFinderSync {
         let menu = NSMenu(title: "QuickDoc")
         menuDefinitionsByTag.removeAll()
         actionSelectionsByTag.removeAll()
+        menuTargetDirectoryURL = resolveMenuTargetDirectory(for: menuKind)
 
         let actionItems = buildActionItems(menuKind: menuKind)
         actionItems.forEach { menu.addItem($0) }
@@ -682,6 +616,13 @@ final class FinderSync: FIFinderSync {
             return
         }
 
+        if let readOnlyMessage = readOnlyVolumeMessage(for: directory) {
+            logger.error("Create file blocked because target volume is read-only: \(directory.path, privacy: .public)")
+            diagnosticLog("Create file blocked because target volume is read-only: \(directory.path)")
+            showError(message: readOnlyMessage)
+            return
+        }
+
         do {
             logger.info("Resolved target directory \(directory.path, privacy: .public)")
             diagnosticLog("Resolved target directory: \(directory.path)")
@@ -852,23 +793,19 @@ final class FinderSync: FIFinderSync {
     }
 
     private func targetURLForPathCopy() -> URL? {
-        let finderController = FIFinderSyncController.default()
-
         if let selectedURL = selectedItemURLs().first {
             return selectedURL
         }
 
-        if let targetedURL = finderController.targetedURL() {
-            return directoryURL(for: targetedURL)
-        }
-
-        return FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
+        return menuTargetDirectoryURL
     }
 
     private func targetDirectory() -> URL? {
-        let finderController = FIFinderSyncController.default()
+        if let menuTargetDirectoryURL {
+            return menuTargetDirectoryURL
+        }
 
-        if let targetedURL = finderController.targetedURL() {
+        if let targetedURL = FIFinderSyncController.default().targetedURL() {
             return directoryURL(for: targetedURL)
         }
 
@@ -876,7 +813,31 @@ final class FinderSync: FIFinderSync {
             return directoryURL(for: selectedURL)
         }
 
-        return FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
+        // Never silently write into the extension container's Desktop when
+        // Finder cannot provide a target. The caller will surface an error.
+        return nil
+    }
+
+    private func resolveMenuTargetDirectory(for menuKind: FIMenuKind) -> URL? {
+        // Outside monitored roots Finder Sync does not expose targetedURL().
+        // The toolbar is global, so ask Finder for its front window first.
+        if menuKind == .toolbarItemMenu,
+           let directory = finderCurrentDirectoryURLViaAppleScript() {
+            diagnosticLog("Resolved toolbar target from Finder front window: \(directory.path)")
+            return directory
+        }
+
+        if let targetedURL = FIFinderSyncController.default().targetedURL() {
+            let directory = directoryURL(for: targetedURL).standardizedFileURL
+            diagnosticLog("Resolved menu target from Finder Sync: \(directory.path)")
+            return directory
+        }
+
+        if let selectedURL = selectedItemURLs().first {
+            return directoryURL(for: selectedURL).standardizedFileURL
+        }
+
+        return nil
     }
 
     private func selectedItemURLs() -> [URL] {
@@ -912,7 +873,7 @@ final class FinderSync: FIFinderSync {
 
         var urls = selectedItemURLs()
         if menuKind == .toolbarItemMenu,
-           let currentDirectoryURL = FIFinderSyncController.default().targetedURL()?.standardizedFileURL {
+           let currentDirectoryURL = menuTargetDirectoryURL?.standardizedFileURL {
             let originalCount = urls.count
             urls.removeAll { $0.standardizedFileURL == currentDirectoryURL }
             if urls.count != originalCount {
@@ -952,6 +913,40 @@ final class FinderSync: FIFinderSync {
         return Self.stringValues(from: descriptor).map {
             URL(fileURLWithPath: $0).standardizedFileURL
         }
+    }
+
+    private func finderCurrentDirectoryURLViaAppleScript() -> URL? {
+        let scriptSource = """
+        tell application id "\(Self.finderBundleIdentifier)"
+            if (count of Finder windows) is 0 then return ""
+            return POSIX path of (target of front Finder window as alias)
+        end tell
+        """
+
+        guard let script = NSAppleScript(source: scriptSource) else {
+            diagnosticLog("Unable to create Finder current-directory AppleScript")
+            return nil
+        }
+
+        var errorInfo: NSDictionary?
+        let descriptor = script.executeAndReturnError(&errorInfo)
+        if let errorInfo {
+            diagnosticLog("Finder current-directory AppleScript failed: \(errorInfo)")
+            return nil
+        }
+
+        guard let path = descriptor.stringValue, !path.isEmpty else {
+            return nil
+        }
+
+        let url = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            diagnosticLog("Finder current-directory path is unavailable: \(url.path)")
+            return nil
+        }
+        return url
     }
 
     private static func stringValues(from descriptor: NSAppleEventDescriptor) -> [String] {
@@ -1089,7 +1084,27 @@ final class FinderSync: FIFinderSync {
         return sanitized.isEmpty ? "新建文件" : sanitized
     }
 
+    private func readOnlyVolumeMessage(for directory: URL) -> String? {
+        guard let values = try? directory.resourceValues(forKeys: [.volumeIsReadOnlyKey, .volumeNameKey]),
+              values.volumeIsReadOnly == true else {
+            return nil
+        }
+
+        let volumeName = values.volumeName ?? directory.lastPathComponent
+        return "宗卷“\(volumeName)”当前以只读方式挂载，无法新建文件。请改用可写宗卷，或使用支持 NTFS 写入的驱动后重新挂载。"
+    }
+
     private func showError(message: String) {
+        var components = URLComponents()
+        components.scheme = "quickdoc"
+        components.host = Self.finderErrorHost
+        components.queryItems = [
+            URLQueryItem(name: Self.finderErrorMessageQueryKey, value: message)
+        ]
+        if let url = components.url, NSWorkspace.shared.open(url) {
+            return
+        }
+
         let alert = NSAlert()
         alert.messageText = "QuickDoc"
         alert.informativeText = message
