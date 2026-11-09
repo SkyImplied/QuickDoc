@@ -6,11 +6,17 @@ struct PermissionWalkthroughCard: View {
     @State private var playbackID = 0
 
     var body: some View {
-        GlassSection {
-            VStack(alignment: .leading, spacing: 16) {
-                header
-                SystemSettingsWalkthrough(step: step, reduceMotion: reduceMotion)
-                playbackProgress
+        FillCardToWindowBottom { fills in
+            GlassSection(fillsAvailableHeight: fills) {
+                VStack(alignment: .leading, spacing: 16) {
+                    header
+                    SystemSettingsWalkthrough(step: step, reduceMotion: reduceMotion)
+                        .frame(maxWidth: .infinity, maxHeight: fills ? .infinity : nil)
+                        .frame(height: fills ? nil : 292)
+                        .frame(minHeight: 292)
+                    playbackProgress
+                }
+                .frame(maxWidth: .infinity, maxHeight: fills ? .infinity : nil, alignment: .top)
             }
         }
         .task(id: playbackID) {
@@ -117,7 +123,7 @@ private struct SystemSettingsWalkthrough: View {
 
                     Divider()
 
-                    ExtensionSettingsPane(step: step)
+                    ExtensionSettingsPane(step: step, stageHeight: proxy.size.height)
                 }
 
                 if step == .toggle {
@@ -131,7 +137,6 @@ private struct SystemSettingsWalkthrough: View {
             .frame(width: proxy.size.width, height: proxy.size.height)
             .clipped()
         }
-        .frame(height: 470)
         .background(SystemSettingsDemoPalette.paneBackground(for: colorScheme))
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
@@ -156,8 +161,8 @@ private struct SystemSettingsSidebar: View {
                 Circle().fill(Color(red: 0.18, green: 0.78, blue: 0.35))
             }
             .frame(width: 68, height: 14)
-            .padding(.top, 16)
-            .padding(.leading, 15)
+            .padding(.top, 10)
+            .padding(.leading, 12)
 
             Label("搜索", systemImage: "magnifyingglass")
                 .font(.system(size: 13))
@@ -201,7 +206,7 @@ private struct SettingsSidebarRow: View {
         }
         .foregroundStyle(isSelected ? Color.white : Color.primary)
         .padding(.horizontal, 8)
-        .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
         .background(isSelected ? Color.accentColor : Color.clear, in: RoundedRectangle(cornerRadius: 8))
     }
 }
@@ -209,6 +214,11 @@ private struct SettingsSidebarRow: View {
 private struct ExtensionSettingsPane: View {
     @Environment(\.colorScheme) private var colorScheme
     let step: PermissionWalkthroughStep
+    var stageHeight: CGFloat = 292
+
+    private var rhythm: CGFloat {
+        min(34, max(0, stageHeight - 292) * 0.22)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -220,12 +230,12 @@ private struct ExtensionSettingsPane: View {
                 }
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 14)
-                .frame(height: 36)
+                .padding(.horizontal, 12)
+                .frame(height: 30)
                 .background(.regularMaterial, in: Capsule())
 
                 Text("登录项与扩展")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 18, weight: .bold))
                     .overlay {
                         if step == .loginItems {
                             RoundedRectangle(cornerRadius: 8)
@@ -237,13 +247,13 @@ private struct ExtensionSettingsPane: View {
 
                 Spacer()
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 14)
-            .padding(.bottom, 14)
+            .padding(.horizontal, 16)
+            .padding(.top, 10 + rhythm * 0.35)
+            .padding(.bottom, 8 + rhythm * 0.25)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("扩展")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: 15, weight: .bold))
 
                 Text("扩展可在 Mac 和 App 中添加额外功能，部分扩展可能会在后台运行。")
                     .font(.system(size: 12.5))
@@ -251,12 +261,12 @@ private struct ExtensionSettingsPane: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 14)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8 + rhythm * 0.35)
 
             ExtensionScopeSwitcher()
-                .padding(.horizontal, 20)
-                .padding(.bottom, 16)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8 + rhythm * 0.7)
 
             VStack(spacing: 0) {
                 QuickDocExtensionRow(
@@ -276,15 +286,15 @@ private struct ExtensionSettingsPane: View {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(SystemSettingsDemoPalette.border(for: colorScheme), lineWidth: 1)
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
 
             Text("点击信息按钮可以管理该应用安装的扩展。")
                 .font(.system(size: 11.5))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 24)
-                .padding(.top, 10)
+                .padding(.top, 10 + rhythm)
 
-            Spacer()
+            Spacer(minLength: 16)
         }
         .background(SystemSettingsDemoPalette.paneBackground(for: colorScheme))
     }
@@ -308,8 +318,8 @@ private struct ExtensionScopeSwitcher: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.clear)
         }
-        .font(.system(size: 14, weight: .semibold))
-        .frame(height: 34)
+        .font(.system(size: 13, weight: .semibold))
+        .frame(height: 28)
         .background(SystemSettingsDemoPalette.segmentedControlBackground(for: colorScheme))
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
@@ -361,7 +371,7 @@ private struct QuickDocExtensionRow: View {
         HStack(spacing: 12) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
-                .frame(width: 38, height: 38)
+                .frame(width: 30, height: 30)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("QuickDoc")
@@ -388,8 +398,8 @@ private struct QuickDocExtensionRow: View {
                     }
                 }
         }
-        .padding(.horizontal, 16)
-        .frame(height: 70)
+        .padding(.horizontal, 12)
+        .frame(height: 52)
         .background(rowIsFocused ? Color.accentColor.opacity(0.12) : Color.clear)
         .overlay {
             if rowIsFocused {
@@ -412,7 +422,7 @@ private struct SystemServiceRow: View {
             Image(systemName: "gearshape.fill")
                 .font(.system(size: 20))
                 .foregroundStyle(.white)
-                .frame(width: 36, height: 36)
+                .frame(width: 28, height: 28)
                 .background(Color.gray, in: RoundedRectangle(cornerRadius: 9))
 
             VStack(alignment: .leading, spacing: 2) {
@@ -429,8 +439,8 @@ private struct SystemServiceRow: View {
                 .font(.system(size: 19))
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 16)
-        .frame(height: 70)
+        .padding(.horizontal, 12)
+        .frame(height: 52)
     }
 }
 
@@ -438,7 +448,9 @@ private struct ExtensionSheetFocus: View {
     let containerSize: CGSize
 
     var body: some View {
-        let sheetWidth = min(containerSize.width * 0.54, 470)
+        let widthCap = min(containerSize.width * 0.54, 470)
+        let heightCap = max(180, containerSize.height - 32)
+        let sheetWidth = min(widthCap, heightCap * 940 / 930)
         let sheetHeight = sheetWidth * 930 / 940
         let originX = (containerSize.width - sheetWidth) / 2
         let originY = (containerSize.height - sheetHeight) / 2

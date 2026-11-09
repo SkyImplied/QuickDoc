@@ -58,7 +58,41 @@ build_release() {
     -scheme "$SCHEME_NAME" \
     -configuration "$CONFIGURATION" \
     -derivedDataPath "$DERIVED_DATA_PATH" \
+    CODE_SIGNING_ALLOWED=YES \
+    CODE_SIGNING_REQUIRED=YES \
+    CODE_SIGN_STYLE=Manual \
+    CODE_SIGN_IDENTITY=- \
+    ONLY_ACTIVE_ARCH=NO \
+    ARCHS="arm64 x86_64" \
     build
+}
+
+sign_release_app() {
+  local login_item="$APP_BUNDLE/Contents/Library/LoginItems/QuickDocLoginItem.app"
+  local finder_sync="$APP_BUNDLE/Contents/PlugIns/QuickDocFinderSync.appex"
+
+  /usr/bin/xattr -cr "$APP_BUNDLE" >/dev/null 2>&1 || true
+
+  # Sign nested bundles before the host. Do not use --deep, and do not
+  # register or unregister any Finder Sync plug-in.
+  /usr/bin/codesign --force --sign - \
+    --identifier "com.skyimplied.QuickDoc.LoginItem" \
+    --entitlements "$ROOT_DIR/QuickDocLoginItem/QuickDocLoginItem.entitlements" \
+    --options runtime \
+    "$login_item"
+
+  /usr/bin/codesign --force --sign - \
+    --identifier "com.skyimplied.QuickDoc.FinderSync" \
+    --entitlements "$ROOT_DIR/QuickDocFinderSync/QuickDocFinderSync.entitlements" \
+    "$finder_sync"
+
+  /usr/bin/codesign --force --sign - \
+    --identifier "com.skyimplied.QuickDoc" \
+    --entitlements "$ROOT_DIR/QuickDoc/QuickDoc.entitlements" \
+    --options runtime \
+    "$APP_BUNDLE"
+
+  /usr/bin/codesign --verify --deep --strict "$APP_BUNDLE"
 }
 
 stage_app() {
@@ -162,8 +196,9 @@ Release artifacts created:
   $DIST_DIR/$DMG_NAME
 
 Note:
-  This build is unsigned. For public distribution without Gatekeeper warnings,
-  sign the app with Developer ID Application and notarize the final artifact.
+  This build is ad-hoc signed for local distribution. It is not a Developer ID
+  signature and it is not notarized. macOS may warn that the developer cannot
+  be verified.
 EOF
 }
 
@@ -172,6 +207,7 @@ sanitize_resource_attributes
 clean_output
 build_release
 sanitize_resource_attributes
+sign_release_app
 stage_app
 create_zip
 create_dmg

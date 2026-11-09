@@ -2,11 +2,8 @@ import SwiftUI
 
 struct EfficiencyToolsPage: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            PageHeader(
-                title: "效率工具",
-                subtitle: "配置 Finder 右键菜单中的效率功能与文件操作。"
-            )
+        VStack(alignment: .leading, spacing: 18) {
+            PageHeader(title: "效率工具")
             QuickAccessSettingsCard()
         }
     }
@@ -14,10 +11,11 @@ struct EfficiencyToolsPage: View {
 
 struct QuickAccessSettingsCard: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: 18) {
             TerminalDirectSettingsCard()
             PathCopySettingsCard()
             QuickActionsSettingsCard()
+            ExternalVolumeContextMenuCard()
         }
     }
 }
@@ -26,26 +24,15 @@ struct TerminalDirectSettingsCard: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
 
     var body: some View {
-        GlassSection {
-            VStack(alignment: .leading, spacing: 18) {
-                EfficiencySectionHeader(
-                    title: "终端直达",
-                    subtitle: "从 Finder 右键菜单直接在指定终端中打开当前位置。",
-                    systemImage: "command",
-                    tint: .blue,
-                    isEnabled: model.terminalDirectEnabled
-                )
-
-                EfficiencyFeatureToggleCard(
-                    title: "显示“在终端中打开”",
-                    subtitle: "启用后直接显示在 Finder 右键一级菜单。",
-                    systemImage: "terminal.fill",
-                    tint: .blue,
-                    isOn: $model.terminalDirectEnabled
-                )
-
-                TerminalApplicationPicker()
-            }
+        EfficiencyGroup(title: "终端直达", systemImage: "terminal.fill") {
+            EfficiencyToggleRow(
+                title: "在终端中打开",
+                caption: "显示在 Finder 右键一级菜单。",
+                systemImage: "terminal.fill",
+                isOn: $model.terminalDirectEnabled
+            )
+            Divider()
+            TerminalApplicationPicker()
         }
     }
 }
@@ -54,37 +41,13 @@ struct PathCopySettingsCard: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
 
     var body: some View {
-        GlassSection {
-            VStack(alignment: .leading, spacing: 18) {
-                EfficiencySectionHeader(
-                    title: "路径复制",
-                    subtitle: "快速复制当前文件夹或所选项目的完整路径。",
-                    systemImage: "doc.on.doc",
-                    tint: .cyan,
-                    isEnabled: model.pathCopyEnabled
-                )
-
-                EfficiencyFeatureToggleCard(
-                    title: "显示“复制当前路径”",
-                    subtitle: "启用后直接显示在 Finder 右键一级菜单。",
-                    systemImage: "point.topleft.down.curvedto.point.bottomright.up",
-                    tint: .cyan,
-                    isOn: $model.pathCopyEnabled
-                )
-
-                HStack(spacing: 12) {
-                    PathCopyBehaviorCard(
-                        title: "点击文件夹空白处",
-                        result: "复制当前文件夹路径",
-                        systemImage: "folder"
-                    )
-                    PathCopyBehaviorCard(
-                        title: "选中文件或文件夹",
-                        result: "复制所选项目路径",
-                        systemImage: "doc.on.doc"
-                    )
-                }
-            }
+        EfficiencyGroup(title: "路径复制", systemImage: "doc.on.doc") {
+            EfficiencyToggleRow(
+                title: "复制当前路径",
+                caption: "空白处复制当前文件夹，选中项复制所选路径。",
+                systemImage: "doc.on.doc",
+                isOn: $model.pathCopyEnabled
+            )
         }
     }
 }
@@ -92,131 +55,146 @@ struct PathCopySettingsCard: View {
 struct QuickActionsSettingsCard: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
 
-    private let actionColumns = [
-        GridItem(.flexible(minimum: 170), spacing: 12),
-        GridItem(.flexible(minimum: 170), spacing: 12),
-        GridItem(.flexible(minimum: 170), spacing: 12)
-    ]
-
     var body: some View {
-        GlassSection {
-            VStack(alignment: .leading, spacing: 18) {
-                EfficiencySectionHeader(
-                    title: "文件操作",
-                    subtitle: "管理 Finder 右键菜单中的文件传输与删除操作。",
-                    systemImage: "wrench.and.screwdriver",
-                    tint: .indigo,
-                    statusText: enabledActionCount == 0 ? "未启用" : "\(enabledActionCount) 项已启用",
-                    statusColor: enabledActionCount == 0 ? .secondary : .green
-                )
-
-                HStack(spacing: 12) {
-                    EfficiencyFeatureToggleCard(
-                        title: "拷贝、粘贴与剪切",
-                        subtitle: "启用 QuickDoc 自有的文件传输操作。",
-                        systemImage: "doc.on.doc",
-                        tint: .indigo,
-                        isOn: $model.quickActionsEnabled
-                    )
-
-                    EfficiencyFeatureToggleCard(
-                        title: "彻底删除",
-                        subtitle: "永久删除所选项目，执行前会再次确认。",
-                        systemImage: "trash.slash.fill",
-                        tint: .red,
-                        isOn: $model.permanentDeleteEnabled
-                    )
-                }
-
-                QuickActionsCompatibilityNotice()
-
-                Divider()
-
-                VStack(alignment: .leading, spacing: 12) {
-                    SettingsSubsectionHeader(
-                        title: "常用操作",
-                        subtitle: "选择启用后要显示的具体操作。"
-                    )
-
-                    LazyVGrid(columns: actionColumns, alignment: .leading, spacing: 12) {
-                        QuickActionToggleCard(
-                            title: "拷贝",
-                            iconName: "复制",
-                            fallbackSystemImage: "doc.on.doc",
-                            isOn: $model.copyActionEnabled,
-                            isEnabled: model.quickActionsEnabled
-                        )
-                        QuickActionToggleCard(
-                            title: "粘贴",
-                            iconName: "粘贴",
-                            fallbackSystemImage: "clipboard",
-                            isOn: $model.pasteActionEnabled,
-                            isEnabled: model.quickActionsEnabled
-                        )
-                        QuickActionToggleCard(
-                            title: "剪切",
-                            iconName: "剪切",
-                            fallbackSystemImage: "scissors",
-                            isOn: $model.cutActionEnabled,
-                            isEnabled: model.quickActionsEnabled
-                        )
-                    }
-                }
-
-                Divider()
-
-                menuPlacementSection
-            }
+        VStack(alignment: .leading, spacing: 18) {
+            copyPasteCutGroup
+            permanentDeleteGroup
+            menuPlacementGroup
         }
-    }
-
-    private var enabledActionCount: Int {
-        var count = 0
-        if model.quickActionsEnabled {
-            count += model.copyActionEnabled ? 1 : 0
-            count += model.pasteActionEnabled ? 1 : 0
-            count += model.cutActionEnabled ? 1 : 0
-        }
-        count += model.permanentDeleteEnabled ? 1 : 0
-        return count
     }
 
     private var hasEnabledOperations: Bool {
         model.quickActionsEnabled || model.permanentDeleteEnabled
     }
 
-    private var menuPlacementSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SettingsSubsectionHeader(
-                title: "菜单显示位置",
-                subtitle: hasEnabledOperations ? "选择操作直接展开，或统一收进子菜单。" : "启用任一文件操作后即可设置显示位置。"
-            )
+    private var copyPasteCutGroup: some View {
+        EfficiencyGroup(title: "拷贝、粘贴与剪切", systemImage: "square.on.square") {
+            VStack(alignment: .leading, spacing: 0) {
+                EfficiencyToggleRow(
+                    title: "在右键菜单中显示",
+                    caption: model.quickActionsEnabled ? nil : "需先开启拷贝、粘贴与剪切",
+                    systemImage: "square.on.square",
+                    isOn: $model.quickActionsEnabled,
+                    accessibilityTitle: "拷贝、粘贴与剪切"
+                )
 
-            HStack(spacing: 12) {
-                MenuPlacementOptionCard(
-                    title: "收起显示",
-                    subtitle: "归入“快捷操作”子菜单",
-                    systemImage: "rectangle.stack",
-                    isSelected: !model.quickActionsExpanded,
-                    isEnabled: hasEnabledOperations
-                ) {
-                    withAnimation(.easeInOut(duration: 0.16)) {
-                        model.quickActionsExpanded = false
-                    }
+                childAction(
+                    title: "拷贝",
+                    systemImage: "doc.on.doc",
+                    isOn: $model.copyActionEnabled
+                )
+                childAction(
+                    title: "粘贴",
+                    systemImage: "doc.on.clipboard",
+                    isOn: $model.pasteActionEnabled
+                )
+                childAction(
+                    title: "剪切",
+                    systemImage: "scissors",
+                    isOn: $model.cutActionEnabled
+                )
+
+                QuickActionsCompatibilityNotice()
+                    .padding(.top, 8)
+            }
+        }
+    }
+
+    private func childAction(title: String, systemImage: String, isOn: Binding<Bool>) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Divider()
+                .padding(.leading, 40)
+                .padding(.vertical, 4)
+            EfficiencyToggleRow(
+                title: title,
+                systemImage: systemImage,
+                isOn: isOn,
+                isEnabled: model.quickActionsEnabled,
+                indentsLabel: true
+            )
+        }
+    }
+
+    private var permanentDeleteGroup: some View {
+        EfficiencyGroup(title: "彻底删除", systemImage: "trash.slash", iconColor: .red) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: "trash.slash")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.red)
+                    .frame(width: 18, height: 18)
+                Text("永久删除，执行前会再次确认。")
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                Toggle("", isOn: $model.permanentDeleteEnabled)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .accessibilityLabel("彻底删除")
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    private var menuPlacementGroup: some View {
+        EfficiencyGroup(title: "菜单显示位置", systemImage: "list.bullet") {
+            VStack(alignment: .leading, spacing: 8) {
+                if !hasEnabledOperations {
+                    Text("启用任一文件操作后可设置")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
-                MenuPlacementOptionCard(
-                    title: "一级菜单",
-                    subtitle: "直接显示在 Finder 右键菜单",
-                    systemImage: "list.bullet",
-                    isSelected: model.quickActionsExpanded,
-                    isEnabled: hasEnabledOperations
-                ) {
-                    withAnimation(.easeInOut(duration: 0.16)) {
-                        model.quickActionsExpanded = true
+                HStack(alignment: .top, spacing: 8) {
+                    MenuPlacementOptionCard(
+                        title: "收起显示",
+                        subtitle: "归入“快捷操作”",
+                        systemImage: "rectangle.stack",
+                        isSelected: !model.quickActionsExpanded,
+                        isEnabled: hasEnabledOperations
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.16)) {
+                            model.quickActionsExpanded = false
+                        }
+                    }
+
+                    MenuPlacementOptionCard(
+                        title: "一级菜单",
+                        subtitle: "直接出现在右键菜单",
+                        systemImage: "list.bullet",
+                        isSelected: model.quickActionsExpanded,
+                        isEnabled: hasEnabledOperations
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.16)) {
+                            model.quickActionsExpanded = true
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+struct ExternalVolumeContextMenuCard: View {
+    @EnvironmentObject private var model: QuickDocSettingsModel
+
+    var body: some View {
+        EfficiencyGroup(title: "外置硬盘右键菜单（实验性）", systemImage: "externaldrive") {
+            EfficiencyToggleRow(
+                title: "在外置硬盘中显示",
+                systemImage: "externaldrive",
+                isOn: $model.externalVolumeContextMenuEnabled,
+                accessibilityTitle: "外置硬盘右键菜单（实验性）"
+            )
+            Text("不建议开启。开启后会监听外置硬盘，系统可能将磁盘图标显示为 QuickDoc Logo；介意图标变化请保持关闭，建议将 QuickDoc 添加到访达工具栏使用。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("关闭后，Finder 可能仍暂时保留已更换的图标，直到重新读取该磁盘。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
@@ -226,19 +204,19 @@ private struct QuickActionsCompatibilityNotice: View {
 
     var body: some View {
         Label {
-            Text("QuickDoc 的拷贝、粘贴和剪切需配套使用，与 Finder 系统菜单互不衔接。")
+            Text("拷贝、粘贴、剪切需配套使用，与 Finder 原菜单不互通。")
                 .fixedSize(horizontal: false, vertical: true)
         } icon: {
             Image(systemName: "exclamationmark.triangle.fill")
         }
         .font(.caption.weight(.medium))
         .foregroundStyle(warningColor)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.yellow.opacity(colorScheme == .dark ? 0.10 : 0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(Color.yellow.opacity(colorScheme == .dark ? 0.10 : 0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .stroke(Color.yellow.opacity(colorScheme == .dark ? 0.22 : 0.30), lineWidth: 1)
         }
     }
@@ -250,105 +228,62 @@ private struct QuickActionsCompatibilityNotice: View {
     }
 }
 
-private struct EfficiencySectionHeader: View {
+private struct EfficiencyGroup<Content: View>: View {
     let title: String
-    let subtitle: String
     let systemImage: String
-    let tint: Color
-    var statusText: String?
-    var statusColor: Color = .green
-
-    init(
-        title: String,
-        subtitle: String,
-        systemImage: String,
-        tint: Color,
-        isEnabled: Bool
-    ) {
-        self.title = title
-        self.subtitle = subtitle
-        self.systemImage = systemImage
-        self.tint = tint
-        statusText = isEnabled ? "已启用" : "未启用"
-        statusColor = isEnabled ? .green : .secondary
-    }
-
-    init(
-        title: String,
-        subtitle: String,
-        systemImage: String,
-        tint: Color,
-        statusText: String,
-        statusColor: Color
-    ) {
-        self.title = title
-        self.subtitle = subtitle
-        self.systemImage = systemImage
-        self.tint = tint
-        self.statusText = statusText
-        self.statusColor = statusColor
-    }
+    var iconColor: Color = .accentColor
+    @ViewBuilder var content: Content
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: systemImage)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(tint)
-                .frame(width: 42, height: 42)
-                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(iconColor)
+                    .frame(width: 22, height: 22)
+                    .background(iconColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 Text(title)
-                    .font(.headline)
-                Text(subtitle)
-                    .font(.callout)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-
-            Spacer(minLength: 12)
-
-            if let statusText {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(statusColor)
-                        .frame(width: 7, height: 7)
-                    Text(statusText)
-                        .lineLimit(1)
+            GlassSection {
+                VStack(alignment: .leading, spacing: 8) {
+                    content
                 }
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.primary.opacity(0.045), in: Capsule())
             }
         }
     }
 }
 
-private struct EfficiencyFeatureToggleCard: View {
+private struct EfficiencyToggleRow: View {
     let title: String
-    let subtitle: String
+    var caption: String?
     let systemImage: String
-    let tint: Color
+    var iconColor: Color = .secondary
     @Binding var isOn: Bool
+    var isEnabled: Bool = true
+    var indentsLabel = false
+    var accessibilityTitle: String? = nil
 
     var body: some View {
-        HStack(alignment: .center, spacing: 13) {
+        HStack(alignment: .center, spacing: 10) {
             Image(systemName: systemImage)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(tint)
-                .frame(width: 36, height: 36)
-                .background(tint.opacity(0.11), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(isEnabled ? iconColor : Color.secondary)
+                .frame(width: 18, height: 18)
+                .padding(.leading, indentsLabel ? 22 : 0)
 
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.callout.weight(.semibold))
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .font(.body)
+                    .lineLimit(1)
+                if let caption, !caption.isEmpty {
+                    Text(caption)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             Spacer(minLength: 8)
@@ -357,121 +292,11 @@ private struct EfficiencyFeatureToggleCard: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.small)
-                .accessibilityLabel(title)
-                .accessibilityHint(subtitle)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 84, alignment: .leading)
-        .background(
-            isOn ? tint.opacity(0.065) : Color.primary.opacity(0.022),
-            in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(isOn ? tint.opacity(0.26) : Color.primary.opacity(0.08), lineWidth: 1)
-        }
-    }
-}
-
-private struct PathCopyBehaviorCard: View {
-    let title: String
-    let result: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(spacing: 11) {
-            Image(systemName: systemImage)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color.cyan)
-                .frame(width: 32, height: 32)
-                .background(Color.cyan.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-                Text(result)
-                    .font(.callout.weight(.semibold))
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.primary.opacity(0.022), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.primary.opacity(0.075), lineWidth: 1)
-        }
-    }
-}
-
-private struct SettingsSubsectionHeader: View {
-    let title: String
-    let subtitle: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(title)
-                .font(.callout.weight(.semibold))
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
-private struct QuickActionToggleCard: View {
-    let title: String
-    let iconName: String
-    let fallbackSystemImage: String
-    @Binding var isOn: Bool
-    let isEnabled: Bool
-
-    var body: some View {
-        HStack(spacing: 10) {
-            actionIcon
-                .frame(width: 32, height: 32)
-                .background(Color.indigo.opacity(0.10), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-            Text(title)
-                .font(.callout.weight(.semibold))
-
-            Spacer(minLength: 6)
-
-            Toggle("", isOn: $isOn)
-                .labelsHidden()
-                .toggleStyle(.switch)
-                .controlSize(.mini)
                 .disabled(!isEnabled)
-                .accessibilityLabel(title)
+                .accessibilityLabel(accessibilityTitle ?? title)
         }
-        .padding(.horizontal, 12)
-        .frame(maxWidth: .infinity, minHeight: 54)
-        .background(
-            isOn && isEnabled ? Color.indigo.opacity(0.06) : Color.primary.opacity(0.022),
-            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(isOn && isEnabled ? Color.indigo.opacity(0.22) : Color.primary.opacity(0.075), lineWidth: 1)
-        }
-        .opacity(isEnabled ? 1 : 0.58)
-    }
-
-    @ViewBuilder
-    private var actionIcon: some View {
-        if let image = Bundle.main.image(forResource: iconName) {
-            Image(nsImage: image)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 18, height: 18)
-        } else {
-            Image(systemName: fallbackSystemImage)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color.indigo)
-        }
+        .padding(.vertical, 2)
+        .opacity(isEnabled ? 1 : 0.72)
     }
 }
 
@@ -485,50 +310,48 @@ private struct MenuPlacementOptionCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
-                    .frame(width: 34, height: 34)
-                    .background(
-                        isSelected ? Color.accentColor.opacity(0.11) : Color.primary.opacity(0.045),
-                        in: RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    )
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 16, height: 16)
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 1) {
                     Text(title)
                         .font(.callout.weight(.semibold))
                         .foregroundStyle(.primary)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                         .lineLimit(1)
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Spacer(minLength: 6)
+                Spacer(minLength: 4)
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary.opacity(0.42))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(isSelected && isEnabled ? Color.primary : Color.secondary.opacity(0.4))
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
             .background(
-                isSelected ? Color.accentColor.opacity(0.075) : Color.primary.opacity(0.022),
-                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                Color.primary.opacity(isSelected && isEnabled ? 0.07 : 0.035),
+                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
             )
             .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isSelected ? Color.accentColor.opacity(0.34) : Color.primary.opacity(0.075), lineWidth: isSelected ? 1.5 : 1)
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.primary.opacity(isSelected && isEnabled ? 0.22 : 0.08), lineWidth: isSelected && isEnabled ? 1.5 : 1)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.55)
         .accessibilityLabel(title)
         .accessibilityValue(isSelected ? "已选择" : "未选择")
-        .accessibilityHint(subtitle)
     }
 }
 
@@ -536,25 +359,24 @@ struct TerminalApplicationPicker: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
+        ViewThatFits(in: .horizontal) {
+            pickerRow(stacksButtons: false)
+            pickerRow(stacksButtons: true)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func pickerRow(stacksButtons: Bool) -> some View {
+        let info = HStack(alignment: .center, spacing: 10) {
             Image(nsImage: model.selectedTerminalApplicationIcon)
                 .resizable()
-                .frame(width: 42, height: 42)
-                .padding(9)
-                .background(Color.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .stroke(Color.blue.opacity(0.14), lineWidth: 1)
-                }
+                .frame(width: 28, height: 28)
 
-            VStack(alignment: .leading, spacing: 5) {
-                Text("当前终端应用")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
+            VStack(alignment: .leading, spacing: 2) {
                 Text(model.selectedTerminalApplicationName)
-                    .font(.headline)
-
+                    .font(.body.weight(.semibold))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 Text(model.selectedTerminalApplicationPathText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -562,32 +384,38 @@ struct TerminalApplicationPicker: View {
                     .truncationMode(.middle)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-
-            Spacer(minLength: 0)
-
-            HStack(spacing: 10) {
-                Button {
-                    model.chooseTerminalApplication()
-                } label: {
-                    Label("更换终端", systemImage: "folder")
-                }
-                .glassButtonStyle(prominent: true)
-
-                Button {
-                    model.resetTerminalApplication()
-                } label: {
-                    Label("恢复默认", systemImage: "arrow.counterclockwise")
-                }
-                .disabled(!model.hasCustomTerminalApplication)
-                .glassButtonStyle()
-            }
-            .fixedSize()
         }
-        .padding(14)
-        .background(Color.primary.opacity(0.022), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+
+        let buttons = HStack(spacing: 8) {
+            Button {
+                model.chooseTerminalApplication()
+            } label: {
+                Label("更换终端", systemImage: "folder")
+            }
+            .glassButtonStyle(prominent: true)
+
+            Button {
+                model.resetTerminalApplication()
+            } label: {
+                Label("恢复默认", systemImage: "arrow.counterclockwise")
+            }
+            .disabled(!model.hasCustomTerminalApplication)
+            .glassButtonStyle()
+        }
+        .fixedSize(horizontal: true, vertical: false)
+
+        return Group {
+            if stacksButtons {
+                VStack(alignment: .leading, spacing: 8) {
+                    info
+                    buttons
+                }
+            } else {
+                HStack(alignment: .center, spacing: 10) {
+                    info
+                    buttons
+                }
+            }
         }
     }
 }

@@ -5,108 +5,28 @@ struct MenuPreviewCard: View {
     @State private var isEditingOrder = false
 
     var body: some View {
-        GlassSection {
-            VStack(alignment: .leading, spacing: 20) {
-                sectionHeader
-                statusBar
-                menuPreviewCanvas
-            }
-        }
-    }
-
-    private var sectionHeader: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: "cursorarrow.click.2")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 42, height: 42)
-                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Finder 右键菜单预览")
-                    .font(.headline)
-                Text("预览“新建文件”子菜单，并调整各文件类型在 Finder 中的显示顺序。")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 16)
-
-            Button {
-                withAnimation(.easeInOut(duration: 0.18)) {
-                    isEditingOrder.toggle()
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                SettingsSectionTitle(title: "菜单顺序", systemImage: "list.bullet")
+                Spacer(minLength: 8)
+                Button(isEditingOrder ? "完成" : "调整顺序") {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        isEditingOrder.toggle()
+                    }
                 }
-            } label: {
-                Label(isEditingOrder ? "完成排序" : "调整顺序", systemImage: isEditingOrder ? "checkmark" : "arrow.up.arrow.down")
+                .disabled(model.menuPreviewItems.count < 2)
             }
-            .glassButtonStyle(prominent: isEditingOrder)
-            .disabled(model.menuPreviewItems.count < 2)
-        }
-    }
 
-    private var statusBar: some View {
-        HStack(spacing: 10) {
-            MenuPreviewStatusPill(
-                systemImage: "doc.on.doc",
-                text: "\(model.menuPreviewItems.count) 个文件类型"
-            )
-
-            MenuPreviewStatusPill(
-                systemImage: "square.stack.3d.up",
-                text: "\(visibleTemplateCount) 个自定义模板"
-            )
-
-            Spacer(minLength: 12)
-
-            Label(
-                isEditingOrder ? "使用每行右侧的箭头调整位置，修改会立即生效" : "带模板的类型会显示为三级菜单",
-                systemImage: isEditingOrder ? "info.circle.fill" : "chevron.right.2"
-            )
-            .font(.caption)
-            .foregroundStyle(isEditingOrder ? Color.accentColor : Color.secondary)
-            .lineLimit(1)
-        }
-    }
-
-    private var menuPreviewCanvas: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    Color.accentColor.opacity(0.055),
-                    Color.primary.opacity(0.018),
-                    Color.accentColor.opacity(0.035)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-            VStack(spacing: 14) {
-                HStack(spacing: 7) {
-                    Image(systemName: "folder.fill")
-                        .foregroundStyle(Color.accentColor)
-                    Text("Finder")
-                        .fontWeight(.semibold)
-                    Text("·")
-                        .foregroundStyle(.tertiary)
-                    Text(isEditingOrder ? "正在调整菜单顺序" : "空白处右键  ›  新建文件")
+            GlassSection {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(isEditingOrder ? "用右侧箭头调整，松开后立即生效。" : "当前「新建文件」菜单。带模板的项目会展开子菜单。")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    finderMenu
                 }
-                .font(.caption)
-
-                finderMenu
-                    .frame(maxWidth: 540)
             }
-            .padding(.horizontal, 42)
-            .padding(.vertical, 24)
         }
-        .frame(maxWidth: .infinity, minHeight: 390)
-        .background(Color.primary.opacity(0.02))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var finderMenu: some View {
@@ -145,7 +65,7 @@ struct MenuPreviewCard: View {
 
             Divider()
 
-            ScrollView {
+            Group {
                 if model.menuPreviewItems.isEmpty {
                     emptyMenuView
                 } else {
@@ -161,50 +81,28 @@ struct MenuPreviewCard: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 7)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 4)
                 }
             }
-            .frame(minHeight: 280, maxHeight: 430)
             .animation(.easeInOut(duration: 0.18), value: model.menuPreviewItems.map(\.id))
 
-            if !model.menuPreviewItems.isEmpty {
-                Divider()
-
-                HStack(spacing: 7) {
-                    Image(systemName: isEditingOrder ? "arrow.up.arrow.down.circle" : "eye")
-                    Text(isEditingOrder ? "顺序会自动保存并同步到 Finder" : "以上是当前 Finder 菜单中的实际显示顺序")
-                }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 9)
+            if !model.menuPreviewItems.isEmpty, isEditingOrder {
+                Text("顺序会保存并同步到 Finder。")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 6)
             }
         }
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-        }
-        .shadow(color: .black.opacity(0.10), radius: 18, y: 8)
     }
 
     private var emptyMenuView: some View {
-        VStack(spacing: 9) {
-            Image(systemName: "doc.badge.ellipsis")
-                .font(.system(size: 25))
-                .foregroundStyle(.secondary)
-            Text("暂无启用的文件类型")
-                .font(.callout.weight(.semibold))
-            Text("请在上方选择要显示在 Finder 中的类型。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 245)
-    }
-
-    private var visibleTemplateCount: Int {
-        model.menuPreviewItems.reduce(0) { $0 + $1.templateCount }
+        Text("还没有启用的文件类型。")
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
     }
 
     private func moveItem(at index: Int, offset: Int) {
@@ -232,10 +130,9 @@ struct PreviewMenuRow: View {
         HStack(spacing: 10) {
             if isEditing {
                 Text("\(position + 1)")
-                    .font(.caption.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 24, height: 24)
-                    .background(Color.accentColor.opacity(0.10), in: Circle())
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 18)
             }
 
             previewIcon
@@ -243,15 +140,14 @@ struct PreviewMenuRow: View {
 
             Text(item.title)
                 .font(.callout)
-                .lineLimit(1)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
 
             if item.templateCount > 0 {
                 Text("\(item.templateCount) 个模板")
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(Color.accentColor)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 2)
-                    .background(Color.accentColor.opacity(0.09), in: Capsule())
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
             Spacer(minLength: 8)
@@ -285,7 +181,7 @@ struct PreviewMenuRow: View {
         .frame(height: isEditing ? 42 : 36)
         .padding(.horizontal, 10)
         .background(
-            isEditing ? Color.accentColor.opacity(0.045) : Color.clear,
+            isEditing ? Color.primary.opacity(0.04) : Color.clear,
             in: RoundedRectangle(cornerRadius: 8, style: .continuous)
         )
     }
@@ -303,16 +199,3 @@ struct PreviewMenuRow: View {
     }
 }
 
-struct MenuPreviewStatusPill: View {
-    let systemImage: String
-    let text: String
-
-    var body: some View {
-        Label(text, systemImage: systemImage)
-            .font(.caption.weight(.medium))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.primary.opacity(0.055), in: Capsule())
-    }
-}

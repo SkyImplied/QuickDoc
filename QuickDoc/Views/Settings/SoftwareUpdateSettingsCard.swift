@@ -5,24 +5,20 @@ struct SoftwareUpdateSettingsCard: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        GlassSection {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .center, spacing: 14) {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.blue)
-                        .frame(width: 40, height: 40)
-                        .background(Color.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("软件更新")
-                            .font(.headline)
+        VStack(alignment: .leading, spacing: 8) {
+            SettingsSectionTitle(title: "软件更新", systemImage: "arrow.triangle.2.circlepath")
+            GlassSection {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("检查更新")
+                            .font(.body)
                         Text("当前版本 v\(model.appVersion)")
-                            .font(.callout)
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
-                    Spacer()
+                    Spacer(minLength: 12)
 
                     Button(model.softwareUpdateButtonTitle) {
                         model.checkForSoftwareUpdate()
@@ -37,7 +33,7 @@ struct SoftwareUpdateSettingsCard: View {
                 }
 
                 Text(model.softwareUpdateStatusText)
-                    .font(.callout)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -57,6 +53,7 @@ struct SoftwareUpdateSettingsCard: View {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .stroke(Color.yellow.opacity(colorScheme == .dark ? 0.22 : 0.30), lineWidth: 1)
                 }
+            }
             }
         }
     }

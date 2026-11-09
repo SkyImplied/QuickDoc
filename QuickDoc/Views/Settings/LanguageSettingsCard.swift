@@ -20,29 +20,23 @@ struct LanguageSettingsCard: View {
     @State private var isPresentingLanguageSheet = false
 
     var body: some View {
-        GlassSection {
-            HStack(alignment: .center, spacing: 14) {
-                Image(systemName: "globe")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.blue)
-                    .frame(width: 40, height: 40)
-                    .background(Color.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("软件语言")
-                        .font(.headline)
-                    Text("点击后再选择语言，当前版本暂不支持实际切换。")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 8) {
+            SettingsSectionTitle(title: "语言", systemImage: "globe")
+            GlassSection {
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("软件语言")
+                            .font(.body)
+                        Text("当前版本只有简体中文。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 12)
+                    Button("语言设置") {
+                        isPresentingLanguageSheet = true
+                    }
+                    .glassButtonStyle()
                 }
-
-                Spacer()
-
-                Button("语言设置") {
-                    isPresentingLanguageSheet = true
-                }
-                .glassButtonStyle()
             }
         }
         .sheet(isPresented: $isPresentingLanguageSheet) {

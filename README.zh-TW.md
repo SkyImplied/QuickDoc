@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>直接從 Finder 右鍵選單和工具列建立常用檔案。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.7.7"><img src="https://img.shields.io/badge/version-v1.7.7-blue" alt="版本 v1.7.7"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.0"><img src="https://img.shields.io/badge/version-v1.8.0-blue" alt="版本 v1.8.0"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="平台 macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="使用 Swift 建置">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.7.7/QuickDoc-1.7.7.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下載 DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.0/QuickDoc-1.8.0.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下載 DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="下載次數"></a>
   </p>
   <p>
@@ -15,6 +15,13 @@
 </div>
 
 QuickDoc 是一款以 macOS Finder Sync 擴充功能為核心的效率工具。它會在 Finder 右鍵選單中加入實用的「新建文件」子選單；從 v1.3 開始，也支援將 QuickDoc 加入 Finder 工具列，直接從工具列建立新檔案。
+
+## v1.8.0 更新亮點
+
+1. 預設設定視窗縮小為 960×720，最小尺寸為 880×660。
+2. 設定介面做了簡約化重設計，使用原生可收合側邊欄，並整理了各個頁面。
+3. 新增預設關閉的「外置硬盘右键菜单（实验性）」。不建議一般使用者開啟。開啟後會監聽外接磁碟掛載點，Finder 可能把磁碟圖示顯示為 QuickDoc Logo；關閉後，Finder 可能仍暫時保留已更換的圖示，直到重新讀取該磁碟。若在意圖示變化，請保持關閉，並建議將 QuickDoc 加入 Finder 工具列使用。
+4. 此開關只為直接掛在 `/Volumes/名稱`、本機且可瀏覽、DiskArbitration 報告為非內建，並且協定是 USB、Thunderbolt、PCI Express、SD、FireWire、SATA、SAS、SCSI 或 ATAPI 的卷提供右鍵選單。磁碟映像、網路卷和模擬器卷不會加入。這不表示所有外接磁碟或檔案系統都可用。
 
 ## v1.7.7 更新亮點
 
@@ -198,7 +205,7 @@ QuickDoc 是一款以 macOS Finder Sync 擴充功能為核心的效率工具。�
 
 ## 支援的新建檔案類型
 
-v1.7.7 內建支援：
+v1.8.0 內建支援：
 
 - TXT
 - Markdown（`.md`）
@@ -301,7 +308,7 @@ QuickDoc 會檢查 Finder Sync 擴充功能是否已啟用，並引導你前往�
 
 安裝 v1.4.0 後，後續版本可在「一般」頁面底部點擊 `检查更新`。發現新版本時，QuickDoc 會先詢問是否安裝；使用者確認後才會自動下載並安裝，完成覆蓋後重新開啟並提示升級成功。
 
-若 macOS 提示應用程式來自未識別的開發者，可在 Finder 中按住 `Control` 點擊應用程式，再選擇 `打開`。
+若 macOS 提示應用程式來自未識別的開發者，可在 Finder 中按住 `Control` 點擊應用程式，再選擇 `打開`。發布包使用 ad-hoc 簽名，沒有 Developer ID，也沒有公證。
 
 ## 從原始碼建置
 

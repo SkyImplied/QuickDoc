@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Create common files directly from Finder's right-click menu and toolbar.</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.7.7"><img src="https://img.shields.io/badge/version-v1.7.7-blue" alt="Version v1.7.7"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.0"><img src="https://img.shields.io/badge/version-v1.8.0-blue" alt="Version v1.8.0"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="Platform macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Built with Swift">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.7.7/QuickDoc-1.7.7.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.0/QuickDoc-1.8.0.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="Downloads"></a>
   </p>
   <p>
@@ -15,6 +15,13 @@
 </div>
 
 QuickDoc is a macOS utility built around a Finder Sync extension. It adds a practical `New File` submenu to Finder's context menu, and since v1.3 it also supports adding QuickDoc to the Finder toolbar so file creation can be invoked directly from the toolbar.
+
+## What's New in v1.8.0
+
+- The default settings window is now 960×720, and the minimum window size is 880×660.
+- The settings interface is simplified, with a native collapsible sidebar and reorganized pages.
+- Added an experimental switch, off by default: “外置硬盘右键菜单（实验性）”. General use is not recommended. Turning it on monitors external-disk mount points, and Finder may show the QuickDoc logo as the disk icon. After turning it off, Finder may keep that icon until it reloads the disk. Leave the switch off and add QuickDoc to the Finder toolbar if the icon matters.
+- The switch only offers a contextual menu for a local, browsable volume mounted directly at `/Volumes/<name>` when DiskArbitration reports it as non-internal and using USB, Thunderbolt, PCI Express, SD, FireWire, SATA, SAS, SCSI, or ATAPI. Disk images, network volumes, and simulator volumes are excluded. This is not a promise that every external disk or file system works.
 
 ## What's New in v1.7.7
 
@@ -205,7 +212,7 @@ After replacement succeeds, QuickDoc relaunches automatically and confirms that 
 
 ## Supported File Types
 
-Built-in file types in v1.7.7:
+Built-in file types in v1.8.0:
 
 - TXT
 - Markdown (`.md`)
@@ -310,7 +317,7 @@ Then:
 
 After installing v1.4.0 or later, future versions can be checked from the `检查更新` button at the bottom of the General page. QuickDoc asks for confirmation before downloading an available update, then relaunches automatically and confirms when the upgrade is complete.
 
-If macOS warns that the app is from an unidentified developer, open it once from Finder with `Control` + click and choose `Open`.
+If macOS warns that the app is from an unidentified developer, open it once from Finder with `Control` + click and choose `Open`. Release builds are ad-hoc signed. They are not Developer ID signed and they are not notarized.
 
 ## Build From Source
 

@@ -1,6 +1,23 @@
 import Cocoa
+import DiskArbitration
 import FinderSync
 import os
+
+private let quickDocSettingsDidChangeNotification = "com.skyimplied.QuickDoc.settingsDidChange" as CFString
+
+private func quickDocSettingsDidChange(
+    _ center: CFNotificationCenter?,
+    _ observer: UnsafeMutableRawPointer?,
+    _ name: CFNotificationName?,
+    _ object: UnsafeRawPointer?,
+    _ userInfo: CFDictionary?
+) {
+    guard let observer else { return }
+    let sync = Unmanaged<FinderSync>.fromOpaque(observer).takeUnretainedValue()
+    DispatchQueue.main.async {
+        sync.refreshMonitoredDirectories(reason: "settings notification")
+    }
+}
 
 private struct CustomTemplateDefinition {
     let id: String
@@ -41,7 +58,8 @@ private typealias SharedSettings = (
     copyActionEnabled: Bool?,
     pasteActionEnabled: Bool?,
     cutActionEnabled: Bool?,
-    permanentDeleteEnabled: Bool?
+    permanentDeleteEnabled: Bool?,
+    externalVolumeContextMenuEnabled: Bool?
 )
 
 private struct FinderActionSelection {
@@ -135,6 +153,8 @@ final class FinderSync: FIFinderSync {
     private static let pasteActionEnabledKey = "pasteActionEnabled"
     private static let cutActionEnabledKey = "cutActionEnabled"
     private static let permanentDeleteEnabledKey = "permanentDeleteEnabled"
+    private static let externalVolumeContextMenuEnabledKey = FinderMenuTargetPolicy.externalVolumeContextMenuEnabledKey
+    private static let settingsDidChangeNotification = CFNotificationName(quickDocSettingsDidChangeNotification)
     private static let diagnosticsEnabled = ProcessInfo.processInfo.environment["QUICKDOC_FINDER_DIAGNOSTICS"] == "1"
     private static let maximumDiagnosticLogSize: UInt64 = 1_000_000
     private static let quickDocCutPasteboardType = NSPasteboard.PasteboardType("com.skyimplied.QuickDoc.cut-files")
@@ -165,13 +185,26 @@ final class FinderSync: FIFinderSync {
         Bundle(for: FinderSync.self)
     }
 
-    private static func monitoredDirectoryURLs() -> [URL] {
+    private var monitoringSignalsStarted = false
+    private var settingsDirectorySource: DispatchSourceFileSystemObject?
+    private var workspaceObservers: [NSObjectProtocol] = []
+
+    private func monitoredDirectoryURLs() -> [URL] {
+        let settings = readSharedSettings()
+        let enabled = FinderMenuTargetPolicy.externalVolumeContextMenuEnabled(
+            sharedValue: settings.externalVolumeContextMenuEnabled
+        )
+        let paths = FinderMenuTargetPolicy.monitoredDirectoryPaths(
+            homePath: "/Users/\(NSUserName())",
+            externalContextMenuEnabled: enabled,
+            volumes: enabled ? externalVolumeCandidates() : []
+        )
+        return existingDirectoryURLs(at: paths)
+    }
+
+    private func existingDirectoryURLs(at paths: [String]) -> [URL] {
         let fileManager = FileManager.default
-        // Keep mounted volumes out of the root set. Finder replaces the sidebar
-        // icon of every monitored root with the containing app's icon. /Volumes
-        // intentionally does not provide contextual menus across mount boundaries;
-        // external volumes are supported through the global toolbar item instead.
-        return FinderMenuTargetPolicy.monitoredRootPaths(homePath: "/Users/\(NSUserName())").compactMap { path in
+        return paths.compactMap { path in
             let standardizedURL = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: standardizedURL.path, isDirectory: &isDirectory),
@@ -180,6 +213,108 @@ final class FinderSync: FIFinderSync {
             }
             return standardizedURL
         }
+    }
+
+    /// Mount points only. Resource values and DiskArbitration describe the
+    /// volume; they do not list or write anything inside it.
+    private func externalVolumeCandidates() -> [ExternalVolumeAttributes] {
+        let keys: Set<URLResourceKey> = [
+            .volumeIsLocalKey,
+            .volumeIsInternalKey,
+            .volumeIsBrowsableKey,
+            .volumeIsRootFileSystemKey
+        ]
+        let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: Array(keys), options: [.skipHiddenVolumes]) ?? []
+        guard let session = DASessionCreate(kCFAllocatorDefault) else { return [] }
+
+        return urls.compactMap { url in
+            guard let values = try? url.resourceValues(forKeys: keys),
+                  values.volumeIsRootFileSystem != true,
+                  let isLocal = values.volumeIsLocal,
+                  let isInternal = values.volumeIsInternal,
+                  let isBrowsable = values.volumeIsBrowsable,
+                  let disk = DADiskCreateFromVolumePath(kCFAllocatorDefault, session, url as CFURL),
+                  let description = DADiskCopyDescription(disk) as? [String: Any],
+                  let deviceInternal = description[kDADiskDescriptionDeviceInternalKey as String] as? Bool,
+                  let deviceProtocol = description[kDADiskDescriptionDeviceProtocolKey as String] as? String else {
+                return nil
+            }
+            return ExternalVolumeAttributes(
+                path: url.standardizedFileURL.path,
+                isLocal: isLocal,
+                isInternal: isInternal,
+                isBrowsable: isBrowsable,
+                deviceInternal: deviceInternal,
+                deviceProtocol: deviceProtocol
+            )
+        }
+    }
+
+    private func startMonitoringSignals() {
+        guard !monitoringSignalsStarted else { return }
+        monitoringSignalsStarted = true
+
+        let center = NSWorkspace.shared.notificationCenter
+        let names = [
+            NSWorkspace.didMountNotification,
+            NSWorkspace.didUnmountNotification,
+            NSWorkspace.didRenameVolumeNotification
+        ]
+        workspaceObservers = names.map { name in
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.refreshMonitoredDirectories(reason: "volume \(name.rawValue)")
+            }
+        }
+
+        CFNotificationCenterAddObserver(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            Unmanaged.passUnretained(self).toOpaque(),
+            quickDocSettingsDidChange,
+            Self.settingsDidChangeNotification.rawValue,
+            nil,
+            .deliverImmediately
+        )
+        watchSettingsDirectory()
+    }
+
+    private func watchSettingsDirectory() {
+        let directory = Self.sharedSettingsURL.deletingLastPathComponent()
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            return
+        }
+        let descriptor = open(directory.path, O_EVTONLY)
+        guard descriptor >= 0 else { return }
+        let source = DispatchSource.makeFileSystemObjectSource(
+            fileDescriptor: descriptor,
+            eventMask: [.write, .rename, .delete],
+            queue: .main
+        )
+        source.setEventHandler { [weak self] in
+            self?.refreshMonitoredDirectories(reason: "settings file")
+        }
+        source.setCancelHandler {
+            close(descriptor)
+        }
+        settingsDirectorySource = source
+        source.resume()
+    }
+
+    private func stopMonitoringSignals() {
+        guard monitoringSignalsStarted else { return }
+        monitoringSignalsStarted = false
+        CFNotificationCenterRemoveObserver(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            Unmanaged.passUnretained(self).toOpaque(),
+            Self.settingsDidChangeNotification,
+            nil
+        )
+        let center = NSWorkspace.shared.notificationCenter
+        workspaceObservers.forEach { center.removeObserver($0) }
+        workspaceObservers.removeAll()
+        settingsDirectorySource?.cancel()
+        settingsDirectorySource = nil
     }
 
     private let builtInDefinitions: [FileDefinition] = [
@@ -201,9 +336,14 @@ final class FinderSync: FIFinderSync {
 
     override init() {
         super.init()
+        startMonitoringSignals()
         refreshMonitoredDirectories(reason: "initial load")
         logger.info("QuickDoc Finder Sync extension loaded")
         diagnosticLog("QuickDoc Finder Sync extension loaded")
+    }
+
+    deinit {
+        stopMonitoringSignals()
     }
 
     override var toolbarItemName: String {
@@ -234,8 +374,8 @@ final class FinderSync: FIFinderSync {
         refreshMonitoredDirectories(reason: "begin observing \(url.path)")
     }
 
-    private func refreshMonitoredDirectories(reason: String) {
-        let monitoredURLs = Self.monitoredDirectoryURLs()
+    fileprivate func refreshMonitoredDirectories(reason: String) {
+        let monitoredURLs = monitoredDirectoryURLs()
         let monitoredURLSet = Set(monitoredURLs)
         let finderSyncController = FIFinderSyncController.default()
         guard finderSyncController.directoryURLs != monitoredURLSet else {
@@ -565,11 +705,12 @@ final class FinderSync: FIFinderSync {
                 payload[Self.copyActionEnabledKey] as? Bool,
                 payload[Self.pasteActionEnabledKey] as? Bool,
                 payload[Self.cutActionEnabledKey] as? Bool,
-                payload[Self.permanentDeleteEnabledKey] as? Bool
+                payload[Self.permanentDeleteEnabledKey] as? Bool,
+                payload[Self.externalVolumeContextMenuEnabledKey] as? Bool
             )
         }
 
-        return (nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+        return (nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
     }
 
     private func settingValue(_ sharedValue: Bool?, key: String, fallback: Bool) -> Bool {

@@ -161,7 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func makeMainWindow() -> NSWindow {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1200, height: 840),
+            contentRect: NSRect(origin: .zero, size: QuickDocWindowMetrics.defaultContentSize),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -170,10 +170,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = false
-        window.minSize = NSSize(width: 1120, height: 700)
+        window.contentMinSize = QuickDocWindowMetrics.minimumContentSize
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.center()
+        window.setFrameAutosaveName("QuickDocSettings")
         window.contentView = NSHostingView(rootView: QuickDocSettingsView(model: settingsModel))
         return window
     }

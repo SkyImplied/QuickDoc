@@ -24,6 +24,14 @@ enum QuickDocIcon {
     @MainActor private static var cache: [CacheKey: NSImage] = [:]
 
     @MainActor
+    static func applicationLogo() -> NSImage {
+        if let named = NSImage(named: "QuickDocLogo") {
+            return named
+        }
+        return NSApp.applicationIconImage
+    }
+
+    @MainActor
     static func icon(for id: String, size: NSSize) -> NSImage? {
         let resourceName: String
         if let builtInResourceName = builtInIconResourceNames[id] {

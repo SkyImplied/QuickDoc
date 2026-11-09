@@ -61,6 +61,15 @@ enum FinderPathCopyPlan: Equatable {
     case cancel(FinderDirectoryCancelReason)
 }
 
+struct ExternalVolumeAttributes: Equatable {
+    var path: String
+    var isLocal: Bool
+    var isInternal: Bool
+    var isBrowsable: Bool
+    var deviceInternal: Bool
+    var deviceProtocol: String
+}
+
 enum FinderMenuTargetPolicy {
     /// Short enough that a re-entrant Finder event cannot pin the extension
     /// for the Apple Event Manager's default one-minute timeout.
@@ -175,11 +184,74 @@ enum FinderMenuTargetPolicy {
         }
     }
 
-    /// Monitored roots are the home folder and `/Volumes` only. Mount points
-    /// under `/Volumes` are excluded because Finder replaces each monitored
-    /// root's sidebar icon with the app icon.
+    /// Baseline roots stay the home folder and `/Volumes`. `/Volumes` does not
+    /// cross a mount boundary, so it does not give an external disk a contextual
+    /// menu. Adding that disk's own mount URL does, and Finder may then draw the
+    /// containing app's icon for that sidebar item. The experimental switch is
+    /// the only path that adds those mount URLs.
+    static let externalVolumeContextMenuEnabledKey = "externalVolumeContextMenuEnabled"
+
+    static func externalVolumeContextMenuEnabled(sharedValue: Bool?) -> Bool {
+        sharedValue == true
+    }
+
     static func monitoredRootPaths(homePath: String) -> [String] {
         [homePath, "/Volumes"]
+    }
+
+    /// Physical external buses. Internal storage on this Mac reports
+    /// "Apple Fabric"; disk images and simulators report their own protocols.
+    static let supportedExternalDeviceProtocols: Set<String> = [
+        "usb",
+        "thunderbolt",
+        "pci-express",
+        "secure digital",
+        "firewire",
+        "sata",
+        "sas",
+        "scsi",
+        "atapi"
+    ]
+
+    static func isSupportedExternalVolume(_ volume: ExternalVolumeAttributes) -> Bool {
+        let path = standardizedPath(volume.path)
+        guard isExternalMountPath(path) else { return false }
+        guard volume.isLocal, !volume.isInternal, volume.isBrowsable, !volume.deviceInternal else {
+            return false
+        }
+        return supportedExternalDeviceProtocols.contains(volume.deviceProtocol.lowercased())
+    }
+
+    static func monitoredDirectoryPaths(
+        homePath: String,
+        externalContextMenuEnabled: Bool,
+        volumes: [ExternalVolumeAttributes]
+    ) -> [String] {
+        let baseline = monitoredRootPaths(homePath: homePath)
+        guard externalContextMenuEnabled else { return baseline }
+
+        let home = standardizedPath(homePath)
+        var paths = baseline
+        var seen = Set(baseline.map(standardizedPath))
+        let extras = volumes
+            .filter(isSupportedExternalVolume)
+            .map { standardizedPath($0.path) }
+            .filter { $0 != home && $0 != "/Volumes" && $0 != "/" }
+            .sorted()
+        for extra in extras where seen.insert(extra).inserted {
+            paths.append(extra)
+        }
+        return paths
+    }
+
+    private static func standardizedPath(_ path: String) -> String {
+        URL(fileURLWithPath: path).standardizedFileURL.path
+    }
+
+    private static func isExternalMountPath(_ path: String) -> Bool {
+        guard path.hasPrefix("/Volumes/") else { return false }
+        let name = path.dropFirst("/Volumes/".count)
+        return !name.isEmpty && !name.contains("/")
     }
 
     static func isSidebarProtectedVolumeMount(_ path: String) -> Bool {

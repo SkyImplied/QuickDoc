@@ -40,12 +40,17 @@ EOF
   fi
 }
 
-build_app() {
-  require_xcode
+stop_quickdoc_processes() {
   pkill -x "$APP_NAME" >/dev/null 2>&1 || true
   pkill -x "$EXTENSION_NAME" >/dev/null 2>&1 || true
+}
+
+build_app() {
+  require_xcode
   mkdir -p "$BUILD_ROOT"
 
+  # Command-line settings override a caller-exported CODE_SIGNING_ALLOWED=NO.
+  # Ad-hoc identity "-" is local signing, not a Developer ID or notarization.
   /usr/bin/xcodebuild \
     -project "$ROOT_DIR/$PROJECT_NAME" \
     -scheme "$SCHEME_NAME" \
@@ -56,6 +61,10 @@ build_app() {
     DSTROOT="$BUILD_ROOT/Install" \
     SHARED_PRECOMPS_DIR="$BUILD_ROOT/PrecompiledHeaders" \
     CONFIGURATION_BUILD_DIR="$PRODUCTS_DIR" \
+    CODE_SIGNING_ALLOWED=YES \
+    CODE_SIGNING_REQUIRED=YES \
+    CODE_SIGN_STYLE=Manual \
+    CODE_SIGN_IDENTITY=- \
     build
 
   prune_intermediate_build_products
@@ -107,18 +116,21 @@ case "$MODE" in
     clean_build_products
     ;;
   run|--run)
+    stop_quickdoc_processes
     build_app
     refresh_extension_registration
     restart_finder
     open_app
     ;;
   debug|--debug)
+    stop_quickdoc_processes
     build_app
     refresh_extension_registration
     restart_finder
     /usr/bin/lldb -- "$APP_BINARY"
     ;;
   logs|--logs)
+    stop_quickdoc_processes
     build_app
     refresh_extension_registration
     restart_finder
@@ -126,6 +138,7 @@ case "$MODE" in
     /usr/bin/log stream --info --style compact --predicate "process == \"$APP_NAME\" OR process == \"$EXTENSION_NAME\""
     ;;
   telemetry|--telemetry)
+    stop_quickdoc_processes
     build_app
     refresh_extension_registration
     restart_finder
@@ -133,6 +146,7 @@ case "$MODE" in
     /usr/bin/log stream --info --style compact --predicate "subsystem == \"$BUNDLE_ID\""
     ;;
   verify|--verify)
+    stop_quickdoc_processes
     build_app
     refresh_extension_registration
     restart_finder

@@ -3,7 +3,7 @@ import SwiftUI
 struct PermissionsPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            PageHeader(title: "权限与扩展", subtitle: "确认 Finder Sync 扩展已在系统设置中启用。")
+            PageHeader(title: "权限与扩展")
             PermissionStatusCard()
             PermissionWalkthroughCard()
         }
@@ -12,8 +12,8 @@ struct PermissionsPage: View {
 
 struct FileTypesPage: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            PageHeader(title: "新建文件类型", subtitle: "选择要出现在 Finder 右键菜单里的文件类型，添加自定义后缀，并管理常用文件模板。")
+        VStack(alignment: .leading, spacing: 18) {
+            PageHeader(title: "新建文件类型")
             FileTypesCard()
             CustomTemplatesCard()
             MenuPreviewCard()
@@ -24,7 +24,7 @@ struct FileTypesPage: View {
 struct FinderActionsPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            PageHeader(title: "访达操作", subtitle: "重新载入 Finder 扩展，并预览 QuickDoc 在右键菜单与菜单栏中的实际使用方式。")
+            PageHeader(title: "访达操作")
             FinderRestartCard()
             FinderExperienceDemoCard()
         }

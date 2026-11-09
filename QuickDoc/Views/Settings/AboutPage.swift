@@ -30,41 +30,7 @@ struct AboutPage: View {
                 }
             }
 
-            LazyVGrid(columns: [
-                GridItem(.flexible(minimum: 220), spacing: 14),
-                GridItem(.flexible(minimum: 220), spacing: 14)
-            ], alignment: .leading, spacing: 14) {
-                AboutFeatureCard(
-                    systemImage: "doc.badge.plus",
-                    title: "多类型文件一键新建",
-                    subtitle: "内置 TXT、Markdown、Word、Excel、CSV、PowerPoint、JSON、Python、HTML、Shell、RTF 和空白文件。"
-                )
-                AboutFeatureCard(
-                    systemImage: "rectangle.and.hand.point.up.left",
-                    title: "Finder 右键与工具栏",
-                    subtitle: "可在文件夹空白处、选中文件夹或桌面右键创建文件，也支持添加到 Finder 工具栏直接调用。"
-                )
-                AboutFeatureCard(
-                    systemImage: "menubar.rectangle",
-                    title: "菜单栏快捷配置",
-                    subtitle: "常驻菜单栏后，可直接调整新建文件类型和其他 Finder 快捷功能，不必每次打开主窗口。"
-                )
-                AboutFeatureCard(
-                    systemImage: "terminal",
-                    title: "自定义终端与路径操作",
-                    subtitle: "支持用你选择的终端 App 打开当前 Finder 文件夹，也可在右键菜单中复制当前路径。"
-                )
-                AboutFeatureCard(
-                    systemImage: "slider.horizontal.3",
-                    title: "菜单内容可自定义",
-                    subtitle: "可启用或隐藏内置文件类型、添加自定义后缀，并通过菜单预览调整显示顺序。"
-                )
-                AboutFeatureCard(
-                    systemImage: "checkmark.shield",
-                    title: "扩展状态与更新管理",
-                    subtitle: "在应用内检查 Finder Sync 启用状态、一键前往系统设置，并支持确认后自动下载安装更新。"
-                )
-            }
+            AboutFeatureGrid()
 
             GlassSection {
                 VStack(alignment: .leading, spacing: 10) {
@@ -92,13 +58,98 @@ struct AboutPage: View {
     }
 }
 
+private struct AboutFeatureGrid: View {
+    @State private var titleHeight: CGFloat = 0
+
+    var body: some View {
+        EqualFeatureGrid {
+            feature("doc.badge.plus", "多类型文件一键新建", "支持常用文档、代码与空白文件。")
+            feature("rectangle.and.hand.point.up.left", "Finder 右键与工具栏", "在 Finder 右键菜单或工具栏快速新建文件。")
+            feature("menubar.rectangle", "菜单栏快捷配置", "在菜单栏调整显示方式与常用功能。")
+            feature("terminal", "自定义终端与路径操作", "用指定终端打开当前文件夹，或复制路径。")
+            feature("slider.horizontal.3", "菜单内容可自定义", "管理文件类型、自定义后缀及显示顺序。")
+            feature("checkmark.shield", "扩展状态与更新管理", "查看扩展状态、打开系统设置并检查更新。")
+        }
+        .onPreferenceChange(AboutTitleHeightPreference.self) { newValue in
+            guard newValue > 0, abs(titleHeight - newValue) > 0.5 else { return }
+            titleHeight = newValue
+        }
+    }
+
+    private func feature(_ systemImage: String, _ title: String, _ subtitle: String) -> some View {
+        AboutFeatureCard(systemImage: systemImage, title: title, subtitle: subtitle, titleHeight: titleHeight)
+    }
+}
+
+private struct EqualFeatureGrid: Layout {
+    var minimumColumnWidth: CGFloat = 220
+    var spacing: CGFloat = 14
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 0
+        let metrics = metrics(for: width)
+        let cardHeight = tallestCard(subviews, width: metrics.cardWidth)
+        let rows = Int(ceil(Double(subviews.count) / Double(metrics.columns)))
+        let height = CGFloat(rows) * cardHeight + CGFloat(max(0, rows - 1)) * spacing
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let metrics = metrics(for: bounds.width)
+        let cardHeight = tallestCard(subviews, width: metrics.cardWidth)
+        for (index, subview) in subviews.enumerated() {
+            let row = index / metrics.columns
+            let column = index % metrics.columns
+            let origin = CGPoint(
+                x: bounds.minX + metrics.inset + CGFloat(column) * (metrics.cardWidth + spacing),
+                y: bounds.minY + CGFloat(row) * (cardHeight + spacing)
+            )
+            subview.place(
+                at: origin,
+                anchor: .topLeading,
+                proposal: ProposedViewSize(width: metrics.cardWidth, height: cardHeight)
+            )
+        }
+    }
+
+    private func columnCount(for width: CGFloat) -> Int {
+        guard width > 0 else { return 1 }
+        let count = Int((width + spacing) / (minimumColumnWidth + spacing))
+        return max(1, min(count, 6))
+    }
+
+    private func metrics(for width: CGFloat) -> (columns: Int, cardWidth: CGFloat, inset: CGFloat) {
+        let columns = columnCount(for: width)
+        let raw = (width - spacing * CGFloat(columns - 1)) / CGFloat(columns)
+        let cardWidth = floor(raw)
+        let used = cardWidth * CGFloat(columns) + spacing * CGFloat(max(0, columns - 1))
+        let inset = max(0, (width - used) / 2)
+        return (columns, cardWidth, inset)
+    }
+
+    private func tallestCard(_ subviews: Subviews, width: CGFloat) -> CGFloat {
+        subviews.map { subview in
+            subview.sizeThatFits(ProposedViewSize(width: width, height: nil)).height
+        }.max() ?? 0
+    }
+}
+
+private struct AboutTitleHeightPreference: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 struct AboutFeatureCard: View {
     let systemImage: String
     let title: String
     let subtitle: String
+    var titleHeight: CGFloat = 0
 
     var body: some View {
-        GlassSection {
+        GlassSection(fillsAvailableHeight: true) {
             VStack(alignment: .leading, spacing: 12) {
                 Image(systemName: systemImage)
                     .font(.system(size: 20, weight: .semibold))
@@ -108,14 +159,34 @@ struct AboutFeatureCard: View {
 
                 Text(title)
                     .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .overlay {
+                        GeometryReader { proxy in
+                            Color.clear.preference(key: AboutTitleHeightPreference.self, value: proxy.size.height)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, minHeight: titleHeight, alignment: .topLeading)
 
                 Text(subtitle)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+        .accessibilityIdentifier("about-feature")
+        .background(AboutCardFrameMarker())
     }
+}
+
+private struct AboutCardFrameMarker: NSViewRepresentable {
+    func makeNSView(context: Context) -> AboutCardFrameView { AboutCardFrameView() }
+    func updateNSView(_ nsView: AboutCardFrameView, context: Context) {}
+}
+
+final class AboutCardFrameView: NSView {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
 struct ContactRow: View {

@@ -10,16 +10,15 @@ struct CustomTemplatesCard: View {
     @State private var shouldShowInContextMenu = true
 
     var body: some View {
-        GlassSection {
-            VStack(alignment: .leading, spacing: 20) {
-                sectionHeader
-
+        VStack(alignment: .leading, spacing: 8) {
+            SettingsSectionTitle(title: "文件模板", systemImage: "doc.on.doc")
+            GlassSection {
                 if model.templateFileTypes.isEmpty {
                     emptyFileTypesView
                 } else {
                     HStack(alignment: .top, spacing: 0) {
                         templateTypeList
-                            .frame(width: 232)
+                            .frame(width: 196)
 
                         Divider()
 
@@ -28,15 +27,6 @@ struct CustomTemplatesCard: View {
                                 .frame(maxWidth: .infinity, alignment: .topLeading)
                         }
                     }
-                    .background(
-                        Color.primary.opacity(0.025),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
         }
@@ -49,47 +39,12 @@ struct CustomTemplatesCard: View {
         }
     }
 
-    private var sectionHeader: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: "doc.on.doc.fill")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 42, height: 42)
-                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("自定义文件模板")
-                    .font(.headline)
-                Text("选择一种文件类型，添加常用模板并设置它们在 Finder 右键菜单中的顺序。")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 16)
-
-            Label("\(model.customTemplates.count) 个", systemImage: "square.stack.3d.up")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.primary.opacity(0.06), in: Capsule())
-        }
-    }
-
     private var emptyFileTypesView: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "doc.badge.plus")
-                .font(.system(size: 28))
-                .foregroundStyle(.secondary)
-            Text("还没有可管理的文件类型")
-                .font(.callout.weight(.semibold))
-            Text("请先在上方启用内置类型，或添加一种自定义后缀。")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 180)
-        .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        Text("先启用带后缀的类型，或添加自定义后缀。")
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 4)
     }
 
     private var selectedType: TemplateFileType? {
@@ -102,15 +57,11 @@ struct CustomTemplatesCard: View {
     }
 
     private var templateTypeList: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("文件类型")
-                    .font(.callout.weight(.semibold))
-                Text("选择要管理的类型")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 4)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("类型")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
 
             ScrollView {
                 LazyVStack(spacing: 4) {
@@ -120,8 +71,9 @@ struct CustomTemplatesCard: View {
                 }
             }
         }
-        .padding(14)
-        .frame(minHeight: 470, maxHeight: 620, alignment: .top)
+        .padding(.vertical, 4)
+        .padding(.trailing, 8)
+        .frame(minHeight: 220, maxHeight: 320, alignment: .top)
     }
 
     private func templateTypeRow(for type: TemplateFileType) -> some View {
@@ -136,10 +88,16 @@ struct CustomTemplatesCard: View {
                     .frame(width: 22, height: 22)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(type.title)
-                        .font(.callout.weight(isSelected(type) ? .semibold : .medium))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
+                    HStack(spacing: 4) {
+                        Text(shortTitle(for: type))
+                            .font(.callout.weight(isSelected(type) ? .semibold : .medium))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text(".\(type.pathExtension.lowercased())")
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
 
                     Text(templates.isEmpty ? "尚无模板" : "\(visibleCount) 个显示")
                         .font(.caption)
@@ -161,8 +119,8 @@ struct CustomTemplatesCard: View {
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                isSelected(type) ? Color.accentColor.opacity(0.13) : Color.clear,
-                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                isSelected(type) ? Color.primary.opacity(0.06) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
             )
             .overlay(alignment: .leading) {
                 if isSelected(type) {
@@ -181,37 +139,25 @@ struct CustomTemplatesCard: View {
         let templates = model.customTemplates(for: type.id)
         let visibleCount = templates.filter(\.isVisibleInContextMenu).count
 
-        return VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .center, spacing: 12) {
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 8) {
                 templateIcon(for: type)
-                    .frame(width: 34, height: 34)
+                    .frame(width: 20, height: 20)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
-                        Text(type.title)
-                            .font(.title3.weight(.semibold))
-                        Text(".\(type.pathExtension.lowercased())")
-                            .font(.caption.monospaced().weight(.medium))
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(Color.primary.opacity(0.06), in: Capsule())
-                    }
+                Text(shortTitle(for: type))
+                    .font(.body.weight(.semibold))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(".\(type.pathExtension.lowercased())")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
 
-                    Label("新建文件  ›  \(menuTitle(for: type))", systemImage: "menucard")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
+                Spacer(minLength: 8)
 
-                Spacer(minLength: 12)
-
-                Button {
+                Button("添加模板") {
                     chooseTemplateFile(for: type)
-                } label: {
-                    Label("添加模板", systemImage: "plus")
                 }
-                .glassButtonStyle(prominent: templates.isEmpty)
             }
 
             if selectedTemplateURL != nil {
@@ -221,17 +167,10 @@ struct CustomTemplatesCard: View {
 
             Divider()
 
-            HStack {
-                Text("已添加模板")
-                    .font(.callout.weight(.semibold))
-
-                Spacer()
-
-                if !templates.isEmpty {
-                    Text("\(visibleCount) / \(templates.count) 个显示在右键菜单")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+            if !templates.isEmpty {
+                Text("\(visibleCount)/\(templates.count) 显示在右键菜单")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             if templates.isEmpty {
@@ -250,41 +189,30 @@ struct CustomTemplatesCard: View {
                 }
             }
         }
-        .padding(18)
+        .padding(.leading, 14)
+        .padding(.vertical, 4)
         .animation(.easeInOut(duration: 0.18), value: selectedTemplateURL)
     }
 
     private func emptyTemplatesView(for type: TemplateFileType) -> some View {
-        VStack(spacing: 10) {
-            Image(systemName: "tray")
-                .font(.system(size: 26))
-                .foregroundStyle(.secondary)
-            Text("还没有 .\(type.pathExtension) 模板")
-                .font(.callout.weight(.semibold))
-            Text("添加后可直接从 Finder 右键菜单创建带有预设内容的新文件。")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, minHeight: 230)
+        Text("还没有 .\(type.pathExtension) 模板。添加后可创建带预设内容的文件。")
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, minHeight: 72, alignment: .topLeading)
     }
 
     private func templateComposer(for type: TemplateFileType) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
-                Image(systemName: "doc.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 34, height: 34)
-                    .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("添加新模板")
+                    Text("新模板")
                         .font(.callout.weight(.semibold))
                     Text(selectedTemplateURL?.lastPathComponent ?? "未选择文件")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: 8)
@@ -333,12 +261,8 @@ struct CustomTemplatesCard: View {
                 .foregroundStyle(canAddTemplate(for: type) ? Color.secondary : Color.orange)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
-        .background(Color.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .stroke(Color.accentColor.opacity(0.18), lineWidth: 1)
-        }
+        .padding(10)
+        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func canAddTemplate(for type: TemplateFileType) -> Bool {
@@ -415,12 +339,14 @@ struct CustomTemplatesCard: View {
         shouldShowInContextMenu = true
     }
 
-    private func isSelected(_ type: TemplateFileType) -> Bool {
-        selectedType?.id == type.id
+    private func shortTitle(for type: TemplateFileType) -> String {
+        let suffix = " (.\(type.pathExtension))"
+        guard type.title.hasSuffix(suffix) else { return type.title }
+        return String(type.title.dropLast(suffix.count))
     }
 
-    private func menuTitle(for type: TemplateFileType) -> String {
-        model.menuTitle(forTemplateFileTypeID: type.id) ?? "新建 \(type.pathExtension.uppercased()) 文件"
+    private func isSelected(_ type: TemplateFileType) -> Bool {
+        selectedType?.id == type.id
     }
 
     @ViewBuilder
@@ -461,7 +387,7 @@ struct CustomTemplateRow: View {
 
             Image(systemName: fileExists ? "doc.fill" : "doc.badge.ellipsis")
                 .font(.system(size: 15))
-                .foregroundStyle(fileExists ? Color.accentColor : Color.red)
+                .foregroundStyle(fileExists ? Color.secondary : Color.red)
                 .frame(width: 30, height: 30)
                 .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
@@ -469,7 +395,8 @@ struct CustomTemplateRow: View {
                 HStack(spacing: 7) {
                     Text(template.displayName)
                         .font(.callout.weight(.medium))
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     if !fileExists {
                         statusBadge("文件缺失", color: .red)
@@ -481,7 +408,8 @@ struct CustomTemplateRow: View {
                 Text(template.originalFileName)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 

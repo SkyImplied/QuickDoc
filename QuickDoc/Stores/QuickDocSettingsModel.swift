@@ -176,6 +176,13 @@ final class QuickDocSettingsModel: ObservableObject {
         }
     }
 
+    @Published var externalVolumeContextMenuEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(externalVolumeContextMenuEnabled, forKey: Self.externalVolumeContextMenuEnabledKey)
+            writeSharedSettings()
+        }
+    }
+
     @Published private var menuOrder: [String] {
         didSet {
             UserDefaults.standard.set(menuOrder, forKey: Self.menuOrderKey)
@@ -202,11 +209,17 @@ final class QuickDocSettingsModel: ObservableObject {
     private static let pasteActionEnabledKey = "pasteActionEnabled"
     private static let cutActionEnabledKey = "cutActionEnabled"
     private static let permanentDeleteEnabledKey = "permanentDeleteEnabled"
+    private static let externalVolumeContextMenuEnabledKey = "externalVolumeContextMenuEnabled"
+    private static let settingsDidChangeNotification = "com.skyimplied.QuickDoc.settingsDidChange" as CFString
     private static let enabledFileTypesKey = "enabledFileTypes"
     private static let customExtensionsKey = "customExtensions"
     private static let customTemplatesKey = "customTemplates"
     private static let menuOrderKey = "menuOrder"
     private static let bundleIdentifier = "com.skyimplied.QuickDoc"
+#if SIDEBAR_PREVIEW
+    var previewCustomExtensionDraft = ""
+#endif
+
     private static let loginItemIdentifier = "com.skyimplied.QuickDoc.LoginItem"
     private static let systemTerminalBundleIdentifier = "com.apple.Terminal"
     private static let latestReleaseAPIURL = URL(string: "https://api.github.com/repos/SkyImplied/QuickDoc/releases/latest")!
@@ -217,8 +230,40 @@ final class QuickDocSettingsModel: ObservableObject {
         path: nil
     )
 
-    init() {
+    init(
+        previewQuickActionsEnabled: Bool = true,
+        previewPermanentDeleteEnabled: Bool = false,
+        previewQuickActionsExpanded: Bool = false,
+        previewTerminalPath: String = "",
+        previewEnabledFileTypeIDs: [String]? = nil,
+        previewCustomExtensions: [String] = [],
+        previewCustomTemplates: [CustomTemplate] = [],
+        previewCustomExtensionDraft: String = ""
+    ) {
         let defaultTypes = quickDocFileTypes.filter(\.enabledByDefault).map(\.id)
+#if SIDEBAR_PREVIEW
+        launchAtLogin = false
+        silentLaunchAtLogin = false
+        displayMode = .menuBarOnly
+        appearanceMode = .system
+        terminalDirectEnabled = true
+        selectedTerminalAppPath = previewTerminalPath
+        pathCopyEnabled = true
+        quickActionsEnabled = previewQuickActionsEnabled
+        quickActionsExpanded = previewQuickActionsExpanded
+        copyActionEnabled = true
+        pasteActionEnabled = true
+        cutActionEnabled = true
+        permanentDeleteEnabled = previewPermanentDeleteEnabled
+        externalVolumeContextMenuEnabled = false
+        enabledFileTypes = Set(previewEnabledFileTypeIDs ?? defaultTypes)
+        customExtensions = previewCustomExtensions
+        customTemplates = previewCustomTemplates
+        menuOrder = Self.normalizedMenuOrder(Self.defaultMenuOrder, customExtensions: previewCustomExtensions)
+        self.previewCustomExtensionDraft = previewCustomExtensionDraft
+        appVersion = "1.8.0"
+#else
+        _ = (previewQuickActionsEnabled, previewPermanentDeleteEnabled, previewQuickActionsExpanded, previewTerminalPath, previewEnabledFileTypeIDs, previewCustomExtensions, previewCustomTemplates, previewCustomExtensionDraft)
         UserDefaults.standard.register(defaults: [
             Self.displayModeKey: QuickDocDisplayMode.menuBarOnly.rawValue,
             Self.appearanceModeKey: QuickDocAppearanceMode.system.rawValue,
@@ -232,6 +277,7 @@ final class QuickDocSettingsModel: ObservableObject {
             Self.pasteActionEnabledKey: true,
             Self.cutActionEnabledKey: true,
             Self.permanentDeleteEnabledKey: false,
+            Self.externalVolumeContextMenuEnabledKey: false,
             Self.enabledFileTypesKey: defaultTypes,
             Self.customExtensionsKey: [],
             Self.customTemplatesKey: [],
@@ -256,6 +302,7 @@ final class QuickDocSettingsModel: ObservableObject {
         pasteActionEnabled = sharedSettings.pasteActionEnabled ?? UserDefaults.standard.object(forKey: Self.pasteActionEnabledKey) as? Bool ?? true
         cutActionEnabled = sharedSettings.cutActionEnabled ?? UserDefaults.standard.object(forKey: Self.cutActionEnabledKey) as? Bool ?? true
         permanentDeleteEnabled = sharedSettings.permanentDeleteEnabled ?? UserDefaults.standard.object(forKey: Self.permanentDeleteEnabledKey) as? Bool ?? false
+        externalVolumeContextMenuEnabled = sharedSettings.externalVolumeContextMenuEnabled ?? UserDefaults.standard.object(forKey: Self.externalVolumeContextMenuEnabledKey) as? Bool ?? false
         let storedCustomExtensions = sharedSettings.customExtensions ?? UserDefaults.standard.stringArray(forKey: Self.customExtensionsKey) ?? []
         let storedCustomTemplates = sharedSettings.customTemplates
             ?? Self.decodeCustomTemplates(UserDefaults.standard.array(forKey: Self.customTemplatesKey))
@@ -269,6 +316,7 @@ final class QuickDocSettingsModel: ObservableObject {
         refreshExtensionStatus()
         observeAppActivation()
         migrateLegacyLaunchAtLoginIfNeeded()
+#endif
     }
 
     deinit {
@@ -1009,6 +1057,14 @@ final class QuickDocSettingsModel: ObservableObject {
         isSynchronizingLaunchAtLogin = false
     }
 
+#if SIDEBAR_PREVIEW
+    func previewApplyLaunchAtLogin(_ enabled: Bool) {
+        isSynchronizingLaunchAtLogin = true
+        launchAtLogin = enabled
+        isSynchronizingLaunchAtLogin = false
+    }
+#endif
+
     private static var loginItemService: SMAppService {
         SMAppService.loginItem(identifier: loginItemIdentifier)
     }
@@ -1248,7 +1304,8 @@ final class QuickDocSettingsModel: ObservableObject {
             Self.copyActionEnabledKey: copyActionEnabled,
             Self.pasteActionEnabledKey: pasteActionEnabled,
             Self.cutActionEnabledKey: cutActionEnabled,
-            Self.permanentDeleteEnabledKey: permanentDeleteEnabled
+            Self.permanentDeleteEnabledKey: permanentDeleteEnabled,
+            Self.externalVolumeContextMenuEnabledKey: externalVolumeContextMenuEnabled
         ]
 
         do {
@@ -1256,6 +1313,7 @@ final class QuickDocSettingsModel: ObservableObject {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let data = try PropertyListSerialization.data(fromPropertyList: payload, format: .xml, options: 0)
             try data.write(to: Self.sharedSettingsURL, options: .atomic)
+            Self.postSettingsDidChange()
         } catch {
             NSLog("QuickDoc shared settings write failed: \(error.localizedDescription)")
         }
@@ -1274,11 +1332,12 @@ final class QuickDocSettingsModel: ObservableObject {
         copyActionEnabled: Bool?,
         pasteActionEnabled: Bool?,
         cutActionEnabled: Bool?,
-        permanentDeleteEnabled: Bool?
+        permanentDeleteEnabled: Bool?,
+        externalVolumeContextMenuEnabled: Bool?
     ) {
         guard let data = try? Data(contentsOf: sharedSettingsURL),
               let payload = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
-            return (nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+            return (nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
         }
 
         return (
@@ -1294,7 +1353,18 @@ final class QuickDocSettingsModel: ObservableObject {
             payload[copyActionEnabledKey] as? Bool,
             payload[pasteActionEnabledKey] as? Bool,
             payload[cutActionEnabledKey] as? Bool,
-            payload[permanentDeleteEnabledKey] as? Bool
+            payload[permanentDeleteEnabledKey] as? Bool,
+            payload[externalVolumeContextMenuEnabledKey] as? Bool
+        )
+    }
+
+    private static func postSettingsDidChange() {
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            CFNotificationName(settingsDidChangeNotification),
+            nil,
+            nil,
+            true
         )
     }
 

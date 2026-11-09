@@ -5,234 +5,200 @@ struct FileTypesCard: View {
     @State private var customExtension = ""
     @FocusState private var isCustomExtensionFocused: Bool
 
-    private let columns = [
-        GridItem(.flexible(minimum: 180), spacing: 12),
-        GridItem(.flexible(minimum: 180), spacing: 12),
-        GridItem(.flexible(minimum: 180), spacing: 12)
-    ]
-
     var body: some View {
-        GlassSection {
-            VStack(alignment: .leading, spacing: 20) {
-                sectionHeader
-                builtInTypesGrid
-                Divider()
-                customExtensionsSection
-            }
+        VStack(alignment: .leading, spacing: 18) {
+            builtInGroup
+            customExtensionGroup
         }
     }
 
-    private var sectionHeader: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: "doc.badge.plus")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 42, height: 42)
-                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("内置文件类型")
-                    .font(.headline)
-                Text("点击文件类型即可决定它是否出现在 Finder 的“新建文件”菜单中。")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+    private var builtInGroup: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SettingsSectionTitle(title: "内置类型", systemImage: "doc.badge.plus")
+            GlassSection {
+                ViewThatFits(in: .horizontal) {
+                    builtInGrid(columnCount: 2)
+                        .frame(minWidth: 600)
+                    builtInGrid(columnCount: 1)
+                }
             }
-
-            Spacer(minLength: 16)
-
-            Label("\(enabledBuiltInCount) / \(quickDocFileTypes.count) 已启用", systemImage: "checkmark.circle.fill")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(Color.accentColor)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.accentColor.opacity(0.10), in: Capsule())
         }
+        .onAppear(perform: applyPreviewExtensionDraft)
     }
 
-    private var builtInTypesGrid: some View {
-        LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
+    private func applyPreviewExtensionDraft() {
+#if SIDEBAR_PREVIEW
+        guard customExtension.isEmpty, !model.previewCustomExtensionDraft.isEmpty else { return }
+        customExtension = model.previewCustomExtensionDraft
+#endif
+    }
+
+    private func builtInGrid(columnCount: Int) -> some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 0), spacing: 22), count: columnCount), alignment: .leading, spacing: 2) {
             ForEach(quickDocFileTypes) { type in
-                FileTypeToggleCard(
-                    type: type,
-                    isEnabled: model.enabledFileTypes.contains(type.id)
-                ) {
-                    let isEnabled = model.enabledFileTypes.contains(type.id)
-                    withAnimation(.easeInOut(duration: 0.16)) {
-                        model.setFileType(type.id, enabled: !isEnabled)
-                    }
-                }
+                builtInRow(type)
             }
         }
     }
 
-    private var customExtensionsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .center, spacing: 12) {
-                Image(systemName: "plus.square.dashed")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 36, height: 36)
-                    .background(Color.accentColor.opacity(0.09), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("自定义文件后缀")
-                        .font(.callout.weight(.semibold))
-                    Text("添加内置列表之外的文件类型，例如 YAML、LOG 或 TOML。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                if !model.customExtensions.isEmpty {
-                    Text("\(model.customExtensions.count) 个自定义类型")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            HStack(spacing: 10) {
-                HStack(spacing: 6) {
-                    Text(".")
-                        .font(.body.monospaced().weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    TextField("输入后缀，例如 yaml", text: $customExtension)
-                        .textFieldStyle(.plain)
-                        .focused($isCustomExtensionFocused)
-                        .onSubmit(addCustomExtension)
-                }
-                .padding(.horizontal, 11)
-                .frame(height: 36)
-                .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .stroke(isCustomExtensionFocused ? Color.accentColor.opacity(0.65) : Color.primary.opacity(0.10), lineWidth: 1)
-                }
-
-                Button {
-                    addCustomExtension()
-                } label: {
-                    Label("添加后缀", systemImage: "plus")
-                }
-                .glassButtonStyle(prominent: canSubmitCustomExtension)
-                .disabled(!canSubmitCustomExtension)
-            }
-
-            if model.customExtensions.isEmpty {
-                Label("尚未添加自定义后缀", systemImage: "info.circle")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                LazyVGrid(
-                    columns: [GridItem(.adaptive(minimum: 170), spacing: 9)],
-                    alignment: .leading,
-                    spacing: 9
-                ) {
-                    ForEach(model.customExtensions, id: \.self) { fileExtension in
-                        CustomExtensionPill(fileExtension: fileExtension) {
-                            model.removeCustomExtension(fileExtension)
-                        }
-                    }
-                }
-            }
-
-            Label("自定义类型添加后会自动启用，并可继续添加对应的文件模板。", systemImage: "lightbulb")
-                .font(.caption)
+    private func builtInRow(_ type: FileType) -> some View {
+        let isEnabled = model.enabledFileTypes.contains(type.id)
+        return HStack(spacing: 10) {
+            fileIcon(for: type)
+                .frame(width: 20, height: 20)
+            Text(displayName(for: type))
+                .font(.body)
+                .lineLimit(1)
+            Text(type.pathExtension.map { ".\($0)" } ?? "无后缀")
+                .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            Toggle("", isOn: Binding(
+                get: { model.enabledFileTypes.contains(type.id) },
+                set: { model.setFileType(type.id, enabled: $0) }
+            ))
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .accessibilityLabel("\(displayName(for: type))，\(isEnabled ? "已启用" : "未启用")")
         }
-        .padding(16)
-        .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+        .padding(.vertical, 4)
+    }
+
+    private var customExtensionGroup: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SettingsSectionTitle(title: "自定义后缀", systemImage: "plus.square.dashed")
+            GlassSection {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        HStack(spacing: 4) {
+                            Text(".")
+                                .font(.body.monospaced())
+                                .foregroundStyle(.secondary)
+                            TextField("后缀，如 yaml", text: $customExtension)
+                                .textFieldStyle(.plain)
+                                .focused($isCustomExtensionFocused)
+                                .onSubmit(addCustomExtension)
+                        }
+                        .padding(.horizontal, 10)
+                        .frame(height: 28)
+                        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .stroke(fieldStroke, lineWidth: 1)
+                        }
+
+                        Button("添加", action: addCustomExtension)
+                            .disabled(!canSubmitCustomExtension)
+                    }
+
+                    if let validationMessage {
+                        Text(validationMessage)
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    if model.customExtensions.isEmpty {
+                        if validationMessage == nil {
+                            Text("尚未添加。添加后自动启用。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        VStack(spacing: 0) {
+                            ForEach(Array(model.customExtensions.enumerated()), id: \.element) { index, fileExtension in
+                                if index > 0 {
+                                    Divider()
+                                }
+                                customExtensionRow(fileExtension)
+                            }
+                        }
+                        Text("删除后缀时，该类型下的模板也会移除。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
     }
 
-    private var enabledBuiltInCount: Int {
-        quickDocFileTypes.reduce(into: 0) { count, type in
-            if model.enabledFileTypes.contains(type.id) {
-                count += 1
+    private func customExtensionRow(_ fileExtension: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "doc")
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .frame(width: 20, height: 20)
+            Text(".\(fileExtension)")
+                .font(.body.monospaced())
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            Button(role: .destructive) {
+                model.removeCustomExtension(fileExtension)
+            } label: {
+                Image(systemName: "minus.circle")
             }
+            .buttonStyle(.borderless)
+            .help("删除 .\(fileExtension)")
+            .accessibilityLabel("删除 .\(fileExtension)")
         }
+        .padding(.vertical, 4)
+    }
+
+    private var fieldStroke: Color {
+        if validationMessage != nil {
+            return Color.orange.opacity(0.7)
+        }
+        return isCustomExtensionFocused ? Color.accentColor.opacity(0.65) : Color.primary.opacity(0.10)
+    }
+
+    private var normalizedCustomExtension: String {
+        var normalized = customExtension.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        while normalized.hasPrefix(".") {
+            normalized.removeFirst()
+        }
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz0123456789_-+")
+        normalized = String(normalized.unicodeScalars.filter { allowed.contains($0) })
+        return String(normalized.prefix(24))
+    }
+
+    private var validationMessage: String? {
+        let normalized = normalizedCustomExtension
+        guard !normalized.isEmpty else { return nil }
+        if quickDocFileTypes.contains(where: { $0.pathExtension == normalized }) {
+            return ".\(normalized) 已在内置类型中。"
+        }
+        if model.customExtensions.contains(normalized) {
+            return ".\(normalized) 已经添加。"
+        }
+        return nil
     }
 
     private var canSubmitCustomExtension: Bool {
-        !customExtension.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !normalizedCustomExtension.isEmpty && validationMessage == nil
     }
 
     private func addCustomExtension() {
+        guard canSubmitCustomExtension else { return }
         guard model.addCustomExtension(customExtension) else { return }
         customExtension = ""
         isCustomExtensionFocused = true
     }
-}
-
-private struct FileTypeToggleCard: View {
-    let type: FileType
-    let isEnabled: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 11) {
-                fileIcon
-                    .frame(width: 36, height: 36)
-                    .background(
-                        isEnabled ? Color.accentColor.opacity(0.11) : Color.primary.opacity(0.045),
-                        in: RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    )
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(displayName)
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    Text(type.pathExtension.map { ".\($0.lowercased())" } ?? "无扩展名")
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer(minLength: 6)
-
-                Image(systemName: isEnabled ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(isEnabled ? Color.accentColor : Color.secondary.opacity(0.48))
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                isEnabled ? Color.accentColor.opacity(0.075) : Color.primary.opacity(0.022),
-                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isEnabled ? Color.accentColor.opacity(0.22) : Color.primary.opacity(0.075), lineWidth: 1)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(displayName)，\(isEnabled ? "已启用" : "未启用")")
-        .accessibilityHint("点击以\(isEnabled ? "从" : "添加到") Finder 新建文件菜单")
-    }
 
     @ViewBuilder
-    private var fileIcon: some View {
-        if let image = QuickDocIcon.icon(for: type.id, size: NSSize(width: 24, height: 24)) {
+    private func fileIcon(for type: FileType) -> some View {
+        if let image = QuickDocIcon.icon(for: type.id, size: NSSize(width: 18, height: 18)) {
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 24, height: 24)
         } else {
             Image(systemName: "doc")
-                .font(.system(size: 17))
                 .foregroundStyle(.secondary)
         }
     }
 
-    private var displayName: String {
+    private func displayName(for type: FileType) -> String {
         switch type.id {
         case "txt": return "TXT"
         case "md": return "Markdown"
@@ -247,38 +213,6 @@ private struct FileTypeToggleCard: View {
         case "sh": return "Shell"
         case "rtf": return "Rich Text"
         default: return type.title
-        }
-    }
-}
-
-private struct CustomExtensionPill: View {
-    let fileExtension: String
-    let onRemove: () -> Void
-
-    var body: some View {
-        HStack(spacing: 9) {
-            Image(systemName: "doc.text")
-                .foregroundStyle(Color.accentColor)
-
-            Text(".\(fileExtension.lowercased())")
-                .font(.callout.monospaced().weight(.semibold))
-
-            Spacer(minLength: 4)
-
-            Button(role: .destructive, action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
-                    .contentShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .help("删除 .\(fileExtension) 类型")
-        }
-        .padding(.horizontal, 11)
-        .frame(height: 36)
-        .background(Color.accentColor.opacity(0.055), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .stroke(Color.accentColor.opacity(0.13), lineWidth: 1)
         }
     }
 }

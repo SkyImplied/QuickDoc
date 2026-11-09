@@ -8,18 +8,23 @@ struct FinderExperienceDemoCard: View {
     private let cycleDuration = 10.5
 
     var body: some View {
-        GlassSection {
-            VStack(alignment: .leading, spacing: 18) {
-                sectionHeader
+        FillCardToWindowBottom { fills in
+            GlassSection(fillsAvailableHeight: fills) {
+                VStack(alignment: .leading, spacing: 18) {
+                    sectionHeader
 
-                TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
-                    let elapsed = reduceMotion ? 4.8 : cycleTime(at: context.date)
+                    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion)) { context in
+                        let elapsed = reduceMotion ? 4.8 : cycleTime(at: context.date)
 
-                    HStack(alignment: .top, spacing: 16) {
-                        FinderContextMenuDemo(elapsed: elapsed)
-                        MenuBarInteractionDemo(elapsed: elapsed)
+                        HStack(alignment: .top, spacing: 16) {
+                            FinderContextMenuDemo(elapsed: elapsed, fillsStage: fills)
+                            MenuBarInteractionDemo(elapsed: elapsed, fillsStage: fills)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: fills ? .infinity : nil)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: fills ? .infinity : nil)
                 }
+                .frame(maxWidth: .infinity, maxHeight: fills ? .infinity : nil, alignment: .top)
             }
         }
     }
@@ -69,16 +74,15 @@ struct FinderExperienceDemoCard: View {
 private struct FinderContextMenuDemo: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
     let elapsed: Double
-
-    private let contextMenuWidth: CGFloat = 146
-    private let submenuWidth: CGFloat = 174
+    var fillsStage = false
 
     var body: some View {
         DemoPanel(
             title: "Finder 右键菜单",
             subtitle: finderStatusText,
             systemImage: "cursorarrow.click.2",
-            tint: .blue
+            tint: .blue,
+            fillsStage: fillsStage
         ) {
             GeometryReader { proxy in
                 let layout = FinderDemoLayout(size: proxy.size)
@@ -88,14 +92,14 @@ private struct FinderContextMenuDemo: View {
 
                     if contextMenuIsVisible {
                         finderContextMenu
-                            .frame(width: contextMenuWidth)
+                            .frame(width: layout.contextMenuWidth)
                             .offset(x: layout.contextMenuOrigin.x, y: layout.contextMenuOrigin.y)
                             .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .topLeading)))
                     }
 
                     if submenuIsVisible {
                         newFileSubmenu
-                            .frame(width: submenuWidth)
+                            .frame(width: layout.submenuWidth)
                             .offset(x: layout.submenuOrigin.x, y: layout.submenuOrigin.y)
                             .transition(.opacity.combined(with: .move(edge: .leading)))
                     }
@@ -229,8 +233,8 @@ private struct FinderContextMenuDemo: View {
     private func cursorPosition(layout: FinderDemoLayout) -> CGPoint {
         let start = CGPoint(x: layout.size.width * 0.80, y: layout.size.height * 0.77)
         let click = CGPoint(x: layout.contextMenuOrigin.x + 4, y: layout.contextMenuOrigin.y + 5)
-        let newFile = CGPoint(x: layout.contextMenuOrigin.x + 112, y: layout.contextMenuOrigin.y + 92)
-        let firstType = CGPoint(x: layout.submenuOrigin.x + 130, y: layout.submenuOrigin.y + 14)
+        let newFile = CGPoint(x: layout.contextMenuOrigin.x + layout.contextMenuWidth - 18, y: layout.contextMenuOrigin.y + 78)
+        let firstType = CGPoint(x: layout.submenuOrigin.x + layout.submenuWidth - 16, y: layout.submenuOrigin.y + 14)
         let finish = CGPoint(x: layout.size.width * 0.64, y: layout.size.height * 0.72)
 
         switch elapsed {
@@ -258,13 +262,25 @@ private struct FinderDemoLayout {
     let size: CGSize
     let contextMenuOrigin: CGPoint
     let submenuOrigin: CGPoint
+    let contextMenuWidth: CGFloat
+    let submenuWidth: CGFloat
 
     init(size: CGSize) {
         self.size = size
-        let contextX = max(18, min(size.width * 0.16, size.width - 338))
-        let contextY = max(64, size.height * 0.22)
+        let margin: CGFloat = 6
+        let gap: CGFloat = 4
+        let usable = max(180, size.width - margin * 2 - gap)
+        if usable >= 282 {
+            contextMenuWidth = 132
+            submenuWidth = 150
+        } else {
+            contextMenuWidth = max(96, usable * 0.38)
+            submenuWidth = usable - contextMenuWidth
+        }
+        let contextX = margin
+        let contextY = max(36, min(size.height * 0.14, size.height - 210))
         contextMenuOrigin = CGPoint(x: contextX, y: contextY)
-        submenuOrigin = CGPoint(x: contextX + 150, y: contextY + 74)
+        submenuOrigin = CGPoint(x: contextX + contextMenuWidth + gap, y: contextY + 58)
     }
 }
 
@@ -272,98 +288,112 @@ private struct FinderWindowBackdrop: View {
     let showCreatedFile: Bool
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            LinearGradient(
-                colors: [
-                    Color(nsColor: .controlBackgroundColor),
-                    Color.blue.opacity(0.055),
-                    Color(nsColor: .controlBackgroundColor)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+        GeometryReader { proxy in
+            let itemHeight: CGFloat = 48
+            let itemGap: CGFloat = 24
+            let createdY = max(230, proxy.size.height - 16 - itemHeight)
+            let designY = createdY - itemHeight - itemGap
+            let projectY = max(78, designY - itemHeight - itemGap)
 
-            VStack(spacing: 0) {
-                HStack(spacing: 7) {
-                    DemoTrafficLight(color: .red)
-                    DemoTrafficLight(color: .yellow)
-                    DemoTrafficLight(color: .green)
+            ZStack(alignment: .topLeading) {
+                LinearGradient(
+                    colors: [
+                        Color(nsColor: .controlBackgroundColor),
+                        Color.blue.opacity(0.055),
+                        Color(nsColor: .controlBackgroundColor)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                VStack(spacing: 0) {
+                    HStack(spacing: 7) {
+                        DemoTrafficLight(color: .red)
+                        DemoTrafficLight(color: .yellow)
+                        DemoTrafficLight(color: .green)
+                        Spacer()
+                        Text("文稿")
+                            .font(.caption2.weight(.semibold))
+                        Spacer()
+                        Color.clear.frame(width: 43)
+                    }
+                    .padding(.horizontal, 10)
+                    .frame(height: 28)
+                    .background(.ultraThinMaterial)
+
+                    Divider()
+
+                    HStack(spacing: 10) {
+                        Image(systemName: "chevron.left")
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(.tertiary)
+                        Divider().frame(height: 15)
+                        Image(systemName: "square.grid.2x2")
+                        Spacer()
+                        Image(systemName: "magnifyingglass")
+                    }
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .frame(height: 32)
+                    .background(Color.primary.opacity(0.025))
+
+                    Divider()
                     Spacer()
-                    Text("文稿")
-                        .font(.caption2.weight(.semibold))
-                    Spacer()
-                    Color.clear.frame(width: 43)
                 }
-                .padding(.horizontal, 10)
-                .frame(height: 28)
-                .background(.ultraThinMaterial)
 
-                Divider()
+                DemoDesktopItem(title: "项目资料", systemImage: "folder.fill", tint: .blue)
+                    .offset(x: 22, y: projectY)
+                DemoDesktopItem(title: "设计稿", systemImage: "folder.fill", tint: .blue)
+                    .offset(x: 22, y: designY)
 
-                HStack(spacing: 10) {
-                    Image(systemName: "chevron.left")
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.tertiary)
-                    Divider().frame(height: 15)
-                    Image(systemName: "square.grid.2x2")
-                    Spacer()
-                    Image(systemName: "magnifyingglass")
+                if showCreatedFile {
+                    DemoDesktopItem(title: "新建文件", systemImage: "doc.fill", tint: .white)
+                        .offset(x: 22, y: createdY)
+                        .transition(.scale(scale: 0.85).combined(with: .opacity))
                 }
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 12)
-                .frame(height: 32)
-                .background(Color.primary.opacity(0.025))
-
-                Divider()
-                Spacer()
             }
-
-            DemoDesktopItem(title: "项目资料", systemImage: "folder.fill", tint: .blue)
-                .offset(x: 22, y: 86)
-            DemoDesktopItem(title: "设计稿", systemImage: "folder.fill", tint: .blue)
-                .offset(x: 22, y: 158)
-
-            if showCreatedFile {
-                DemoDesktopItem(title: "新建文件", systemImage: "doc.fill", tint: .white)
-                    .offset(x: 22, y: 230)
-                    .transition(.scale(scale: 0.85).combined(with: .opacity))
-            }
+            .animation(.spring(response: 0.34, dampingFraction: 0.78), value: showCreatedFile)
         }
-        .animation(.spring(response: 0.34, dampingFraction: 0.78), value: showCreatedFile)
     }
 }
 
 private struct MenuBarInteractionDemo: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
     let elapsed: Double
+    var fillsStage = false
 
-    private let mainMenuWidth: CGFloat = 202
-    private let submenuWidth: CGFloat = 170
+    private let mainMenuWidth: CGFloat = 158
+    private let submenuWidth: CGFloat = 136
 
     var body: some View {
         DemoPanel(
             title: "菜单栏快捷入口",
             subtitle: menuBarStatusText,
             systemImage: "menubar.rectangle",
-            tint: .purple
+            tint: .purple,
+            fillsStage: fillsStage
         ) {
             GeometryReader { proxy in
                 let layout = MenuBarDemoLayout(size: proxy.size, mainMenuWidth: mainMenuWidth, submenuWidth: submenuWidth)
 
                 ZStack(alignment: .topLeading) {
-                    MenuBarDesktopBackdrop(isStatusItemActive: statusMenuIsVisible)
+                    MenuBarDesktopBackdrop(
+                        isStatusItemActive: statusMenuIsVisible,
+                        stageWidth: proxy.size.width,
+                        stageHeight: proxy.size.height
+                    )
 
                     if statusMenuIsVisible {
                         statusMenu
-                            .frame(width: mainMenuWidth)
+                            .frame(width: layout.mainMenuWidth)
                             .offset(x: layout.mainMenuOrigin.x, y: layout.mainMenuOrigin.y)
                             .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .topTrailing)))
                     }
 
                     if otherFeaturesSubmenuIsVisible {
                         otherFeaturesSubmenu
-                            .frame(width: submenuWidth)
+                            .frame(width: layout.submenuWidth)
                             .offset(x: layout.submenuOrigin.x, y: layout.submenuOrigin.y)
                             .transition(.opacity.combined(with: .move(edge: .trailing)))
                     }
@@ -444,8 +474,8 @@ private struct MenuBarInteractionDemo: View {
     private func cursorPosition(layout: MenuBarDemoLayout) -> CGPoint {
         let start = CGPoint(x: layout.size.width * 0.38, y: layout.size.height * 0.68)
         let statusItem = CGPoint(x: layout.size.width - 47, y: 15)
-        let otherFeatures = CGPoint(x: layout.mainMenuOrigin.x + 154, y: layout.mainMenuOrigin.y + 91)
-        let featureToggle = CGPoint(x: layout.submenuOrigin.x + 125, y: layout.submenuOrigin.y + 37)
+        let otherFeatures = CGPoint(x: layout.mainMenuOrigin.x + layout.mainMenuWidth - 8, y: layout.mainMenuOrigin.y + 91)
+        let featureToggle = CGPoint(x: layout.submenuOrigin.x + layout.submenuWidth - 12, y: layout.submenuOrigin.y + 37)
         let finish = CGPoint(x: layout.size.width * 0.58, y: layout.size.height * 0.72)
 
         switch elapsed {
@@ -473,19 +503,31 @@ private struct MenuBarDemoLayout {
     let size: CGSize
     let mainMenuOrigin: CGPoint
     let submenuOrigin: CGPoint
+    let mainMenuWidth: CGFloat
+    let submenuWidth: CGFloat
 
-    init(size: CGSize, mainMenuWidth: CGFloat, submenuWidth: CGFloat) {
+    init(size: CGSize, mainMenuWidth naturalMain: CGFloat, submenuWidth naturalSubmenu: CGFloat) {
         self.size = size
-        let mainX = max(12, size.width - mainMenuWidth - 10)
-        mainMenuOrigin = CGPoint(x: mainX, y: 29)
-        submenuOrigin = CGPoint(x: max(10, mainX - submenuWidth - 4), y: 86)
+        let margin: CGFloat = 6
+        let gap: CGFloat = 4
+        let usable = max(170, size.width - margin * 2 - gap)
+        let scale = min(1, usable / (naturalMain + naturalSubmenu))
+        mainMenuWidth = naturalMain * scale
+        submenuWidth = naturalSubmenu * scale
+        let mainX = size.width - margin - mainMenuWidth
+        mainMenuOrigin = CGPoint(x: mainX, y: 32)
+        submenuOrigin = CGPoint(x: mainX - gap - submenuWidth, y: 78)
     }
 }
 
 private struct MenuBarDesktopBackdrop: View {
     let isStatusItemActive: Bool
+    var stageWidth: CGFloat = 400
+    var stageHeight: CGFloat = 300
 
     var body: some View {
+        let showsDocumentMenus = stageWidth >= 300
+
         ZStack(alignment: .topLeading) {
             LinearGradient(
                 colors: [Color.indigo.opacity(0.20), Color.blue.opacity(0.09), Color.purple.opacity(0.14)],
@@ -499,17 +541,21 @@ private struct MenuBarDesktopBackdrop: View {
                 .blur(radius: 2)
                 .offset(x: -50, y: 110)
 
-            HStack(spacing: 9) {
+            HStack(spacing: showsDocumentMenus ? 9 : 5) {
                 Image(systemName: "apple.logo")
                     .font(.caption.weight(.semibold))
-                Text("Finder").fontWeight(.semibold)
-                Text("文件")
-                Text("编辑")
-                Text("显示")
-                Spacer(minLength: 5)
+                Text("Finder").fontWeight(.semibold).lineLimit(1)
+                Text("文件").lineLimit(1)
+                if showsDocumentMenus {
+                    Text("编辑").lineLimit(1)
+                    Text("显示").lineLimit(1)
+                }
+                Spacer(minLength: 4)
                 Image(systemName: "wifi")
                 Image(systemName: "battery.100")
                 Text("10:28")
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
                 DemoResourceIcon(resourceName: "菜单栏", fallbackSystemImage: "doc.text", size: 14)
                     .padding(.horizontal, 5)
                     .frame(height: 22)
@@ -520,6 +566,7 @@ private struct MenuBarDesktopBackdrop: View {
             .frame(maxWidth: .infinity)
             .frame(height: 28)
             .background(.ultraThinMaterial)
+            .clipped()
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("菜单栏常驻")
@@ -529,14 +576,14 @@ private struct MenuBarDesktopBackdrop: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(12)
-            .frame(width: 180, alignment: .leading)
+            .padding(10)
+            .frame(width: min(118, max(96, stageWidth * 0.42)), alignment: .leading)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(Color.white.opacity(0.18), lineWidth: 1)
             }
-            .offset(x: 18, y: 232)
+            .offset(x: 10, y: max(168, stageHeight - 92))
         }
     }
 }
@@ -546,6 +593,7 @@ private struct DemoPanel<Content: View>: View {
     let subtitle: String
     let systemImage: String
     let tint: Color
+    var fillsStage = false
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -574,8 +622,9 @@ private struct DemoPanel<Content: View>: View {
             }
 
             content
-                .frame(maxWidth: .infinity)
-                .frame(height: 350)
+                .frame(maxWidth: .infinity, maxHeight: fillsStage ? .infinity : nil)
+                .frame(height: fillsStage ? nil : 300)
+                .frame(minHeight: 300)
                 .background(Color.primary.opacity(0.018))
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay {
@@ -584,7 +633,7 @@ private struct DemoPanel<Content: View>: View {
                 }
         }
         .padding(14)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: fillsStage ? .infinity : nil, alignment: .topLeading)
         .background(Color.primary.opacity(0.022), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -643,7 +692,7 @@ private struct DemoMenuRow: View {
 
             Text(title)
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
+                .minimumScaleFactor(0.55)
 
             Spacer(minLength: 4)
 
@@ -655,7 +704,7 @@ private struct DemoMenuRow: View {
         .font(.system(size: 10.5))
         .foregroundStyle(rowForegroundStyle)
         .padding(.horizontal, 7)
-        .frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 18, alignment: .leading)
         .background(isHighlighted ? Color.accentColor : Color.clear, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
         .padding(.horizontal, 4)
     }

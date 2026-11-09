@@ -289,6 +289,88 @@ enum FinderMenuTargetPolicyTestRunner {
     ]
     expect(messages.allSatisfy { !$0.contains(home) && !$0.contains("/Volumes") }, "失败提示不得带一个猜测出来的目录")
 
+    expect(
+        FinderMenuTargetPolicy.directoryForAction(
+            origin: .container,
+            rememberedPath: "/Volumes/Backup",
+            frontWindow: .directory(home)
+        ) == .usePath("/Volumes/Backup"),
+        "外置卷快捷菜单应使用 Finder Sync 记下的挂载点"
+    )
+    expect(
+        FinderMenuTargetPolicy.directoryForAction(
+            origin: .container,
+            rememberedPath: nil,
+            frontWindow: .directory(home)
+        ) == .cancel(.unresolved),
+        "快捷菜单没有 Finder Sync 目标时不得退回主目录"
+    )
+    expect(
+        FinderMenuTargetPolicy.menuBuildPlan(for: .container) == .rememberFinderSyncTarget,
+        "外置卷快捷菜单仍不得在构建菜单时发送 AppleEvent"
+    )
+
+    let usb = ExternalVolumeAttributes(path: "/Volumes/Backup", isLocal: true, isInternal: false, isBrowsable: true, deviceInternal: false, deviceProtocol: "USB")
+    let diskImage = ExternalVolumeAttributes(path: "/Volumes/Installer", isLocal: true, isInternal: false, isBrowsable: true, deviceInternal: false, deviceProtocol: "Disk Image")
+    let network = ExternalVolumeAttributes(path: "/Volumes/Share", isLocal: false, isInternal: false, isBrowsable: true, deviceInternal: false, deviceProtocol: "SMB")
+    let internalFabric = ExternalVolumeAttributes(path: "/Volumes/Recovery", isLocal: true, isInternal: true, isBrowsable: false, deviceInternal: true, deviceProtocol: "Apple Fabric")
+    let simulator = ExternalVolumeAttributes(path: "/Library/Developer/CoreSimulator/Volumes/iOS", isLocal: true, isInternal: false, isBrowsable: false, deviceInternal: false, deviceProtocol: "Virtual Interface")
+    let nested = ExternalVolumeAttributes(path: "/Volumes/Backup/Photos", isLocal: true, isInternal: false, isBrowsable: true, deviceInternal: false, deviceProtocol: "USB")
+    let thunderbolt = ExternalVolumeAttributes(path: "/Volumes/Archive", isLocal: true, isInternal: false, isBrowsable: true, deviceInternal: false, deviceProtocol: "Thunderbolt")
+    let root = ExternalVolumeAttributes(path: "/", isLocal: true, isInternal: false, isBrowsable: true, deviceInternal: false, deviceProtocol: "USB")
+    let volumesRoot = ExternalVolumeAttributes(path: "/Volumes", isLocal: true, isInternal: false, isBrowsable: true, deviceInternal: false, deviceProtocol: "USB")
+
+    expect(FinderMenuTargetPolicy.externalVolumeContextMenuEnabled(sharedValue: nil) == false, "缺少设置时外置卷菜单必须关闭")
+    expect(FinderMenuTargetPolicy.externalVolumeContextMenuEnabled(sharedValue: false) == false, "显式关闭必须保持关闭")
+    expect(FinderMenuTargetPolicy.externalVolumeContextMenuEnabled(sharedValue: true), "显式开启才打开")
+    expect(FinderMenuTargetPolicy.externalVolumeContextMenuEnabledKey == "externalVolumeContextMenuEnabled", "共享设置键必须稳定")
+
+    let candidates = [usb, diskImage, network, internalFabric, simulator, nested, thunderbolt, root, volumesRoot, usb]
+    expect(
+        FinderMenuTargetPolicy.monitoredDirectoryPaths(homePath: home, externalContextMenuEnabled: false, volumes: candidates) == [home, "/Volumes"],
+        "关闭时监视集合必须回到主目录和 /Volumes"
+    )
+    expect(
+        FinderMenuTargetPolicy.monitoredDirectoryPaths(homePath: home, externalContextMenuEnabled: true, volumes: []) == [home, "/Volumes"],
+        "开启但没有合格外置卷时不得扩大监视范围"
+    )
+    expect(
+        FinderMenuTargetPolicy.monitoredDirectoryPaths(homePath: home, externalContextMenuEnabled: true, volumes: candidates) == [home, "/Volumes", "/Volumes/Archive", "/Volumes/Backup"],
+        "开启时只加入合格外置卷挂载点，并去掉重复"
+    )
+    expect(!FinderMenuTargetPolicy.isSupportedExternalVolume(diskImage), "磁盘映像不是外置硬盘")
+    expect(!FinderMenuTargetPolicy.isSupportedExternalVolume(network), "网络卷不是外置硬盘")
+    expect(!FinderMenuTargetPolicy.isSupportedExternalVolume(internalFabric), "内置 Apple Fabric 卷不能加入")
+    expect(!FinderMenuTargetPolicy.isSupportedExternalVolume(simulator), "模拟器卷不能加入")
+    expect(!FinderMenuTargetPolicy.isSupportedExternalVolume(nested), "不能监视挂载点下面的子目录")
+    expect(!FinderMenuTargetPolicy.isSupportedExternalVolume(root), "不能把根目录当作外置卷")
+    expect(!FinderMenuTargetPolicy.isSupportedExternalVolume(volumesRoot), "不能把 /Volumes 再扩大一次")
+
+    let turnedOn = FinderMenuTargetPolicy.monitoredDirectoryPaths(homePath: home, externalContextMenuEnabled: true, volumes: [usb, thunderbolt])
+    let unmounted = FinderMenuTargetPolicy.monitoredDirectoryPaths(homePath: home, externalContextMenuEnabled: true, volumes: [thunderbolt])
+    let turnedOff = FinderMenuTargetPolicy.monitoredDirectoryPaths(homePath: home, externalContextMenuEnabled: false, volumes: [usb, thunderbolt])
+    expect(turnedOn == [home, "/Volumes", "/Volumes/Archive", "/Volumes/Backup"], "重复计算开启集合应稳定")
+    expect(unmounted == [home, "/Volumes", "/Volumes/Archive"], "卸载后应去掉对应挂载点")
+    expect(turnedOff == [home, "/Volumes"], "再次关闭后不得留下外置卷")
+    expect(turnedOn == FinderMenuTargetPolicy.monitoredDirectoryPaths(homePath: home, externalContextMenuEnabled: true, volumes: [thunderbolt, usb]), "开关反复打开不得产生重复项")
+
+    let temporaryDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("quickdoc-external-volume-\(UUID().uuidString)", isDirectory: true)
+    try? FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+    let temporaryPlist = temporaryDirectory.appendingPathComponent("settings.plist")
+    if let legacyData = try? PropertyListSerialization.data(fromPropertyList: ["enabledFileTypes": ["txt"]], format: .xml, options: 0) {
+        try? legacyData.write(to: temporaryPlist, options: .atomic)
+        let legacy = (try? Data(contentsOf: temporaryPlist)).flatMap {
+            try? PropertyListSerialization.propertyList(from: $0, options: [], format: nil) as? [String: Any]
+        }
+        expect(
+            FinderMenuTargetPolicy.externalVolumeContextMenuEnabled(sharedValue: legacy?[FinderMenuTargetPolicy.externalVolumeContextMenuEnabledKey] as? Bool) == false,
+            "旧版本设置文件缺少该键时必须关闭"
+        )
+    } else {
+        expect(false, "无法写出隔离的旧设置文件")
+    }
+    try? FileManager.default.removeItem(at: temporaryDirectory)
+
     if !failures.isEmpty {
         fputs("\(failures.count) failed\n", stderr)
         exit(1)

@@ -26,7 +26,7 @@ enum SoftwareUpdateState: Equatable {
     var statusText: String {
         switch self {
         case .idle:
-            return "检查是否有新版本。发现更新后会先询问是否安装，确认后再下载并覆盖旧版本。"
+            return "检查是否有新版本。"
         case .checking:
             return "正在检查是否有新版本..."
         case let .downloading(version):

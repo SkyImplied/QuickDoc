@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Finder の右クリックメニューとツールバーから一般的なファイルを直接作成できます。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.7.7"><img src="https://img.shields.io/badge/version-v1.7.7-blue" alt="バージョン v1.7.7"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.0"><img src="https://img.shields.io/badge/version-v1.8.0-blue" alt="バージョン v1.8.0"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="プラットフォーム macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Swift で開発">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.7.7/QuickDoc-1.7.7.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.0/QuickDoc-1.8.0.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="ダウンロード数"></a>
   </p>
   <p>
@@ -15,6 +15,13 @@
 </div>
 
 QuickDoc は macOS の Finder Sync 拡張機能を活用したユーティリティです。Finder のコンテキストメニューに実用的な「新建文件」サブメニューを追加します。v1.3 以降では Finder のツールバーにも QuickDoc を追加でき、ツールバーから直接ファイルを作成できます。
+
+## v1.8.0 の新機能
+
+1. 設定ウィンドウの初期サイズを 960×720、最小サイズを 880×660 に縮小しました。
+2. 設定画面を簡素化し、システム標準の折りたたみ可能なサイドバーと整理された各ページにしました。
+3. 初期状態ではオフの実験的項目「外置硬盘右键菜单（实验性）」を追加しました。一般的な利用ではオンにしないことを推奨します。オンにすると外付けディスクのマウントポイントを監視し、Finder がそのディスクアイコンを QuickDoc のロゴで表示することがあります。オフに戻しても、Finder がそのディスクを読み直すまでアイコンが残ることがあります。アイコンの変化を避けたい場合はオフのまま、QuickDoc を Finder ツールバーに追加して使ってください。
+4. このスイッチが右クリックメニューを追加するのは、`/Volumes/名前` に直接マウントされ、ローカルでブラウズ可能、DiskArbitration が内蔵ではないと報告し、プロトコルが USB、Thunderbolt、PCI Express、SD、FireWire、SATA、SAS、SCSI、ATAPI のいずれかであるボリュームだけです。ディスクイメージ、ネットワークボリューム、シミュレータのボリュームは対象外です。すべての外付けディスクやファイルシステムで使えることを保証するものではありません。
 
 ## v1.7.7 の新機能
 
@@ -198,7 +205,7 @@ Finder の新規ファイル形式とオプションのクイックアクショ�
 
 ## 対応ファイル形式
 
-v1.7.7 に組み込まれているファイル形式：
+v1.8.0 に組み込まれているファイル形式：
 
 - TXT
 - Markdown（`.md`）
@@ -301,7 +308,7 @@ About ページには、アプリの概要、バージョン、連絡先への�
 
 v1.4.0 をインストールすると、以降のバージョンは一般設定ページ下部の `检查更新` から確認できます。新しいバージョンが見つかると QuickDoc はインストール前に確認を求め、同意後にダウンロードと置き換えを行います。完了すると自動的に再起動し、アップグレード完了を通知します。
 
-macOS で開発元を確認できないという警告が表示された場合は、Finder で `Control` キーを押しながらアプリをクリックし、`開く` を選択してください。
+macOS で開発元を確認できないという警告が表示された場合は、Finder で `Control` キーを押しながらアプリをクリックし、`開く` を選択してください。配布物は ad-hoc 署名です。Developer ID 署名や公証はありません。
 
 ## ソースからビルド
 
