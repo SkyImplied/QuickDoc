@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>从 Finder 右键菜单和工具栏直接新建常用文件。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.7.6"><img src="https://img.shields.io/badge/version-v1.7.6-blue" alt="版本 v1.7.6"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.7.7"><img src="https://img.shields.io/badge/version-v1.7.7-blue" alt="版本 v1.7.7"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="平台 macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="使用 Swift 构建">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.7.6/QuickDoc-1.7.6.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下载 DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.7.7/QuickDoc-1.7.7.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下载 DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="下载量"></a>
   </p>
   <p>
@@ -15,6 +15,12 @@
 </div>
 
 QuickDoc 是一个围绕 macOS Finder Sync 扩展构建的效率工具。它会在 Finder 右键菜单中加入一个实用的“新建文件”子菜单；从 v1.3 开始，它还支持把 QuickDoc 添加到 Finder 工具栏，从工具栏直接调用新建文件能力。
+
+## v1.7.7 更新亮点
+
+1. 修复 Finder 工具栏菜单在组菜单时同步向访达发送 AppleEvent，导致菜单出现「正在等待…」并卡住的问题。
+2. 修复未监视目录（包括外置磁盘）上使用工具栏时，目标可能错误落到用户主目录的问题。无法确定目标文件夹时会取消操作，不再静默写入其他目录。
+3. 为主应用补上访达自动化 entitlement，使 macOS 可以按正常流程请求 QuickDoc 控制访达的权限；查找失败时会记录 AppleEvent 数字错误码。
 
 ## v1.7.6 更新亮点
 
@@ -199,7 +205,7 @@ QuickDoc 是一个围绕 macOS Finder Sync 扩展构建的效率工具。它会�
 
 ## 支持的新建文件类型
 
-v1.7.6 内置支持：
+v1.7.7 内置支持：
 
 - TXT
 - Markdown（`.md`）

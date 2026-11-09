@@ -49,12 +49,22 @@ private struct FinderActionSelection {
     let context: String?
 }
 
+private struct StoredMenuActionContext {
+    let origin: FinderMenuOrigin
+    let rememberedDirectoryPath: String?
+}
+
+private struct ToolbarFrontWindowSnapshot {
+    let directory: FinderFrontWindowQuery
+    let selection: FinderSelectionQuery
+}
+
 final class FinderSync: FIFinderSync {
     private let logger = Logger(subsystem: "com.skyimplied.QuickDoc", category: "FinderSync")
     private var menuDefinitionsByTag: [Int: FileDefinition] = [:]
     private var actionSelectionsByTag: [Int: FinderActionSelection] = [:]
     private var nextActionSelectionTag = 10_000
-    private var menuTargetDirectoryURL: URL?
+    private var menuActionContext = StoredMenuActionContext(origin: .other, rememberedDirectoryPath: nil)
     private lazy var menuIcon: NSImage = {
         if let image = Self.iconImage(named: "新建文件icon", size: NSSize(width: 18, height: 18)) {
             return image
@@ -157,18 +167,18 @@ final class FinderSync: FIFinderSync {
 
     private static func monitoredDirectoryURLs() -> [URL] {
         let fileManager = FileManager.default
-        let homeURL = URL(fileURLWithPath: "/Users/\(NSUserName())", isDirectory: true)
-        let volumesURL = URL(fileURLWithPath: "/Volumes", isDirectory: true)
-
         // Keep mounted volumes out of the root set. Finder replaces the sidebar
         // icon of every monitored root with the containing app's icon. /Volumes
         // intentionally does not provide contextual menus across mount boundaries;
         // external volumes are supported through the global toolbar item instead.
-        return [homeURL, volumesURL].filter { url in
-            let standardizedURL = url.standardizedFileURL
+        return FinderMenuTargetPolicy.monitoredRootPaths(homePath: "/Users/\(NSUserName())").compactMap { path in
+            let standardizedURL = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
             var isDirectory: ObjCBool = false
-            return fileManager.fileExists(atPath: standardizedURL.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
+            guard fileManager.fileExists(atPath: standardizedURL.path, isDirectory: &isDirectory),
+                  isDirectory.boolValue else {
+                return nil
+            }
+            return standardizedURL
         }
     }
 
@@ -241,7 +251,12 @@ final class FinderSync: FIFinderSync {
         let menu = NSMenu(title: "QuickDoc")
         menuDefinitionsByTag.removeAll()
         actionSelectionsByTag.removeAll()
-        menuTargetDirectoryURL = resolveMenuTargetDirectory(for: menuKind)
+        let origin = FinderMenuOrigin(menuKind)
+        let rememberedDirectory = resolveMenuTargetDirectory(for: origin)
+        menuActionContext = StoredMenuActionContext(
+            origin: origin,
+            rememberedDirectoryPath: rememberedDirectory?.standardizedFileURL.path
+        )
 
         let actionItems = buildActionItems(menuKind: menuKind)
         actionItems.forEach { menu.addItem($0) }
@@ -361,7 +376,10 @@ final class FinderSync: FIFinderSync {
 
     private func makeQuickActionMenuItems(menuKind: FIMenuKind, sharedSettings: SharedSettings) -> [NSMenuItem] {
         let actionSelection = actionSelection(for: menuKind)
-        let hasSelection = !actionSelection.urls.isEmpty
+        let selectionActionsEnabled = FinderMenuTargetPolicy.selectionActionsEnabled(
+            origin: FinderMenuOrigin(menuKind),
+            finderSyncSelectionCount: actionSelection.urls.count
+        )
         var items: [NSMenuItem] = []
 
         if settingValue(sharedSettings.quickActionsEnabled, key: Self.quickActionsEnabledKey, fallback: true) {
@@ -370,7 +388,7 @@ final class FinderSync: FIFinderSync {
                 copyItem.target = self
                 copyItem.image = copyActionIcon
                 bind(actionSelection, to: copyItem)
-                copyItem.isEnabled = hasSelection
+                copyItem.isEnabled = selectionActionsEnabled
                 items.append(copyItem)
             }
 
@@ -387,7 +405,7 @@ final class FinderSync: FIFinderSync {
                 cutItem.target = self
                 cutItem.image = cutActionIcon
                 bind(actionSelection, to: cutItem)
-                cutItem.isEnabled = hasSelection
+                cutItem.isEnabled = selectionActionsEnabled
                 items.append(cutItem)
             }
         }
@@ -397,7 +415,7 @@ final class FinderSync: FIFinderSync {
             deleteItem.target = self
             deleteItem.image = permanentDeleteIcon
             bind(actionSelection, to: deleteItem)
-            deleteItem.isEnabled = hasSelection
+            deleteItem.isEnabled = selectionActionsEnabled
             items.append(deleteItem)
         }
 
@@ -602,18 +620,24 @@ final class FinderSync: FIFinderSync {
             diagnosticLog("Missing file definition for tag \(sender.tag)")
             return
         }
-        createFile(from: definition)
+        performOnResolvedTarget { [weak self] context in
+            self?.createFile(from: definition, context: context)
+        }
     }
 
-    private func createFile(from definition: FileDefinition) {
+    private func createFile(from definition: FileDefinition, context: StoredMenuActionContext) {
         logger.info("Create file action invoked for \(definition.id, privacy: .public)")
         diagnosticLog("Create file requested: \(definition.id)")
 
-        guard let directory = targetDirectory() else {
+        let directory: URL
+        switch resolveDirectory(context: context) {
+        case .cancel(let reason):
             logger.error("Unable to resolve target directory")
-            diagnosticLog("Unable to resolve target directory")
-            showError(message: "无法确定目标文件夹。")
+            diagnosticLog("Unable to resolve target directory: \(String(describing: reason))")
+            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: "新建文件"))
             return
+        case .usePath(let path):
+            directory = URL(fileURLWithPath: path, isDirectory: true)
         }
 
         if let readOnlyMessage = readOnlyVolumeMessage(for: directory) {
@@ -644,41 +668,58 @@ final class FinderSync: FIFinderSync {
     }
 
     @objc private func openInTerminal(_ sender: NSMenuItem) {
-        guard let directory = targetDirectory() else {
-            showError(message: "无法确定目标文件夹。")
-            return
+        performOnResolvedTarget { [weak self] context in
+            guard let self else { return }
+            switch self.resolveDirectory(context: context) {
+            case .cancel(let reason):
+                self.showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: "打开终端"))
+            case .usePath(let path):
+                self.openDirectoryInTerminal(URL(fileURLWithPath: path, isDirectory: true))
+            }
         }
-
-        openDirectoryInTerminal(directory)
     }
 
     @objc private func copyCurrentPath(_ sender: NSMenuItem) {
-        guard let targetURL = targetURLForPathCopy() else {
-            showError(message: "无法确定要复制的路径。")
-            return
+        performOnResolvedTarget { [weak self] context in
+            self?.copyResolvedPath(context: context)
         }
-
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(targetURL.path, forType: .string)
-        diagnosticLog("Copied path: \(targetURL.path)")
     }
 
     @objc private func copySelectedItems(_ sender: NSMenuItem) {
-        writeSelectedItemsToPasteboard(from: sender, isCut: false)
+        guard let selection = capturedSelection(for: sender, verb: "拷贝") else { return }
+        performOnResolvedTarget { [weak self] context in
+            self?.writeSelectedItemsToPasteboard(selection: selection, context: context, isCut: false)
+        }
     }
 
     @objc private func cutSelectedItems(_ sender: NSMenuItem) {
-        writeSelectedItemsToPasteboard(from: sender, isCut: true)
+        guard let selection = capturedSelection(for: sender, verb: "剪切") else { return }
+        performOnResolvedTarget { [weak self] context in
+            self?.writeSelectedItemsToPasteboard(selection: selection, context: context, isCut: true)
+        }
     }
 
     @objc private func permanentlyDeleteSelectedItems(_ sender: NSMenuItem) {
-        guard let selection = actionSelectionsByTag[sender.tag],
-              let selectionContext = selection.context,
-              !selection.urls.isEmpty else {
-            showError(message: "请先选择要彻底删除的文件或文件夹。")
-            return
+        guard let selection = capturedSelection(for: sender, verb: "彻底删除") else { return }
+        performOnResolvedTarget { [weak self] context in
+            self?.permanentlyDelete(selection: selection, context: context)
         }
-        let selectedURLs = selection.urls
+    }
+
+    private func permanentlyDelete(selection: FinderActionSelection, context: StoredMenuActionContext) {
+        let selectedURLs: [URL]
+        switch resolvedSelectionURLs(selection: selection, context: context, removeCurrentDirectory: true) {
+        case .cancel(let reason):
+            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: "彻底删除"))
+            return
+        case .usePaths(let paths):
+            guard selection.context != nil, !paths.isEmpty else {
+                showError(message: "请先选择要彻底删除的文件或文件夹。")
+                return
+            }
+            selectedURLs = paths.map { URL(fileURLWithPath: $0) }
+        }
+        guard let selectionContext = selection.context else { return }
 
         do {
             let requestID = UUID()
@@ -719,14 +760,24 @@ final class FinderSync: FIFinderSync {
         }
     }
 
-    private func writeSelectedItemsToPasteboard(from sender: NSMenuItem, isCut: Bool) {
-        guard let selection = actionSelectionsByTag[sender.tag],
-              selection.context != nil,
-              !selection.urls.isEmpty else {
-            showError(message: "请先选择要\(isCut ? "剪切" : "拷贝")的文件或文件夹。")
+    private func writeSelectedItemsToPasteboard(
+        selection: FinderActionSelection,
+        context: StoredMenuActionContext,
+        isCut: Bool
+    ) {
+        let verb = isCut ? "剪切" : "拷贝"
+        let selectedURLs: [URL]
+        switch resolvedSelectionURLs(selection: selection, context: context, removeCurrentDirectory: true) {
+        case .cancel(let reason):
+            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: verb))
             return
+        case .usePaths(let paths):
+            guard selection.context != nil, !paths.isEmpty else {
+                showError(message: "请先选择要\(verb)的文件或文件夹。")
+                return
+            }
+            selectedURLs = paths.map { URL(fileURLWithPath: $0) }
         }
-        let selectedURLs = selection.urls
 
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
@@ -744,9 +795,20 @@ final class FinderSync: FIFinderSync {
             showError(message: "剪贴板中没有可粘贴的文件或文件夹。")
             return
         }
-        guard let directory = targetDirectory() else {
-            showError(message: "无法确定粘贴目标文件夹。")
+        let capturedURLs = sourceURLs
+        performOnResolvedTarget { [weak self] context in
+            self?.pasteCapturedItems(capturedURLs, context: context)
+        }
+    }
+
+    private func pasteCapturedItems(_ sourceURLs: [URL], context: StoredMenuActionContext) {
+        let directory: URL
+        switch resolveDirectory(context: context) {
+        case .cancel(let reason):
+            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: "粘贴"))
             return
+        case .usePath(let path):
+            directory = URL(fileURLWithPath: path, isDirectory: true)
         }
 
         let shouldMove = NSPasteboard.general.string(forType: Self.quickDocCutPasteboardType) != nil
@@ -792,161 +854,235 @@ final class FinderSync: FIFinderSync {
         return (NSPasteboard.general.readObjects(forClasses: [NSURL.self], options: options) as? [URL]) ?? []
     }
 
-    private func targetURLForPathCopy() -> URL? {
-        if let selectedURL = selectedItemURLs().first {
-            return selectedURL
+    private func performOnResolvedTarget(_ work: @escaping (StoredMenuActionContext) -> Void) {
+        let context = menuActionContext
+        guard context.origin == .toolbar else {
+            work(context)
+            return
         }
 
-        return menuTargetDirectoryURL
+        // Finder's main thread is blocked in this action's synchronous reply.
+        // An AppleEvent sent before the reply returns cannot be answered.
+        DispatchQueue.main.async {
+            work(context)
+        }
     }
 
-    private func targetDirectory() -> URL? {
-        if let menuTargetDirectoryURL {
-            return menuTargetDirectoryURL
+    private func capturedSelection(for sender: NSMenuItem, verb: String) -> FinderActionSelection? {
+        guard let selection = actionSelectionsByTag[sender.tag] else {
+            showError(message: "请先选择要\(verb)的文件或文件夹。")
+            return nil
         }
-
-        if let targetedURL = FIFinderSyncController.default().targetedURL() {
-            return directoryURL(for: targetedURL)
-        }
-
-        if let selectedURL = selectedItemURLs().first {
-            return directoryURL(for: selectedURL)
-        }
-
-        // Never silently write into the extension container's Desktop when
-        // Finder cannot provide a target. The caller will surface an error.
-        return nil
+        return selection
     }
 
-    private func resolveMenuTargetDirectory(for menuKind: FIMenuKind) -> URL? {
-        // Outside monitored roots Finder Sync does not expose targetedURL().
-        // The toolbar is global, so ask Finder for its front window first.
-        if menuKind == .toolbarItemMenu,
-           let directory = finderCurrentDirectoryURLViaAppleScript() {
-            diagnosticLog("Resolved toolbar target from Finder front window: \(directory.path)")
-            return directory
+    private func copyResolvedPath(context: StoredMenuActionContext) {
+        switch resolvePathCopy(context: context) {
+        case .cancel(let reason):
+            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: "复制路径"))
+        case .copyPath(let path):
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(path, forType: .string)
+            diagnosticLog("Copied path: \(path)")
         }
-
-        if let targetedURL = FIFinderSyncController.default().targetedURL() {
-            let directory = directoryURL(for: targetedURL).standardizedFileURL
-            diagnosticLog("Resolved menu target from Finder Sync: \(directory.path)")
-            return directory
-        }
-
-        if let selectedURL = selectedItemURLs().first {
-            return directoryURL(for: selectedURL).standardizedFileURL
-        }
-
-        return nil
     }
 
-    private func selectedItemURLs() -> [URL] {
-        if let selectedURLs = FIFinderSyncController.default().selectedItemURLs(),
-           !selectedURLs.isEmpty {
-            return selectedURLs.map(\.standardizedFileURL)
+    private func resolveDirectory(context: StoredMenuActionContext) -> FinderDirectoryActionPlan {
+        let snapshot = context.origin == .toolbar ? queryToolbarFrontWindow() : nil
+        let plan = FinderMenuTargetPolicy.directoryForAction(
+            origin: context.origin,
+            rememberedPath: context.rememberedDirectoryPath,
+            frontWindow: snapshot?.directory ?? .failed
+        )
+        switch plan {
+        case .usePath(let path):
+            diagnosticLog("Resolved action directory: \(path)")
+        case .cancel(let reason):
+            diagnosticLog("Cancelled directory lookup: \(String(describing: reason))")
+        }
+        return plan
+    }
+
+    private func resolvedSelectionURLs(
+        selection: FinderActionSelection,
+        context: StoredMenuActionContext,
+        removeCurrentDirectory: Bool
+    ) -> FinderSelectionActionPlan {
+        let snapshot = context.origin == .toolbar ? queryToolbarFrontWindow() : nil
+        let currentDirectory: String?
+        if removeCurrentDirectory, let snapshot, case .directory(let path) = snapshot.directory {
+            currentDirectory = path
+        } else {
+            currentDirectory = nil
+        }
+        return FinderMenuTargetPolicy.selectionForAction(
+            origin: context.origin,
+            rememberedPaths: selection.urls.map(\.standardizedFileURL.path),
+            liveSelection: snapshot?.selection ?? .failed,
+            directory: snapshot?.directory ?? .failed,
+            currentDirectoryPath: currentDirectory
+        )
+    }
+
+    private func resolvePathCopy(context: StoredMenuActionContext) -> FinderPathCopyPlan {
+        if context.origin == .toolbar {
+            let snapshot = queryToolbarFrontWindow()
+            let selection = FinderMenuTargetPolicy.selectionForAction(
+                origin: .toolbar,
+                rememberedPaths: [],
+                liveSelection: snapshot.selection,
+                directory: snapshot.directory,
+                currentDirectoryPath: nil
+            )
+            let directory = FinderMenuTargetPolicy.directoryForAction(
+                origin: .toolbar,
+                rememberedPath: nil,
+                frontWindow: snapshot.directory
+            )
+            return FinderMenuTargetPolicy.pathCopyPlan(selection: selection, directory: directory)
         }
 
-        let fallbackURLs = finderSelectionURLsViaAppleScript()
-        if !fallbackURLs.isEmpty {
-            diagnosticLog("Resolved \(fallbackURLs.count) selected item(s) via Finder AppleScript fallback")
+        let selection = FinderMenuTargetPolicy.selectionForAction(
+            origin: context.origin,
+            rememberedPaths: finderSyncSelectedItemURLs().map(\.standardizedFileURL.path),
+            liveSelection: .paths([]),
+            directory: .failed,
+            currentDirectoryPath: nil
+        )
+        let directory = FinderMenuTargetPolicy.directoryForAction(
+            origin: context.origin,
+            rememberedPath: context.rememberedDirectoryPath,
+            frontWindow: .failed
+        )
+        return FinderMenuTargetPolicy.pathCopyPlan(selection: selection, directory: directory)
+    }
+
+    private func resolveMenuTargetDirectory(for origin: FinderMenuOrigin) -> URL? {
+        switch FinderMenuTargetPolicy.menuBuildPlan(for: origin) {
+        case .deferDirectoryUntilAction:
+            // menu(for:) cannot send an AppleEvent back to Finder. targetedURL()
+            // is also the wrong write target here: outside a monitored volume it
+            // is nil, and when Finder still reports a monitored root it is the
+            // home folder rather than the external disk on screen.
+            diagnosticLog("Deferring toolbar target until after menu(for:) returns")
+            return nil
+        case .rememberFinderSyncTarget:
+            if let targetedURL = FIFinderSyncController.default().targetedURL() {
+                let directory = directoryURL(for: targetedURL).standardizedFileURL
+                diagnosticLog("Resolved menu target from Finder Sync: \(directory.path)")
+                return directory
+            }
+            if let selectedURL = finderSyncSelectedItemURLs().first {
+                return directoryURL(for: selectedURL).standardizedFileURL
+            }
+            return nil
         }
-        return fallbackURLs
+    }
+
+    private func finderSyncSelectedItemURLs() -> [URL] {
+        // This value is only meaningful during menu(for:) or its action.
+        // A nil result must not fall back to AppleScript: menu construction
+        // calls this method while Finder is waiting for the menu.
+        guard let selectedURLs = FIFinderSyncController.default().selectedItemURLs(),
+              !selectedURLs.isEmpty else {
+            return []
+        }
+        return selectedURLs.map(\.standardizedFileURL)
     }
 
     private func actionSelection(for menuKind: FIMenuKind) -> FinderActionSelection {
-        let context: String?
-        switch menuKind {
-        case .contextualMenuForItems:
-            context = "items"
-        case .toolbarItemMenu:
-            context = "toolbar"
-        default:
+        switch FinderMenuOrigin(menuKind) {
+        case .items:
+            return FinderActionSelection(urls: finderSyncSelectedItemURLs(), context: "items")
+        case .toolbar:
+            return FinderActionSelection(urls: [], context: "toolbar")
+        case .container, .other:
             // Finder may report the current folder as its selection when the
             // contextual menu comes from an empty area. Never treat that
             // container as an explicit file selection.
-            context = nil
-        }
-
-        guard context != nil else {
             return FinderActionSelection(urls: [], context: nil)
         }
-
-        var urls = selectedItemURLs()
-        if menuKind == .toolbarItemMenu,
-           let currentDirectoryURL = menuTargetDirectoryURL?.standardizedFileURL {
-            let originalCount = urls.count
-            urls.removeAll { $0.standardizedFileURL == currentDirectoryURL }
-            if urls.count != originalCount {
-                diagnosticLog("Ignored the current Finder directory reported as a toolbar selection")
-            }
-        }
-
-        return FinderActionSelection(urls: urls, context: context)
     }
 
-    private func finderSelectionURLsViaAppleScript() -> [URL] {
-        let scriptSource = """
-        tell application id "\(Self.finderBundleIdentifier)"
-            set selectedItems to selection
-            set selectedPaths to {}
-            repeat with selectedItem in selectedItems
-                try
-                    set end of selectedPaths to POSIX path of (selectedItem as alias)
-                end try
-            end repeat
-            return selectedPaths
-        end tell
-        """
-
-        guard let script = NSAppleScript(source: scriptSource) else {
-            diagnosticLog("Unable to create Finder selection AppleScript")
-            return []
+    private func queryToolbarFrontWindow() -> ToolbarFrontWindowSnapshot {
+        let source = FinderMenuTargetPolicy.frontWindowScript(bundleIdentifier: Self.finderBundleIdentifier)
+        guard let script = NSAppleScript(source: source) else {
+            diagnosticLog("Unable to create Finder front-window AppleScript")
+            return failedToolbarSnapshot(number: nil)
         }
 
         var errorInfo: NSDictionary?
         let descriptor = script.executeAndReturnError(&errorInfo)
         if let errorInfo {
-            diagnosticLog("Finder selection AppleScript failed: \(errorInfo)")
-            return []
+            let number = appleEventErrorNumber(errorInfo)
+            logger.error("Finder front-window AppleEvent failed: \(number ?? -1, privacy: .public)")
+            diagnosticLog("Finder front-window AppleScript failed: \(errorInfo)")
+            return failedToolbarSnapshot(number: number)
         }
 
-        return Self.stringValues(from: descriptor).map {
-            URL(fileURLWithPath: $0).standardizedFileURL
+        guard let snapshot = toolbarSnapshot(from: descriptor) else {
+            diagnosticLog("Finder front-window AppleScript returned an unexpected reply")
+            return failedToolbarSnapshot(number: nil)
         }
+        return snapshot
     }
 
-    private func finderCurrentDirectoryURLViaAppleScript() -> URL? {
-        let scriptSource = """
-        tell application id "\(Self.finderBundleIdentifier)"
-            if (count of Finder windows) is 0 then return ""
-            return POSIX path of (target of front Finder window as alias)
-        end tell
-        """
+    private func appleEventErrorNumber(_ errorInfo: NSDictionary) -> Int? {
+        let value = errorInfo[NSAppleScript.errorNumber]
+        if let number = value as? Int {
+            return number
+        }
+        if let number = value as? NSNumber {
+            return number.intValue
+        }
+        return nil
+    }
 
-        guard let script = NSAppleScript(source: scriptSource) else {
-            diagnosticLog("Unable to create Finder current-directory AppleScript")
+    private func failedToolbarSnapshot(number: Int?) -> ToolbarFrontWindowSnapshot {
+        let failure = FinderMenuTargetPolicy.transportFailure(number: number)
+        return ToolbarFrontWindowSnapshot(directory: failure.0, selection: failure.1)
+    }
+
+    private func toolbarSnapshot(from descriptor: NSAppleEventDescriptor) -> ToolbarFrontWindowSnapshot? {
+        guard descriptor.descriptorType == typeAEList, descriptor.numberOfItems >= 3 else {
             return nil
         }
 
-        var errorInfo: NSDictionary?
-        let descriptor = script.executeAndReturnError(&errorInfo)
-        if let errorInfo {
-            diagnosticLog("Finder current-directory AppleScript failed: \(errorInfo)")
+        let state: FinderDirectoryScriptState
+        switch descriptor.atIndex(1)?.stringValue {
+        case "no-window":
+            state = .noWindow
+        case "unavailable":
+            state = .unavailable
+        case "ok":
+            state = .path(standardizedPath(descriptor.atIndex(2)?.stringValue) ?? "")
+        default:
             return nil
         }
 
-        guard let path = descriptor.stringValue, !path.isEmpty else {
-            return nil
-        }
+        let selectionPaths = descriptor.atIndex(3).map { Self.stringValues(from: $0) } ?? []
+        return ToolbarFrontWindowSnapshot(
+            directory: FinderMenuTargetPolicy.directoryQuery(
+                state: state,
+                pathIsDirectory: pathIsDirectory(state)
+            ),
+            selection: .paths(selectionPaths.compactMap { standardizedPath($0) })
+        )
+    }
 
-        let url = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
+    private func pathIsDirectory(_ state: FinderDirectoryScriptState) -> Bool {
+        guard case .path(let path) = state, !path.isEmpty else {
+            return false
+        }
         var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
-              isDirectory.boolValue else {
-            diagnosticLog("Finder current-directory path is unavailable: \(url.path)")
-            return nil
-        }
-        return url
+        return FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) && isDirectory.boolValue
+    }
+
+    private func standardizedPath(_ path: String?) -> String? {
+        guard let path else { return nil }
+        let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return URL(fileURLWithPath: trimmed).standardizedFileURL.path
     }
 
     private static func stringValues(from descriptor: NSAppleEventDescriptor) -> [String] {
@@ -1148,6 +1284,21 @@ final class FinderSync: FIFinderSync {
             FileManager.default.homeDirectoryForCurrentUser
                 .appendingPathComponent("Library/Application Support/QuickDoc/finder-sync.log")
         ]
+    }
+}
+
+private extension FinderMenuOrigin {
+    init(_ menuKind: FIMenuKind) {
+        switch menuKind {
+        case .contextualMenuForItems:
+            self = .items
+        case .contextualMenuForContainer:
+            self = .container
+        case .toolbarItemMenu:
+            self = .toolbar
+        default:
+            self = .other
+        }
     }
 }
 

@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Finder の右クリックメニューとツールバーから一般的なファイルを直接作成できます。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.7.6"><img src="https://img.shields.io/badge/version-v1.7.6-blue" alt="バージョン v1.7.6"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.7.7"><img src="https://img.shields.io/badge/version-v1.7.7-blue" alt="バージョン v1.7.7"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="プラットフォーム macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Swift で開発">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.7.6/QuickDoc-1.7.6.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.7.7/QuickDoc-1.7.7.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="ダウンロード数"></a>
   </p>
   <p>
@@ -15,6 +15,12 @@
 </div>
 
 QuickDoc は macOS の Finder Sync 拡張機能を活用したユーティリティです。Finder のコンテキストメニューに実用的な「新建文件」サブメニューを追加します。v1.3 以降では Finder のツールバーにも QuickDoc を追加でき、ツールバーから直接ファイルを作成できます。
+
+## v1.7.7 の新機能
+
+1. ツールバーのメニューを組み立てる際に Finder へ同期 AppleEvent を送っていたため、メニューが「待機中…」のまま止まる問題を修正しました。
+2. 監視対象外のフォルダ（外付けボリュームを含む）でツールバーから操作したとき、作成先がホームフォルダへ誤って戻る問題を修正しました。作成先を確定できない場合は操作を中止し、別の場所へ書き込みません。
+3. メインアプリに Finder 自動化の entitlement を追加し、macOS が通常の手順で QuickDoc に Finder の制御許可を求められるようにしました。照会に失敗した場合は AppleEvent の数値エラーを記録します。
 
 ## v1.7.6 の新機能
 
@@ -192,7 +198,7 @@ Finder の新規ファイル形式とオプションのクイックアクショ�
 
 ## 対応ファイル形式
 
-v1.7.6 に組み込まれているファイル形式：
+v1.7.7 に組み込まれているファイル形式：
 
 - TXT
 - Markdown（`.md`）
