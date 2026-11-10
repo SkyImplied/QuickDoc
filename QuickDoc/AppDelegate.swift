@@ -89,6 +89,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         applyAppearanceMode(settingsModel.appearanceMode)
         applyDisplayMode(settingsModel.displayMode, suppressDock: isSuppressingDockForPermanentDeleteLaunch)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(refreshLocalizedStatusItem),
+            name: .quickDocLanguageDidChange,
+            object: nil
+        )
         if let completedUpdateVersion = SoftwareUpdateCompletionStore.consumeVersion() {
             showMainWindow()
             DispatchQueue.main.async { [weak self] in
@@ -213,8 +219,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         button.target = self
         button.action = #selector(handleStatusItemClick(_:))
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        button.toolTip = "QuickDoc 正在运行"
+        button.toolTip = L("QuickDoc 正在运行")
         refreshStatusItemAppearance()
+    }
+
+    @objc
+    private func refreshLocalizedStatusItem() {
+        statusItem?.button?.toolTip = L("QuickDoc 正在运行")
     }
 
     private func refreshStatusItemAppearance() {
@@ -234,12 +245,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        let openSettingsItem = NSMenuItem(title: "打开设置", action: #selector(openSettingsFromMenu(_:)), keyEquivalent: "")
+        let openSettingsItem = NSMenuItem(title: L("打开设置"), action: #selector(openSettingsFromMenu(_:)), keyEquivalent: "")
         openSettingsItem.target = self
         menu.addItem(openSettingsItem)
         menu.addItem(.separator())
 
-        let displayModeItem = NSMenuItem(title: "显示方式", action: nil, keyEquivalent: "")
+        let displayModeItem = NSMenuItem(title: L("显示方式"), action: nil, keyEquivalent: "")
         let displayModeMenu = NSMenu()
         for mode in QuickDocDisplayMode.allCases {
             let item = NSMenuItem(title: mode.title, action: #selector(selectDisplayModeFromMenu(_:)), keyEquivalent: "")
@@ -251,7 +262,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         displayModeItem.submenu = displayModeMenu
         menu.addItem(displayModeItem)
 
-        let fileTypesItem = NSMenuItem(title: "新建文件类型", action: nil, keyEquivalent: "")
+        let fileTypesItem = NSMenuItem(title: L("新建文件类型"), action: nil, keyEquivalent: "")
         let fileTypesMenu = NSMenu()
         for type in quickDocFileTypes {
             fileTypesMenu.addItem(persistentToggleMenuItem(
@@ -264,32 +275,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         fileTypesItem.submenu = fileTypesMenu
         menu.addItem(fileTypesItem)
 
-        let otherFeaturesItem = NSMenuItem(title: "其他功能", action: nil, keyEquivalent: "")
+        let otherFeaturesItem = NSMenuItem(title: L("其他功能"), action: nil, keyEquivalent: "")
         let otherFeaturesMenu = NSMenu()
 
         otherFeaturesMenu.addItem(persistentToggleMenuItem(
-            title: "终端直达",
+            title: L("终端直达"),
             isOn: settingsModel.terminalDirectEnabled
         ) { [weak self] enabled in
             self?.settingsModel.terminalDirectEnabled = enabled
         })
 
         otherFeaturesMenu.addItem(persistentToggleMenuItem(
-            title: "路径复制",
+            title: L("路径复制"),
             isOn: settingsModel.pathCopyEnabled
         ) { [weak self] enabled in
             self?.settingsModel.pathCopyEnabled = enabled
         })
 
         otherFeaturesMenu.addItem(persistentToggleMenuItem(
-            title: "快捷操作",
+            title: L("快捷操作"),
             isOn: settingsModel.quickActionsEnabled
         ) { [weak self] enabled in
             self?.settingsModel.quickActionsEnabled = enabled
         })
 
         otherFeaturesMenu.addItem(persistentToggleMenuItem(
-            title: "展开快捷操作",
+            title: L("展开快捷操作"),
             isOn: settingsModel.quickActionsExpanded
         ) { [weak self] enabled in
             self?.settingsModel.quickActionsExpanded = enabled
@@ -298,12 +309,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         otherFeaturesItem.submenu = otherFeaturesMenu
         menu.addItem(otherFeaturesItem)
 
-        let launchAtLoginItem = NSMenuItem(title: "开机自启动", action: #selector(toggleLaunchAtLogin(_:)), keyEquivalent: "")
+        let launchAtLoginItem = NSMenuItem(title: L("开机自启动"), action: #selector(toggleLaunchAtLogin(_:)), keyEquivalent: "")
         launchAtLoginItem.target = self
         launchAtLoginItem.state = settingsModel.launchAtLogin ? .on : .off
         menu.addItem(launchAtLoginItem)
 
-        let silentLaunchAtLoginItem = NSMenuItem(title: "静默启动", action: #selector(toggleSilentLaunchAtLogin(_:)), keyEquivalent: "")
+        let silentLaunchAtLoginItem = NSMenuItem(title: L("静默启动"), action: #selector(toggleSilentLaunchAtLogin(_:)), keyEquivalent: "")
         silentLaunchAtLoginItem.target = self
         silentLaunchAtLoginItem.state = settingsModel.silentLaunchAtLogin ? .on : .off
         silentLaunchAtLoginItem.isEnabled = settingsModel.launchAtLogin
@@ -311,17 +322,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         menu.addItem(.separator())
 
-        let finderItem = NSMenuItem(title: "重启访达", action: #selector(restartFinderFromMenu(_:)), keyEquivalent: "")
+        let finderItem = NSMenuItem(title: L("重启访达"), action: #selector(restartFinderFromMenu(_:)), keyEquivalent: "")
         finderItem.target = self
         menu.addItem(finderItem)
 
-        let extensionItem = NSMenuItem(title: "打开扩展设置", action: #selector(openExtensionSettingsFromMenu(_:)), keyEquivalent: "")
+        let extensionItem = NSMenuItem(title: L("打开扩展设置"), action: #selector(openExtensionSettingsFromMenu(_:)), keyEquivalent: "")
         extensionItem.target = self
         menu.addItem(extensionItem)
 
         menu.addItem(.separator())
 
-        let quitItem = NSMenuItem(title: "退出 QuickDoc", action: #selector(quitApplication(_:)), keyEquivalent: "")
+        let quitItem = NSMenuItem(title: L("退出 QuickDoc"), action: #selector(quitApplication(_:)), keyEquivalent: "")
         quitItem.target = self
         menu.addItem(quitItem)
 
@@ -444,7 +455,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
               })?.value,
               let requestID = UUID(uuidString: requestValue) else {
             logger.error("Ignored malformed permanent deletion request URL")
-            presentPermanentDeleteError("删除请求无效，请重试。")
+            presentPermanentDeleteError(L("删除请求无效，请重试。"))
             finishPermanentDeleteRequest()
             return
         }
@@ -484,7 +495,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         } catch {
             try? fileManager.removeItem(at: requestURL)
             logger.error("Unable to read permanent deletion request: \(error.localizedDescription, privacy: .public)")
-            presentPermanentDeleteError("无法读取删除请求：\(error.localizedDescription)")
+            presentPermanentDeleteError(LF("无法读取删除请求：%@", error.localizedDescription))
             finishPermanentDeleteRequest()
         }
     }
@@ -494,21 +505,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         let alert = NSAlert()
         alert.messageText = itemURLs.count == 1
-            ? "确认彻底删除此项目？"
-            : "确认彻底删除这 \(itemURLs.count) 个项目？"
+            ? L("确认彻底删除此项目？")
+            : LF("确认彻底删除这 %ld 个项目？", itemURLs.count)
 
         let visiblePaths = itemURLs.prefix(5).map { "• \($0.path)" }
         let remainingCount = itemURLs.count - visiblePaths.count
         let selectionSummary = visiblePaths.joined(separator: "\n")
-            + (remainingCount > 0 ? "\n• 以及另外 \(remainingCount) 个项目" : "")
-        alert.informativeText = "这些项目会被立即永久删除，不会移入废纸篓，也无法通过“撤销”恢复。请确认你了解此操作的风险。\n\n\(selectionSummary)"
+            + (remainingCount > 0 ? LF("\n• 以及另外 %ld 个项目", remainingCount) : "")
+        alert.informativeText = LF("这些项目会被立即永久删除，不会移入废纸篓，也无法通过“撤销”恢复。请确认你了解此操作的风险。\n\n%@", selectionSummary)
         alert.alertStyle = .critical
 
-        let deleteButton = alert.addButton(withTitle: "彻底删除")
+        let deleteButton = alert.addButton(withTitle: L("彻底删除"))
         deleteButton.hasDestructiveAction = true
         deleteButton.keyEquivalent = ""
 
-        let cancelButton = alert.addButton(withTitle: "取消")
+        let cancelButton = alert.addButton(withTitle: L("取消"))
         cancelButton.keyEquivalent = "\r"
 
         guard alert.runModal() == .alertFirstButtonReturn else {
@@ -530,7 +541,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
         logger.info("Permanently deleted \(deletedCount) of \(itemURLs.count) requested item(s)")
         if !failures.isEmpty {
-            presentPermanentDeleteError("部分项目未能彻底删除：\n\(failures.joined(separator: "\n"))")
+            presentPermanentDeleteError(LF("部分项目未能彻底删除：\n%@", failures.joined(separator: "\n")))
         }
         finishPermanentDeleteRequest()
     }
@@ -553,7 +564,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             alert.messageText = "QuickDoc"
             alert.informativeText = message
             alert.alertStyle = .warning
-            alert.addButton(withTitle: "好的")
+            alert.addButton(withTitle: L("好的"))
             alert.runModal()
         }
     }
@@ -565,7 +576,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             alert.messageText = "QuickDoc"
             alert.informativeText = message
             alert.alertStyle = .warning
-            alert.addButton(withTitle: "好的")
+            alert.addButton(withTitle: L("好的"))
             alert.runModal()
         }
     }
@@ -654,10 +665,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private func presentCompletedUpdateAlert(version: String) {
         let alert = NSAlert()
-        alert.messageText = "更新完成"
-        alert.informativeText = "QuickDoc 已成功升级到最新版 v\(version)。"
+        alert.messageText = L("更新完成")
+        alert.informativeText = LF("QuickDoc 已成功升级到最新版 v%@。", version)
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "好的")
+        alert.addButton(withTitle: L("好的"))
         alert.runModal()
     }
 }

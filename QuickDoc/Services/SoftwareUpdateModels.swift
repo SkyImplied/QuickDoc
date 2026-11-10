@@ -13,26 +13,26 @@ enum SoftwareUpdateState: Equatable {
     var buttonTitle: String {
         switch self {
         case .idle:
-            return "检查更新"
+            return L("检查更新")
         case .checking:
-            return "正在检查"
+            return L("正在检查")
         case .downloading:
-            return "正在下载"
+            return L("正在下载")
         case .preparing:
-            return "正在安装"
+            return L("正在安装")
         }
     }
 
     var statusText: String {
         switch self {
         case .idle:
-            return "检查是否有新版本。"
+            return L("检查是否有新版本。")
         case .checking:
-            return "正在检查是否有新版本..."
+            return L("正在检查是否有新版本...")
         case let .downloading(version):
-            return "发现新版本 v\(version)，正在下载安装包..."
+            return LF("发现新版本 v%@，正在下载安装包...", version)
         case let .preparing(version):
-            return "已下载 v\(version)，正在校验并准备替换当前版本..."
+            return LF("已下载 v%@，正在校验并准备替换当前版本...", version)
         }
     }
 }
@@ -89,7 +89,7 @@ struct TerminalApplicationOption: Identifiable, Equatable {
     }
 
     var subtitle: String {
-        resolvedURL?.path ?? "未安装"
+        resolvedURL?.path ?? L("未安装")
     }
 
     var icon: NSImage {
@@ -120,29 +120,29 @@ enum SoftwareUpdateError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidReleaseResponse:
-            return "更新服务器返回了无法识别的数据，请稍后重试。"
+            return L("更新服务器返回了无法识别的数据，请稍后重试。")
         case let .invalidReleaseVersion(version):
-            return "无法识别最新版本号：\(version)。"
+            return LF("无法识别最新版本号：%@。", version)
         case .missingZipAsset:
-            return "最新版本中没有找到 QuickDoc ZIP 安装包。"
+            return L("最新版本中没有找到 QuickDoc ZIP 安装包。")
         case .invalidDownloadURL:
-            return "更新包下载地址不符合预期，已停止更新。"
+            return L("更新包下载地址不符合预期，已停止更新。")
         case let .downloadFailed(statusCode):
-            return "下载安装包失败，服务器返回状态码 \(statusCode)。"
+            return LF("下载安装包失败，服务器返回状态码 %ld。", statusCode)
         case let .extractionFailed(message):
-            return "解压安装包失败：\(message)"
+            return LF("解压安装包失败：%@", message)
         case .missingAppBundle:
-            return "安装包中没有找到 QuickDoc.app。"
+            return L("安装包中没有找到 QuickDoc.app。")
         case .invalidBundleIdentifier:
-            return "安装包不是有效的 QuickDoc 应用，已停止更新。"
+            return L("安装包不是有效的 QuickDoc 应用，已停止更新。")
         case let .mismatchedBundleVersion(expected, actual):
-            return "安装包版本不匹配：预期 v\(expected)，实际为 v\(actual)。"
+            return LF("安装包版本不匹配：预期 v%@，实际为 v%@。", expected, actual)
         case let .invalidCodeSignature(message):
-            return "安装包代码签名校验失败：\(message)"
+            return LF("安装包代码签名校验失败：%@", message)
         case .unsupportedInstallLocation:
-            return "当前 QuickDoc 位于磁盘映像或临时隔离目录中。请先将应用移动到“应用程序”文件夹，再检查更新。"
+            return L("当前 QuickDoc 位于磁盘映像或临时隔离目录中。请先将应用移动到“应用程序”文件夹，再检查更新。")
         case let .installerLaunchFailed(message):
-            return "无法启动更新安装程序：\(message)"
+            return LF("无法启动更新安装程序：%@", message)
         }
     }
 }

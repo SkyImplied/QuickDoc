@@ -1,0 +1,2 @@
+"CFBundleDisplayName" = "QuickDoc";
+"NSAppleEventsUsageDescription" = "QuickDoc は、最前面のウインドウのフォルダを確認し、選択したターミナルアプリを開くために Finder の制御が必要です。";

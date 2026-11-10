@@ -7,9 +7,9 @@ struct MenuPreviewCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .center, spacing: 8) {
-                SettingsSectionTitle(title: "菜单顺序", systemImage: "list.bullet")
+                SettingsSectionTitle(title: L("菜单顺序"), systemImage: "list.bullet")
                 Spacer(minLength: 8)
-                Button(isEditingOrder ? "完成" : "调整顺序") {
+                Button(isEditingOrder ? L("完成") : L("调整顺序")) {
                     withAnimation(.easeInOut(duration: 0.18)) {
                         isEditingOrder.toggle()
                     }
@@ -19,7 +19,7 @@ struct MenuPreviewCard: View {
 
             GlassSection {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(isEditingOrder ? "用右侧箭头调整，松开后立即生效。" : "当前「新建文件」菜单。带模板的项目会展开子菜单。")
+                    Text(isEditingOrder ? L("用右侧箭头调整，松开后立即生效。") : L("当前「新建文件」菜单。带模板的项目会展开子菜单。"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -38,9 +38,9 @@ struct MenuPreviewCard: View {
                     .frame(width: 22)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("新建文件")
+                    Text(L("新建文件"))
                         .font(.callout.weight(.semibold))
-                    Text(isEditingOrder ? "按你的使用习惯排列" : "QuickDoc Finder 扩展")
+                    Text(isEditingOrder ? L("按你的使用习惯排列") : L("QuickDoc Finder 扩展"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -48,7 +48,7 @@ struct MenuPreviewCard: View {
                 Spacer()
 
                 if isEditingOrder {
-                    Text("排序模式")
+                    Text(L("排序模式"))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(Color.accentColor)
                         .padding(.horizontal, 8)
@@ -88,7 +88,7 @@ struct MenuPreviewCard: View {
             .animation(.easeInOut(duration: 0.18), value: model.menuPreviewItems.map(\.id))
 
             if !model.menuPreviewItems.isEmpty, isEditingOrder {
-                Text("顺序会保存并同步到 Finder。")
+                Text(L("顺序会保存并同步到 Finder。"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 10)
@@ -98,7 +98,7 @@ struct MenuPreviewCard: View {
     }
 
     private var emptyMenuView: some View {
-        Text("还没有启用的文件类型。")
+        Text(L("还没有启用的文件类型。"))
             .font(.callout)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -144,7 +144,7 @@ struct PreviewMenuRow: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             if item.templateCount > 0 {
-                Text("\(item.templateCount) 个模板")
+                Text(LF("%ld 个模板", item.templateCount))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -160,7 +160,7 @@ struct PreviewMenuRow: View {
                             .contentShape(Rectangle())
                     }
                     .disabled(position == 0)
-                    .help("上移")
+                    .help(L("上移"))
 
                     Button(action: onMoveDown) {
                         Image(systemName: "chevron.down")
@@ -168,7 +168,7 @@ struct PreviewMenuRow: View {
                             .contentShape(Rectangle())
                     }
                     .disabled(position == totalCount - 1)
-                    .help("下移")
+                    .help(L("下移"))
                 }
                 .buttonStyle(.borderless)
             } else if item.templateCount > 0 {

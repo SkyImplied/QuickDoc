@@ -1,0 +1,2 @@
+"CFBundleDisplayName" = "QuickDoc";
+"NSAppleEventsUsageDescription" = "QuickDoc needs to control Finder to identify the folder in the front window and to open the terminal app you choose.";

@@ -1,0 +1,2 @@
+"CFBundleDisplayName" = "QuickDoc 扩展";
+"NSAppleEventsUsageDescription" = "QuickDoc 需要读取和修改 Finder 当前选择，以便在 iCloud 云盘和外置硬盘等位置执行拷贝、剪切、路径复制和用户确认的彻底删除操作。";

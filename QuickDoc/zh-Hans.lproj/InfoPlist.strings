@@ -1,0 +1,2 @@
+"CFBundleDisplayName" = "QuickDoc";
+"NSAppleEventsUsageDescription" = "QuickDoc 需要控制访达以确认当前窗口中的文件夹，并打开你选择的终端应用。";

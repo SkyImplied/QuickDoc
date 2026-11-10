@@ -28,6 +28,7 @@ let staleSelection = ["/Users/test/Desktop/note.txt"]
 @main
 enum FinderMenuTargetPolicyTestRunner {
     static func main() {
+        QuickDocLocalization.previewOverride = "zh-Hans"
         if CommandLine.arguments.contains("--print-script") {
             print(FinderMenuTargetPolicy.frontWindowScript(bundleIdentifier: "com.apple.finder"))
             return
@@ -370,6 +371,20 @@ enum FinderMenuTargetPolicyTestRunner {
         expect(false, "无法写出隔离的旧设置文件")
     }
     try? FileManager.default.removeItem(at: temporaryDirectory)
+
+    expect(QuickDocLocalization.code(matching: "zh-CN") == "zh-Hans", "zh-CN 应使用简体中文")
+    expect(QuickDocLocalization.code(matching: "zh-Hans-SG") == "zh-Hans", "zh-Hans-SG 应使用简体中文")
+    expect(QuickDocLocalization.code(matching: "zh-TW") == "zh-Hant", "zh-TW 应使用繁体中文")
+    expect(QuickDocLocalization.code(matching: "zh-HK") == "zh-Hant", "zh-HK 应使用繁体中文")
+    expect(QuickDocLocalization.code(matching: "zh-Hant-MO") == "zh-Hant", "zh-Hant-MO 应使用繁体中文")
+    expect(QuickDocLocalization.code(matching: "ja-JP") == "ja", "ja-JP 应使用日文")
+    expect(QuickDocLocalization.code(matching: "en-GB") == "en", "en-GB 应使用英文")
+    expect(QuickDocLocalization.code(matching: "fr-FR") == nil, "未支持的语言应留给英文 fallback")
+    expect(QuickDocLocalization.text("新建文件") == "新建文件", "预览锁定简体中文时菜单标题保持原文")
+    QuickDocLocalization.previewOverride = "en"
+    expect(QuickDocLocalization.text("新建文件") == "New File", "英文目录应翻译菜单标题")
+    expect(!QuickDocLocalization.text("新建文件").contains("%"), "翻译结果不应留下占位符")
+    QuickDocLocalization.previewOverride = "zh-Hans"
 
     if !failures.isEmpty {
         fputs("\(failures.count) failed\n", stderr)

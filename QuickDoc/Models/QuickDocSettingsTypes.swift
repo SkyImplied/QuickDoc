@@ -12,12 +12,12 @@ enum SettingsPage: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .general: return "通用"
-        case .efficiencyTools: return "效率工具"
-        case .permissions: return "权限与扩展"
-        case .fileTypes: return "新建文件类型"
-        case .finder: return "访达操作"
-        case .about: return "关于"
+        case .general: return L("通用")
+        case .efficiencyTools: return L("效率工具")
+        case .permissions: return L("权限与扩展")
+        case .fileTypes: return L("新建文件类型")
+        case .finder: return L("访达操作")
+        case .about: return L("关于")
         }
     }
 
@@ -44,26 +44,26 @@ enum QuickDocDisplayMode: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .menuBarOnly:
-            return "仅在菜单栏显示"
+            return L("仅在菜单栏显示")
         case .hiddenBoth:
-            return "隐藏菜单栏和 Dock"
+            return L("隐藏菜单栏和 Dock")
         case .dockOnly:
-            return "仅在 Dock 栏显示"
+            return L("仅在 Dock 栏显示")
         case .menuBarAndDock:
-            return "菜单栏和 Dock 同时显示"
+            return L("菜单栏和 Dock 同时显示")
         }
     }
 
     var subtitle: String {
         switch self {
         case .menuBarOnly:
-            return "默认推荐，常驻状态栏，点击图标可快速打开设置。"
+            return L("默认推荐，常驻状态栏，点击图标可快速打开设置。")
         case .hiddenBoth:
-            return "后台静默运行，不显示菜单栏与 Dock，可通过再次启动应用重新打开。"
+            return L("后台静默运行，不显示菜单栏与 Dock，可通过再次启动应用重新打开。")
         case .dockOnly:
-            return "保留当前传统窗口应用行为，仅通过 Dock 使用。"
+            return L("保留当前传统窗口应用行为，仅通过 Dock 使用。")
         case .menuBarAndDock:
-            return "同时保留菜单栏入口与 Dock 图标，适合双入口习惯。"
+            return L("同时保留菜单栏入口与 Dock 图标，适合双入口习惯。")
         }
     }
 
@@ -95,17 +95,17 @@ enum QuickDocAppearanceMode: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .system: return "跟随系统"
-        case .light: return "浅色"
-        case .dark: return "深色"
+        case .system: return L("跟随系统")
+        case .light: return L("浅色")
+        case .dark: return L("深色")
         }
     }
 
     var subtitle: String {
         switch self {
-        case .system: return "随 macOS 自动切换"
-        case .light: return "始终使用浅色外观"
-        case .dark: return "始终使用深色外观"
+        case .system: return L("随 macOS 自动切换")
+        case .light: return L("始终使用浅色外观")
+        case .dark: return L("始终使用深色外观")
         }
     }
 
@@ -131,10 +131,21 @@ enum QuickDocAppearanceMode: String, CaseIterable, Identifiable {
 
 struct FileType: Identifiable, Hashable {
     let id: String
-    let title: String
-    let menuTitle: String
+    private let storedTitle: String
+    private let storedMenuTitle: String
     let pathExtension: String?
     let enabledByDefault: Bool
+
+    var title: String { L(storedTitle) }
+    var menuTitle: String { L(storedMenuTitle) }
+
+    init(id: String, title: String, menuTitle: String, pathExtension: String?, enabledByDefault: Bool) {
+        self.id = id
+        self.storedTitle = title
+        self.storedMenuTitle = menuTitle
+        self.pathExtension = pathExtension
+        self.enabledByDefault = enabledByDefault
+    }
 }
 
 struct MenuPreviewItem: Identifiable, Hashable {

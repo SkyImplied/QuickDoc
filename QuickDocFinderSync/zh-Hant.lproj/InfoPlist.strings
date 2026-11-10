@@ -1,0 +1,2 @@
+"CFBundleDisplayName" = "QuickDoc 擴充功能";
+"NSAppleEventsUsageDescription" = "QuickDoc 需要讀取並修改「訪達」目前的選取項目，以便在 iCloud 雲碟和外接磁碟等位置執行拷貝、剪下、複製路徑，以及經你確認的永久刪除。";

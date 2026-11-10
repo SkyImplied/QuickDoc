@@ -172,15 +172,15 @@ enum FinderMenuTargetPolicy {
     static func userMessage(for reason: FinderDirectoryCancelReason, action: String) -> String {
         switch reason {
         case .noWindow:
-            return "没有打开的访达窗口，无法\(action)。"
+            return LF("没有打开的访达窗口，无法%@。", action)
         case .timeout:
-            return "访达没有及时响应，已取消\(action)。"
+            return LF("访达没有及时响应，已取消%@。", action)
         case .permissionDenied:
-            return "没有访达自动化权限，无法\(action)。"
+            return LF("没有访达自动化权限，无法%@。", action)
         case .notADirectory:
-            return "访达当前目标不是文件夹，已取消\(action)。"
+            return LF("访达当前目标不是文件夹，已取消%@。", action)
         case .unresolved:
-            return "无法确定目标文件夹，已取消\(action)。"
+            return LF("无法确定目标文件夹，已取消%@。", action)
         }
     }
 

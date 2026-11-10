@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Finder の右クリックメニューとツールバーから一般的なファイルを直接作成できます。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.0"><img src="https://img.shields.io/badge/version-v1.8.0-blue" alt="バージョン v1.8.0"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.1"><img src="https://img.shields.io/badge/version-v1.8.1-blue" alt="バージョン v1.8.1"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="プラットフォーム macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Swift で開発">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.0/QuickDoc-1.8.0.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.1/QuickDoc-1.8.1.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="ダウンロード数"></a>
   </p>
   <p>
@@ -17,36 +17,42 @@
 ## 画面
 
 <p align="center">
-  <img src="./photos/v1.8.0/general.png" alt="QuickDoc 一般" width="720"><br>
+  <img src="./photos/v1.8.1/ja/general.png" alt="QuickDoc 一般" width="720"><br>
   <strong>一般</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/efficiency.png" alt="QuickDoc 効率ツール" width="720"><br>
+  <img src="./photos/v1.8.1/ja/efficiency.png" alt="QuickDoc 効率ツール" width="720"><br>
   <strong>効率ツール</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/permissions.png" alt="QuickDoc 権限と拡張機能" width="720"><br>
+  <img src="./photos/v1.8.1/ja/permissions.png" alt="QuickDoc 権限と拡張機能" width="720"><br>
   <strong>権限と拡張機能</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/file-types.png" alt="QuickDoc 新規ファイル形式" width="720"><br>
+  <img src="./photos/v1.8.1/ja/file-types.png" alt="QuickDoc 新規ファイル形式" width="720"><br>
   <strong>新規ファイル形式</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/finder.png" alt="QuickDoc Finder 操作" width="720"><br>
+  <img src="./photos/v1.8.1/ja/finder.png" alt="QuickDoc Finder 操作" width="720"><br>
   <strong>Finder 操作</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/about.png" alt="QuickDoc 情報" width="720"><br>
+  <img src="./photos/v1.8.1/ja/about.png" alt="QuickDoc 情報" width="720"><br>
   <strong>情報</strong>
 </p>
 
 QuickDoc は macOS の Finder Sync 拡張機能を活用したユーティリティです。Finder のコンテキストメニューに実用的な「新建文件」サブメニューを追加します。v1.3 以降では Finder のツールバーにも QuickDoc を追加でき、ツールバーから直接ファイルを作成できます。
+
+## v1.8.1 の新機能
+
+1. 繁體中文、English、日本語に対応しました。简体中文も引き続き使えます。
+2. 初期設定では macOS の優先言語に従い、地域の違いも区別します。設定では「システムに合わせる」、简体中文、繁體中文、English、日本語を選べます。
+3. 設定ウインドウとメニューはすぐに選択した言語になります。Finder 拡張機能は、次にメニューを表示するとき同じ言語を使います。
 
 ## v1.8.0 の新機能
 

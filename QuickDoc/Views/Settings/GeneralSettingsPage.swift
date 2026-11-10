@@ -5,7 +5,7 @@ struct GeneralSettingsPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            PageHeader(title: "通用设置")
+            PageHeader(title: L("通用设置"))
 
             StartupSettingsCard()
 
@@ -21,16 +21,16 @@ private struct StartupSettingsCard: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
 
     var body: some View {
-        SettingsGroup(title: "启动", systemImage: "power") {
-            startupToggle(title: "开机自启动", isOn: $model.launchAtLogin)
+        SettingsGroup(title: L("启动"), systemImage: "power") {
+            startupToggle(title: L("开机自启动"), isOn: $model.launchAtLogin)
 
             Divider()
 
             startupToggle(
-                title: "静默启动",
+                title: L("静默启动"),
                 isOn: $model.silentLaunchAtLogin,
                 isEnabled: model.launchAtLogin,
-                dependencyText: "需先开启开机自启动"
+                dependencyText: L("需先开启开机自启动")
             )
         }
     }
@@ -66,7 +66,7 @@ struct DisplayModeSettingsCard: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
 
     var body: some View {
-        SettingsGroup(title: "显示方式", systemImage: "macwindow") {
+        SettingsGroup(title: L("显示方式"), systemImage: "macwindow") {
             LazyVGrid(columns: [
                 GridItem(.flexible(), spacing: 12),
                 GridItem(.flexible(), spacing: 12)
@@ -116,8 +116,8 @@ private struct DisplayModeOptionCard: View {
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("显示方式：\(mode.title)")
-        .accessibilityValue(isSelected ? "已选择" : "未选择")
+        .accessibilityLabel(LF("显示方式：%@", mode.title))
+        .accessibilityValue(isSelected ? L("已选择") : L("未选择"))
     }
 }
 
@@ -206,6 +206,7 @@ struct SettingsSectionTitle: View {
             Text(title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

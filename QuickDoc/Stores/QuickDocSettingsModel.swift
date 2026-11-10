@@ -38,15 +38,15 @@ final class QuickDocSettingsModel: ObservableObject {
         let isConfirmed: Bool
 
         var badgeTitle: String {
-            isConfirmed ? "已确认" : "需确认"
+            isConfirmed ? L("已确认") : L("需确认")
         }
 
         var description: String {
             if isConfirmed {
-                return "QuickDoc Finder Sync 扩展已启用，可以正常显示在 Finder 右键菜单中。"
+                return L("QuickDoc Finder Sync 扩展已启用，可以正常显示在 Finder 右键菜单中。")
             }
 
-            return "请在 系统设置 > 隐私与安全性 > 登录项与扩展 中启用 QuickDoc 扩展"
+            return L("请在 系统设置 > 隐私与安全性 > 登录项与扩展 中启用 QuickDoc 扩展")
         }
 
         var tint: Color {
@@ -225,7 +225,7 @@ final class QuickDocSettingsModel: ObservableObject {
     private static let latestReleaseAPIURL = URL(string: "https://api.github.com/repos/SkyImplied/QuickDoc/releases/latest")!
     private static let latestReleaseURL = URL(string: "https://github.com/SkyImplied/QuickDoc/releases/latest")!
     private static let systemTerminalApplication = TerminalApplicationOption(
-        title: "系统终端",
+        title: L("系统终端"),
         bundleIdentifier: systemTerminalBundleIdentifier,
         path: nil
     )
@@ -343,11 +343,14 @@ final class QuickDocSettingsModel: ObservableObject {
     }
 
     var selectedTerminalApplicationName: String {
-        selectedTerminalApplication?.title ?? "系统终端"
+        if selectedTerminalAppPath.isEmpty {
+            return L("系统终端")
+        }
+        return selectedTerminalApplication?.title ?? L("系统终端")
     }
 
     var selectedTerminalApplicationPathText: String {
-        selectedTerminalApplicationURL?.path ?? "未找到可用终端"
+        selectedTerminalApplicationURL?.path ?? L("未找到可用终端")
     }
 
     var selectedTerminalApplicationIcon: NSImage {
@@ -425,14 +428,14 @@ final class QuickDocSettingsModel: ObservableObject {
         guard fileTypeID.hasPrefix(Self.customMenuIDPrefix) else { return nil }
         let fileExtension = String(fileTypeID.dropFirst(Self.customMenuIDPrefix.count))
         guard customExtensions.contains(fileExtension) else { return nil }
-        return "新建 \(fileExtension.uppercased()) 文件"
+        return LF("新建 %@ 文件", fileExtension.uppercased())
     }
 
     func chooseTerminalApplication() {
         let panel = NSOpenPanel()
-        panel.title = "选择终端 App"
-        panel.message = "请选择一个可打开文件夹的终端应用。"
-        panel.prompt = "选择"
+        panel.title = L("选择终端 App")
+        panel.message = L("请选择一个可打开文件夹的终端应用。")
+        panel.prompt = L("选择")
         panel.directoryURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -446,7 +449,7 @@ final class QuickDocSettingsModel: ObservableObject {
 
         guard url.pathExtension.lowercased() == "app",
               FileManager.default.fileExists(atPath: url.path) else {
-            showAlert(title: "无法选择终端", message: "请选择有效的 macOS 应用。")
+            showAlert(title: L("无法选择终端"), message: L("请选择有效的 macOS 应用。"))
             return
         }
 
@@ -496,17 +499,17 @@ final class QuickDocSettingsModel: ObservableObject {
     func addCustomExtension(_ value: String) -> Bool {
         let normalized = normalizeExtension(value)
         guard !normalized.isEmpty else {
-            showAlert(title: "无法添加后缀", message: "请输入文件后缀，例如 yaml 或 .log。")
+            showAlert(title: L("无法添加后缀"), message: L("请输入文件后缀，例如 yaml 或 .log。"))
             return false
         }
 
         guard quickDocFileTypes.allSatisfy({ $0.pathExtension != normalized }) else {
-            showAlert(title: "后缀已存在", message: ".\(normalized) 已在内置文件类型中。")
+            showAlert(title: L("后缀已存在"), message: LF(".%@ 已在内置文件类型中。", normalized))
             return false
         }
 
         guard !customExtensions.contains(normalized) else {
-            showAlert(title: "后缀已存在", message: ".\(normalized) 已经添加。")
+            showAlert(title: L("后缀已存在"), message: LF(".%@ 已经添加。", normalized))
             return false
         }
 
@@ -531,20 +534,20 @@ final class QuickDocSettingsModel: ObservableObject {
     ) -> Bool {
         let normalizedName = normalizeTemplateDisplayName(displayName)
         guard !normalizedName.isEmpty else {
-            showAlert(title: "无法添加模板", message: "请输入模板在右键菜单里显示的名称。")
+            showAlert(title: L("无法添加模板"), message: L("请输入模板在右键菜单里显示的名称。"))
             return false
         }
 
         guard let fileType = templateFileTypes.first(where: { $0.id == fileTypeID }) else {
-            showAlert(title: "无法添加模板", message: "请选择要关联的文件类型。")
+            showAlert(title: L("无法添加模板"), message: L("请选择要关联的文件类型。"))
             return false
         }
 
         let sourceExtension = normalizeExtension(sourceURL.pathExtension)
         guard sourceExtension == fileType.pathExtension else {
             showAlert(
-                title: "模板类型不匹配",
-                message: "当前文件是 .\(sourceExtension.isEmpty ? "无后缀" : sourceExtension)，请选择 .\(fileType.pathExtension) 文件，或改关联到匹配的文件类型。"
+                title: L("模板类型不匹配"),
+                message: LF("当前文件是 .%@，请选择 .%@ 文件，或改关联到匹配的文件类型。", sourceExtension.isEmpty ? L("无后缀") : sourceExtension, fileType.pathExtension)
             )
             return false
         }
@@ -568,7 +571,7 @@ final class QuickDocSettingsModel: ObservableObject {
             ))
             return true
         } catch {
-            showAlert(title: "添加模板失败", message: error.localizedDescription)
+            showAlert(title: L("添加模板失败"), message: error.localizedDescription)
             return false
         }
     }
@@ -582,11 +585,11 @@ final class QuickDocSettingsModel: ObservableObject {
         guard let index = customTemplates.firstIndex(where: { $0.id == templateID }) else { return }
 
         let alert = NSAlert()
-        alert.messageText = "重命名模板"
-        alert.informativeText = "请输入此模板在 Finder 右键菜单中的显示名称。"
+        alert.messageText = L("重命名模板")
+        alert.informativeText = L("请输入此模板在 Finder 右键菜单中的显示名称。")
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "保存")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: L("保存"))
+        alert.addButton(withTitle: L("取消"))
 
         let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
         textField.stringValue = customTemplates[index].displayName
@@ -596,7 +599,7 @@ final class QuickDocSettingsModel: ObservableObject {
 
         let normalizedName = normalizeTemplateDisplayName(textField.stringValue)
         guard !normalizedName.isEmpty else {
-            showAlert(title: "无法重命名模板", message: "显示名称不能为空。")
+            showAlert(title: L("无法重命名模板"), message: L("显示名称不能为空。"))
             return
         }
 
@@ -607,11 +610,11 @@ final class QuickDocSettingsModel: ObservableObject {
         guard let template = customTemplates.first(where: { $0.id == templateID }) else { return }
 
         let alert = NSAlert()
-        alert.messageText = "删除模板"
-        alert.informativeText = "删除“\(template.displayName)”后，它将不再显示在右键菜单中，已保存的模板副本也会被移除。"
+        alert.messageText = L("删除模板")
+        alert.informativeText = LF("删除“%@”后，它将不再显示在右键菜单中，已保存的模板副本也会被移除。", template.displayName)
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "删除")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: L("删除"))
+        alert.addButton(withTitle: L("取消"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
 
         try? FileManager.default.removeItem(at: Self.templateURL(for: template))
@@ -684,11 +687,11 @@ final class QuickDocSettingsModel: ObservableObject {
 
         if newMode == .hiddenBoth {
             let alert = NSAlert()
-            alert.messageText = "确认隐藏菜单栏与 Dock"
-            alert.informativeText = "切换后 QuickDoc 将不在菜单栏和 Dock 中显示，只会在后台运行。你仍可通过再次启动应用重新打开设置界面。"
+            alert.messageText = L("确认隐藏菜单栏与 Dock")
+            alert.informativeText = L("切换后 QuickDoc 将不在菜单栏和 Dock 中显示，只会在后台运行。你仍可通过再次启动应用重新打开设置界面。")
             alert.alertStyle = .warning
-            alert.addButton(withTitle: "继续切换")
-            alert.addButton(withTitle: "取消")
+            alert.addButton(withTitle: L("继续切换"))
+            alert.addButton(withTitle: L("取消"))
 
             guard alert.runModal() == .alertFirstButtonReturn else { return }
         }
@@ -721,22 +724,15 @@ final class QuickDocSettingsModel: ObservableObject {
                 try await checkForSoftwareUpdateWorkflow()
             } catch {
                 softwareUpdateState = .idle
-                showAlert(title: "检查更新失败", message: error.localizedDescription)
+                showAlert(title: L("检查更新失败"), message: error.localizedDescription)
             }
         }
     }
 
-    func showLanguageComingSoon(languageName: String) {
-        showAlert(
-            title: "功能等待未来更新",
-            message: "\(languageName) 语言支持正在规划中，当前版本暂未开放，敬请期待后续版本更新。"
-        )
-    }
-
     func showFeatureComingSoon(featureName: String) {
         showAlert(
-            title: "功能等待未来更新",
-            message: "\(featureName) 功能正在规划中，当前版本暂未开放，敬请期待后续版本更新。"
+            title: L("功能等待未来更新"),
+            message: LF("%@ 功能正在规划中，当前版本暂未开放，敬请期待后续版本更新。", featureName)
         )
     }
 
@@ -749,8 +745,8 @@ final class QuickDocSettingsModel: ObservableObject {
         guard Self.isVersion(latestVersion, newerThan: appVersion) else {
             softwareUpdateState = .idle
             showAlert(
-                title: "已是最新版本",
-                message: "当前安装的 QuickDoc v\(appVersion) 已经是最新版本。"
+                title: L("已是最新版本"),
+                message: LF("当前安装的 QuickDoc v%@ 已经是最新版本。", appVersion)
             )
             return
         }
@@ -781,19 +777,19 @@ final class QuickDocSettingsModel: ObservableObject {
 
     private func confirmSoftwareUpdate(version: String, releaseNotes: String) -> Bool {
         let alert = NSAlert()
-        alert.messageText = "发现新版本 v\(version)"
-        alert.informativeText = "是否立即下载并安装新版本？确认后 QuickDoc 会自动下载更新，在替换完成后重新打开并提示升级成功。"
+        alert.messageText = LF("发现新版本 v%@", version)
+        alert.informativeText = L("是否立即下载并安装新版本？确认后 QuickDoc 会自动下载更新，在替换完成后重新打开并提示升级成功。")
         alert.alertStyle = .informational
         alert.accessoryView = releaseNotesAccessoryView(version: version, releaseNotes: releaseNotes)
-        alert.addButton(withTitle: "确认更新")
-        alert.addButton(withTitle: "暂不更新")
+        alert.addButton(withTitle: L("确认更新"))
+        alert.addButton(withTitle: L("暂不更新"))
         return alert.runModal() == .alertFirstButtonReturn
     }
 
     private func releaseNotesAccessoryView(version: String, releaseNotes: String) -> NSView {
         let notes = Self.normalizedReleaseNotes(releaseNotes)
         let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 460, height: 180))
-        textView.string = "v\(version) 更新内容\n\n\(notes)"
+        textView.string = LF("v%@ 更新内容\n\n%@", version, notes)
         textView.isEditable = false
         textView.isSelectable = true
         textView.drawsBackground = false
@@ -816,7 +812,7 @@ final class QuickDocSettingsModel: ObservableObject {
     private static func normalizedReleaseNotes(_ value: String) -> String {
         let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalized.isEmpty else {
-            return "此版本暂未填写发布说明。"
+            return L("此版本暂未填写发布说明。")
         }
 
         return String(normalized.prefix(4_000))
@@ -917,7 +913,7 @@ final class QuickDocSettingsModel: ObservableObject {
             )
             guard extractResult.exitCode == 0 else {
                 throw SoftwareUpdateError.extractionFailed(
-                    extractResult.errorDescription ?? "ditto 返回了退出码 \(extractResult.exitCode)。"
+                    extractResult.errorDescription ?? LF("ditto 返回了退出码 %ld。", extractResult.exitCode)
                 )
             }
 
@@ -953,7 +949,7 @@ final class QuickDocSettingsModel: ObservableObject {
         )
         guard verifyResult.exitCode == 0 else {
             throw SoftwareUpdateError.invalidCodeSignature(
-                verifyResult.errorDescription ?? "codesign 返回了退出码 \(verifyResult.exitCode)。"
+                verifyResult.errorDescription ?? LF("codesign 返回了退出码 %ld。", verifyResult.exitCode)
             )
         }
     }
@@ -966,7 +962,10 @@ final class QuickDocSettingsModel: ObservableObject {
         }
 
         let scriptURL = update.rootURL.appendingPathComponent("install-update.sh")
-        try Self.installerScript.write(to: scriptURL, atomically: true, encoding: .utf8)
+        try Self.installerScript(
+            failureTitle: L("QuickDoc 更新失败"),
+            failureMessage: L("自动替换没有完成，旧版本已保留。请在 Finder 中手动替换应用。")
+        ).write(to: scriptURL, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
 
         let arguments = [
@@ -976,7 +975,9 @@ final class QuickDocSettingsModel: ObservableObject {
             String(ProcessInfo.processInfo.processIdentifier),
             update.rootURL.path,
             SoftwareUpdateCompletionStore.markerURL.path,
-            update.version
+            update.version,
+            L("QuickDoc 更新失败"),
+            L("自动替换没有完成，旧版本已保留。请在 Finder 中手动替换应用。")
         ]
         let parentURL = installedAppURL.deletingLastPathComponent()
         let installer = Process()
@@ -1015,7 +1016,7 @@ final class QuickDocSettingsModel: ObservableObject {
             }
         } catch {
             synchronizeLaunchAtLoginStatus()
-            showAlert(title: "开机自启动设置失败", message: error.localizedDescription)
+            showAlert(title: L("开机自启动设置失败"), message: error.localizedDescription)
         }
     }
 
@@ -1027,7 +1028,7 @@ final class QuickDocSettingsModel: ObservableObject {
             try unregisterLegacyLaunchAtLoginIfPossible()
             synchronizeLaunchAtLoginStatus()
         } catch {
-            showAlert(title: "开机自启动升级失败", message: error.localizedDescription)
+            showAlert(title: L("开机自启动升级失败"), message: error.localizedDescription)
         }
     }
 
@@ -1098,8 +1099,8 @@ final class QuickDocSettingsModel: ObservableObject {
 
         guard terminateResult.exitCode == 0 else {
             return AlertContent(
-                title: "重启 Finder 失败",
-                message: terminateResult.errorDescription ?? "Finder 进程结束命令返回了退出码 \(terminateResult.exitCode)。",
+                title: L("重启 Finder 失败"),
+                message: terminateResult.errorDescription ?? LF("Finder 进程结束命令返回了退出码 %ld。", terminateResult.exitCode),
                 style: .warning
             )
         }
@@ -1111,15 +1112,15 @@ final class QuickDocSettingsModel: ObservableObject {
         let relaunchSucceeded = await waitForFinderToLaunch(bundleIdentifier: finderBundleIdentifier)
         guard relaunchSucceeded else {
             return AlertContent(
-                title: "重启 Finder 失败",
-                message: "Finder 已退出，但未能自动重新启动，请手动打开访达后重试。",
+                title: L("重启 Finder 失败"),
+                message: L("Finder 已退出，但未能自动重新启动，请手动打开访达后重试。"),
                 style: .warning
             )
         }
 
         return AlertContent(
-            title: "重启 Finder 成功",
-            message: "访达已经重新启动，扩展刷新应已生效。",
+            title: L("重启 Finder 成功"),
+            message: L("访达已经重新启动，扩展刷新应已生效。"),
             style: .informational
         )
     }
@@ -1220,7 +1221,9 @@ final class QuickDocSettingsModel: ObservableObject {
         return "\"\(escapedValue)\""
     }
 
-    private static let installerScript = """
+    private static func installerScript(failureTitle: String, failureMessage: String) -> String {
+        _ = (failureTitle, failureMessage)
+        return """
     #!/bin/sh
     set -u
 
@@ -1234,13 +1237,15 @@ final class QuickDocSettingsModel: ObservableObject {
     incoming_app="$parent_dir/.QuickDoc.update-$$.app"
     backup_app="$parent_dir/.QuickDoc.backup-$$.app"
     lsregister="/System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister"
+    failure_title="$7"
+    failure_message="$8"
 
     show_failure() {
       if [ -e "$backup_app" ] && [ ! -e "$target_app" ]; then
         /bin/mv "$backup_app" "$target_app" >/dev/null 2>&1 || true
       fi
       /usr/bin/open -R "$source_app" >/dev/null 2>&1 || true
-      /usr/bin/osascript -e 'display alert "QuickDoc 更新失败" message "自动替换没有完成，旧版本已保留。请在 Finder 中手动替换应用。"' >/dev/null 2>&1 || true
+      /usr/bin/osascript -e "on run argv" -e "display alert (item 1 of argv) message (item 2 of argv)" -e "end run" - "$failure_title" "$failure_message" >/dev/null 2>&1 || true
       exit 1
     }
 
@@ -1268,6 +1273,7 @@ final class QuickDocSettingsModel: ObservableObject {
 
     show_failure
     """
+    }
 
     private func normalizeExtension(_ value: String) -> String {
         var normalized = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -1457,7 +1463,7 @@ final class QuickDocSettingsModel: ObservableObject {
         guard customExtensions.contains(fileExtension) else { return nil }
         return MenuPreviewItem(
             id: id,
-            title: "新建 \(fileExtension.uppercased()) 文件",
+            title: LF("新建 %@ 文件", fileExtension.uppercased()),
             templateCount: customTemplates.filter {
                 $0.fileTypeID == id && $0.isVisibleInContextMenu && customTemplateFileExists($0)
             }.count

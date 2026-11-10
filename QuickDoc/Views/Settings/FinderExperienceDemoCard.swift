@@ -38,9 +38,9 @@ struct FinderExperienceDemoCard: View {
                 .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("使用场景演示")
+                Text(L("使用场景演示"))
                     .font(.headline)
-                Text("自动演示 Finder 右键菜单与菜单栏入口；菜单内容会跟随当前设置。")
+                Text(L("自动演示 Finder 右键菜单与菜单栏入口；菜单内容会跟随当前设置。"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -48,7 +48,7 @@ struct FinderExperienceDemoCard: View {
 
             Spacer(minLength: 12)
 
-            Label(reduceMotion ? "静态预览" : "循环演示", systemImage: reduceMotion ? "figure.stand" : "play.fill")
+            Label(reduceMotion ? L("静态预览") : L("循环演示"), systemImage: reduceMotion ? "figure.stand" : "play.fill")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(reduceMotion ? Color.secondary : Color.green)
                 .padding(.horizontal, 10)
@@ -59,7 +59,7 @@ struct FinderExperienceDemoCard: View {
                 Button {
                     animationAnchor = Date()
                 } label: {
-                    Label("重新演示", systemImage: "arrow.clockwise")
+                    Label(L("重新演示"), systemImage: "arrow.clockwise")
                 }
                 .glassButtonStyle()
             }
@@ -78,7 +78,7 @@ private struct FinderContextMenuDemo: View {
 
     var body: some View {
         DemoPanel(
-            title: "Finder 右键菜单",
+            title: L("Finder 右键菜单"),
             subtitle: finderStatusText,
             systemImage: "cursorarrow.click.2",
             tint: .blue,
@@ -105,7 +105,7 @@ private struct FinderContextMenuDemo: View {
                     }
 
                     if elapsed >= 7.25 && elapsed < 9.25 {
-                        Label("已创建 \(createdFileName)", systemImage: "checkmark.circle.fill")
+                        Label(LF("已创建 %@", createdFileName), systemImage: "checkmark.circle.fill")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(Color.green)
                             .padding(.horizontal, 9)
@@ -129,7 +129,7 @@ private struct FinderContextMenuDemo: View {
                 .animation(.easeInOut(duration: 0.16), value: submenuIsVisible)
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Finder 空白处右键演示。打开 QuickDoc 新建文件菜单并创建文件。")
+            .accessibilityLabel(L("Finder 空白处右键演示。打开 QuickDoc 新建文件菜单并创建文件。"))
         }
     }
 
@@ -147,17 +147,22 @@ private struct FinderContextMenuDemo: View {
 
     private var finderStatusText: String {
         switch elapsed {
-        case ..<1.15: return "移动到文件夹空白处"
-        case ..<2.55: return "右键呼出 Finder 菜单"
-        case ..<4.65: return "指向“新建文件”"
-        case ..<7.15: return "选择要创建的文件类型"
-        case ..<9.20: return "文件创建完成"
-        default: return "准备再次演示"
+        case ..<1.15: return L("移动到文件夹空白处")
+        case ..<2.55: return L("右键呼出 Finder 菜单")
+        case ..<4.65: return L("指向“新建文件”")
+        case ..<7.15: return L("选择要创建的文件类型")
+        case ..<9.20: return L("文件创建完成")
+        default: return L("准备再次演示")
         }
     }
 
     private var createdFileName: String {
-        firstFileType?.title.replacingOccurrences(of: "新建 ", with: "") ?? "新建文件"
+        guard let title = firstFileType?.title else { return L("新建文件") }
+        let simplifiedPrefix = "新建 "
+        if title.hasPrefix(simplifiedPrefix) {
+            return String(title.dropFirst(simplifiedPrefix.count))
+        }
+        return title
     }
 
     private var firstFileType: MenuPreviewItem? {
@@ -166,28 +171,28 @@ private struct FinderContextMenuDemo: View {
 
     private var finderContextMenu: some View {
         DemoMenuSurface {
-            DemoMenuRow(title: "新建文件夹", systemImage: "folder.badge.plus")
+            DemoMenuRow(title: L("新建文件夹"), systemImage: "folder.badge.plus")
             DemoMenuSeparator()
-            DemoMenuRow(title: "显示简介", systemImage: "info.circle")
-            DemoMenuRow(title: "查看显示选项", systemImage: "slider.horizontal.3")
+            DemoMenuRow(title: L("显示简介"), systemImage: "info.circle")
+            DemoMenuRow(title: L("查看显示选项"), systemImage: "slider.horizontal.3")
             DemoMenuSeparator()
             DemoMenuRow(
-                title: "新建文件",
+                title: L("新建文件"),
                 resourceName: "新建文件icon",
                 hasSubmenu: true,
                 isHighlighted: elapsed >= 2.65 && elapsed < 7.15
             )
 
             if model.terminalDirectEnabled {
-                DemoMenuRow(title: "在终端中打开", resourceName: "终端直达")
+                DemoMenuRow(title: L("在终端中打开"), resourceName: "终端直达")
             }
 
             if model.pathCopyEnabled {
-                DemoMenuRow(title: "复制当前路径", resourceName: "文件路径")
+                DemoMenuRow(title: L("复制当前路径"), resourceName: "文件路径")
             }
 
             if model.quickActionsEnabled || model.permanentDeleteEnabled {
-                DemoMenuRow(title: "快捷操作", resourceName: "快捷操作", hasSubmenu: true)
+                DemoMenuRow(title: L("快捷操作"), resourceName: "快捷操作", hasSubmenu: true)
             }
         }
     }
@@ -197,7 +202,7 @@ private struct FinderContextMenuDemo: View {
             let items = Array(model.menuPreviewItems.prefix(6))
 
             if items.isEmpty {
-                DemoMenuRow(title: "未启用新建文件类型", systemImage: "doc", isEnabled: false)
+                DemoMenuRow(title: L("未启用新建文件类型"), systemImage: "doc", isEnabled: false)
             } else {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     DemoMenuRow(
@@ -312,7 +317,7 @@ private struct FinderWindowBackdrop: View {
                         DemoTrafficLight(color: .yellow)
                         DemoTrafficLight(color: .green)
                         Spacer()
-                        Text("文稿")
+                        Text(L("文稿"))
                             .font(.caption2.weight(.semibold))
                         Spacer()
                         Color.clear.frame(width: 43)
@@ -342,13 +347,13 @@ private struct FinderWindowBackdrop: View {
                     Spacer()
                 }
 
-                DemoDesktopItem(title: "项目资料", systemImage: "folder.fill", tint: .blue)
+                DemoDesktopItem(title: L("项目资料"), systemImage: "folder.fill", tint: .blue)
                     .offset(x: 22, y: projectY)
-                DemoDesktopItem(title: "设计稿", systemImage: "folder.fill", tint: .blue)
+                DemoDesktopItem(title: L("设计稿"), systemImage: "folder.fill", tint: .blue)
                     .offset(x: 22, y: designY)
 
                 if showCreatedFile {
-                    DemoDesktopItem(title: "新建文件", systemImage: "doc.fill", tint: .white)
+                    DemoDesktopItem(title: L("新建文件"), systemImage: "doc.fill", tint: .white)
                         .offset(x: 22, y: createdY)
                         .transition(.scale(scale: 0.85).combined(with: .opacity))
                 }
@@ -368,7 +373,7 @@ private struct MenuBarInteractionDemo: View {
 
     var body: some View {
         DemoPanel(
-            title: "菜单栏快捷入口",
+            title: L("菜单栏快捷入口"),
             subtitle: menuBarStatusText,
             systemImage: "menubar.rectangle",
             tint: .purple,
@@ -407,7 +412,7 @@ private struct MenuBarInteractionDemo: View {
                 .animation(.easeInOut(duration: 0.16), value: otherFeaturesSubmenuIsVisible)
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("菜单栏 QuickDoc 图标演示。点击图标后显示软件快捷菜单。")
+            .accessibilityLabel(L("菜单栏 QuickDoc 图标演示。点击图标后显示软件快捷菜单。"))
         }
     }
 
@@ -421,53 +426,53 @@ private struct MenuBarInteractionDemo: View {
 
     private var menuBarStatusText: String {
         switch elapsed {
-        case ..<1.0: return "移动到 QuickDoc 菜单栏图标"
-        case ..<2.70: return "点击打开快捷菜单"
-        case ..<4.30: return "浏览软件设置入口"
-        case ..<7.65: return "查看“其他功能”开关"
-        case ..<8.75: return "菜单操作完成"
-        default: return "准备再次演示"
+        case ..<1.0: return L("移动到 QuickDoc 菜单栏图标")
+        case ..<2.70: return L("点击打开快捷菜单")
+        case ..<4.30: return L("浏览软件设置入口")
+        case ..<7.65: return L("查看“其他功能”开关")
+        case ..<8.75: return L("菜单操作完成")
+        default: return L("准备再次演示")
         }
     }
 
     private var statusMenu: some View {
         DemoMenuSurface {
-            DemoMenuRow(title: "打开设置", systemImage: "gearshape")
+            DemoMenuRow(title: L("打开设置"), systemImage: "gearshape")
             DemoMenuSeparator()
-            DemoMenuRow(title: "显示方式", systemImage: "macwindow", hasSubmenu: true)
-            DemoMenuRow(title: "新建文件类型", systemImage: "doc.badge.plus", hasSubmenu: true)
+            DemoMenuRow(title: L("显示方式"), systemImage: "macwindow", hasSubmenu: true)
+            DemoMenuRow(title: L("新建文件类型"), systemImage: "doc.badge.plus", hasSubmenu: true)
             DemoMenuRow(
-                title: "其他功能",
+                title: L("其他功能"),
                 systemImage: "bolt.fill",
                 hasSubmenu: true,
                 isHighlighted: elapsed >= 3.55 && elapsed < 7.65
             )
-            DemoMenuRow(title: "开机自启动", systemImage: "power", state: model.launchAtLogin)
+            DemoMenuRow(title: L("开机自启动"), systemImage: "power", state: model.launchAtLogin)
             DemoMenuRow(
-                title: "静默启动",
+                title: L("静默启动"),
                 systemImage: "moon.fill",
                 state: model.silentLaunchAtLogin,
                 isEnabled: model.launchAtLogin
             )
             DemoMenuSeparator()
-            DemoMenuRow(title: "重启访达", systemImage: "arrow.clockwise")
-            DemoMenuRow(title: "打开扩展设置", systemImage: "puzzlepiece.extension")
+            DemoMenuRow(title: L("重启访达"), systemImage: "arrow.clockwise")
+            DemoMenuRow(title: L("打开扩展设置"), systemImage: "puzzlepiece.extension")
             DemoMenuSeparator()
-            DemoMenuRow(title: "退出 QuickDoc", systemImage: "power.circle")
+            DemoMenuRow(title: L("退出 QuickDoc"), systemImage: "power.circle")
         }
     }
 
     private var otherFeaturesSubmenu: some View {
         DemoMenuSurface {
-            DemoMenuRow(title: "终端直达", systemImage: "terminal", state: model.terminalDirectEnabled)
+            DemoMenuRow(title: L("终端直达"), systemImage: "terminal", state: model.terminalDirectEnabled)
             DemoMenuRow(
-                title: "路径复制",
+                title: L("路径复制"),
                 systemImage: "doc.on.doc",
                 state: model.pathCopyEnabled,
                 isHighlighted: elapsed >= 5.45 && elapsed < 7.15
             )
-            DemoMenuRow(title: "快捷操作", systemImage: "wrench.and.screwdriver", state: model.quickActionsEnabled)
-            DemoMenuRow(title: "展开快捷操作", systemImage: "list.bullet", state: model.quickActionsExpanded)
+            DemoMenuRow(title: L("快捷操作"), systemImage: "wrench.and.screwdriver", state: model.quickActionsEnabled)
+            DemoMenuRow(title: L("展开快捷操作"), systemImage: "list.bullet", state: model.quickActionsExpanded)
         }
     }
 
@@ -545,10 +550,10 @@ private struct MenuBarDesktopBackdrop: View {
                 Image(systemName: "apple.logo")
                     .font(.caption.weight(.semibold))
                 Text("Finder").fontWeight(.semibold).lineLimit(1)
-                Text("文件").lineLimit(1)
+                Text(L("文件")).lineLimit(1)
                 if showsDocumentMenus {
-                    Text("编辑").lineLimit(1)
-                    Text("显示").lineLimit(1)
+                    Text(L("编辑")).lineLimit(1)
+                    Text(L("显示")).lineLimit(1)
                 }
                 Spacer(minLength: 4)
                 Image(systemName: "wifi")
@@ -569,21 +574,24 @@ private struct MenuBarDesktopBackdrop: View {
             .clipped()
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("菜单栏常驻")
+                Text(L("菜单栏常驻"))
                     .font(.caption.weight(.semibold))
-                Text("无需打开主窗口，也能快速管理 QuickDoc。")
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(L("无需打开主窗口，也能快速管理 QuickDoc。"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(10)
-            .frame(width: min(118, max(96, stageWidth * 0.42)), alignment: .leading)
+            .frame(maxWidth: min(168, max(120, stageWidth * 0.52)), alignment: .leading)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(Color.white.opacity(0.18), lineWidth: 1)
             }
-            .offset(x: 10, y: max(168, stageHeight - 92))
+            .padding(.leading, 10)
+            .padding(.bottom, 12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         }
     }
 }
@@ -608,13 +616,15 @@ private struct DemoPanel<Content: View>: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
                         .font(.callout.weight(.semibold))
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(subtitle)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 Circle()
                     .fill(Color.green)
@@ -691,8 +701,8 @@ private struct DemoMenuRow: View {
             }
 
             Text(title)
-                .lineLimit(1)
-                .minimumScaleFactor(0.55)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 4)
 

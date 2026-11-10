@@ -5,7 +5,7 @@ struct AppearanceSettingsCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SettingsSectionTitle(title: "外观", systemImage: "circle.lefthalf.filled")
+            SettingsSectionTitle(title: L("外观"), systemImage: "circle.lefthalf.filled")
             GlassSection {
                 HStack(spacing: 8) {
                     ForEach(QuickDocAppearanceMode.allCases) { mode in
@@ -29,7 +29,9 @@ struct AppearanceSettingsCard: View {
                 Text(mode.title)
                     .font(.callout.weight(.medium))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 10)
@@ -48,7 +50,7 @@ struct AppearanceSettingsCard: View {
             .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("外观模式：\(mode.title)")
-        .accessibilityValue(isSelected ? "已选择" : "未选择")
+        .accessibilityLabel(LF("外观模式：%@", mode.title))
+        .accessibilityValue(isSelected ? L("已选择") : L("未选择"))
     }
 }

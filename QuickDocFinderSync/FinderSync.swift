@@ -88,7 +88,7 @@ final class FinderSync: FIFinderSync {
             return image
         }
 
-        let fallback = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: "新建文件") ?? NSImage()
+        let fallback = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: L("新建文件")) ?? NSImage()
         fallback.size = NSSize(width: 18, height: 18)
         fallback.isTemplate = true
         return fallback
@@ -105,37 +105,37 @@ final class FinderSync: FIFinderSync {
     }()
     private lazy var terminalIcon: NSImage = {
         Self.iconImage(named: "终端直达", size: NSSize(width: 18, height: 18))
-        ?? NSImage(systemSymbolName: "terminal", accessibilityDescription: "在终端中打开")
+        ?? NSImage(systemSymbolName: "terminal", accessibilityDescription: L("在终端中打开"))
         ?? NSImage()
     }()
     private lazy var pathCopyIcon: NSImage = {
         Self.iconImage(named: "文件路径", size: NSSize(width: 18, height: 18))
-        ?? NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "复制当前路径")
+        ?? NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: L("复制当前路径"))
         ?? NSImage()
     }()
     private lazy var quickActionsIcon: NSImage = {
         Self.iconImage(named: "快捷操作", size: NSSize(width: 18, height: 18))
-        ?? NSImage(systemSymbolName: "wrench.and.screwdriver", accessibilityDescription: "快捷操作")
+        ?? NSImage(systemSymbolName: "wrench.and.screwdriver", accessibilityDescription: L("快捷操作"))
         ?? NSImage()
     }()
     private lazy var copyActionIcon: NSImage = {
         Self.iconImage(named: "复制", size: NSSize(width: 18, height: 18))
-        ?? NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "拷贝")
+        ?? NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: L("拷贝"))
         ?? NSImage()
     }()
     private lazy var pasteActionIcon: NSImage = {
         Self.iconImage(named: "粘贴", size: NSSize(width: 18, height: 18))
-        ?? NSImage(systemSymbolName: "clipboard", accessibilityDescription: "粘贴")
+        ?? NSImage(systemSymbolName: "clipboard", accessibilityDescription: L("粘贴"))
         ?? NSImage()
     }()
     private lazy var cutActionIcon: NSImage = {
         Self.iconImage(named: "剪切", size: NSSize(width: 18, height: 18))
-        ?? NSImage(systemSymbolName: "scissors", accessibilityDescription: "剪切")
+        ?? NSImage(systemSymbolName: "scissors", accessibilityDescription: L("剪切"))
         ?? NSImage()
     }()
     private lazy var permanentDeleteIcon: NSImage = {
         Self.iconImage(named: "彻底删除", size: NSSize(width: 18, height: 18))
-        ?? NSImage(systemSymbolName: "trash.slash", accessibilityDescription: "彻底删除")
+        ?? NSImage(systemSymbolName: "trash.slash", accessibilityDescription: L("彻底删除"))
         ?? NSImage()
     }()
     private var menuItemIconsByID: [String: NSImage] = [:]
@@ -351,7 +351,7 @@ final class FinderSync: FIFinderSync {
     }
 
     override var toolbarItemToolTip: String {
-        "新建文件"
+        L("新建文件")
     }
 
     override var toolbarItemImage: NSImage {
@@ -409,16 +409,16 @@ final class FinderSync: FIFinderSync {
         var items: [NSMenuItem] = []
         let sharedSettings = readSharedSettings()
 
-        let parent = NSMenuItem(title: "新建文件", action: nil, keyEquivalent: "")
+        let parent = NSMenuItem(title: L("新建文件"), action: nil, keyEquivalent: "")
         parent.image = menuIcon
-        let submenu = NSMenu(title: "新建文件")
+        let submenu = NSMenu(title: L("新建文件"))
         var nextTag = 0
 
         enabledDefinitions(sharedSettings: sharedSettings).forEach { definition in
             let templates = contextMenuCustomTemplates(for: definition, sharedSettings: sharedSettings)
             if templates.isEmpty {
                 addCreateItem(
-                    title: definition.title,
+                    title: localizedBuiltInTitle(definition),
                     definition: definition,
                     iconDefinition: definition,
                     to: submenu,
@@ -427,12 +427,12 @@ final class FinderSync: FIFinderSync {
                 return
             }
 
-            let typeItem = NSMenuItem(title: definition.title, action: nil, keyEquivalent: "")
+            let typeItem = NSMenuItem(title: localizedBuiltInTitle(definition), action: nil, keyEquivalent: "")
             configureIcon(for: typeItem, definition: definition)
 
-            let templateMenu = NSMenu(title: definition.title)
+            let templateMenu = NSMenu(title: localizedBuiltInTitle(definition))
             addCreateItem(
-                title: "空白默认文档",
+                title: L("空白默认文档"),
                 definition: definition,
                 iconDefinition: definition,
                 to: templateMenu,
@@ -440,7 +440,7 @@ final class FinderSync: FIFinderSync {
             )
             templates.forEach { template in
                 guard FileManager.default.fileExists(atPath: templateFileURL(for: template).path) else {
-                    let missingItem = NSMenuItem(title: "\(template.displayName)（文件缺失）", action: nil, keyEquivalent: "")
+                    let missingItem = NSMenuItem(title: LF("%@（文件缺失）", template.displayName), action: nil, keyEquivalent: "")
                     missingItem.isEnabled = false
                     configureIcon(for: missingItem, definition: definition)
                     templateMenu.addItem(missingItem)
@@ -469,7 +469,7 @@ final class FinderSync: FIFinderSync {
         }
 
         if submenu.items.isEmpty {
-            let disabledItem = NSMenuItem(title: "未启用新建文件类型", action: nil, keyEquivalent: "")
+            let disabledItem = NSMenuItem(title: L("未启用新建文件类型"), action: nil, keyEquivalent: "")
             disabledItem.isEnabled = false
             submenu.addItem(disabledItem)
         }
@@ -478,14 +478,14 @@ final class FinderSync: FIFinderSync {
         items.append(parent)
 
         if settingValue(sharedSettings.terminalDirectEnabled, key: Self.terminalDirectEnabledKey, fallback: true) {
-            let terminalItem = NSMenuItem(title: "在终端中打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
+            let terminalItem = NSMenuItem(title: L("在终端中打开"), action: #selector(openInTerminal(_:)), keyEquivalent: "")
             terminalItem.target = self
             terminalItem.image = terminalIcon
             items.append(terminalItem)
         }
 
         if settingValue(sharedSettings.pathCopyEnabled, key: Self.pathCopyEnabledKey, fallback: true) {
-            let pathItem = NSMenuItem(title: "复制当前路径", action: #selector(copyCurrentPath(_:)), keyEquivalent: "")
+            let pathItem = NSMenuItem(title: L("复制当前路径"), action: #selector(copyCurrentPath(_:)), keyEquivalent: "")
             pathItem.target = self
             pathItem.image = pathCopyIcon
             items.append(pathItem)
@@ -504,10 +504,10 @@ final class FinderSync: FIFinderSync {
     }
 
     private func makeQuickActionsMenuItem(items: [NSMenuItem]) -> NSMenuItem {
-        let parent = NSMenuItem(title: "快捷操作", action: nil, keyEquivalent: "")
+        let parent = NSMenuItem(title: L("快捷操作"), action: nil, keyEquivalent: "")
         parent.image = quickActionsIcon
 
-        let submenu = NSMenu(title: "快捷操作")
+        let submenu = NSMenu(title: L("快捷操作"))
         items.forEach { submenu.addItem($0) }
 
         parent.submenu = submenu
@@ -524,7 +524,7 @@ final class FinderSync: FIFinderSync {
 
         if settingValue(sharedSettings.quickActionsEnabled, key: Self.quickActionsEnabledKey, fallback: true) {
             if settingValue(sharedSettings.copyActionEnabled, key: Self.copyActionEnabledKey, fallback: true) {
-                let copyItem = NSMenuItem(title: "拷贝", action: #selector(copySelectedItems(_:)), keyEquivalent: "")
+                let copyItem = NSMenuItem(title: L("拷贝"), action: #selector(copySelectedItems(_:)), keyEquivalent: "")
                 copyItem.target = self
                 copyItem.image = copyActionIcon
                 bind(actionSelection, to: copyItem)
@@ -533,7 +533,7 @@ final class FinderSync: FIFinderSync {
             }
 
             if settingValue(sharedSettings.pasteActionEnabled, key: Self.pasteActionEnabledKey, fallback: true) {
-                let pasteItem = NSMenuItem(title: "粘贴", action: #selector(pasteItems(_:)), keyEquivalent: "")
+                let pasteItem = NSMenuItem(title: L("粘贴"), action: #selector(pasteItems(_:)), keyEquivalent: "")
                 pasteItem.target = self
                 pasteItem.image = pasteActionIcon
                 pasteItem.isEnabled = !pasteboardFileURLs().isEmpty
@@ -541,7 +541,7 @@ final class FinderSync: FIFinderSync {
             }
 
             if settingValue(sharedSettings.cutActionEnabled, key: Self.cutActionEnabledKey, fallback: true) {
-                let cutItem = NSMenuItem(title: "剪切", action: #selector(cutSelectedItems(_:)), keyEquivalent: "")
+                let cutItem = NSMenuItem(title: L("剪切"), action: #selector(cutSelectedItems(_:)), keyEquivalent: "")
                 cutItem.target = self
                 cutItem.image = cutActionIcon
                 bind(actionSelection, to: cutItem)
@@ -551,7 +551,7 @@ final class FinderSync: FIFinderSync {
         }
 
         if settingValue(sharedSettings.permanentDeleteEnabled, key: Self.permanentDeleteEnabledKey, fallback: false) {
-            let deleteItem = NSMenuItem(title: "彻底删除", action: #selector(permanentlyDeleteSelectedItems(_:)), keyEquivalent: "")
+            let deleteItem = NSMenuItem(title: L("彻底删除"), action: #selector(permanentlyDeleteSelectedItems(_:)), keyEquivalent: "")
             deleteItem.target = self
             deleteItem.image = permanentDeleteIcon
             bind(actionSelection, to: deleteItem)
@@ -587,7 +587,7 @@ final class FinderSync: FIFinderSync {
 
     private func configureIcon(for item: NSMenuItem, definition: FileDefinition) {
         guard let icon = menuItemIcon(for: definition) else {
-            item.image = NSImage(systemSymbolName: "doc", accessibilityDescription: definition.title)
+            item.image = NSImage(systemSymbolName: "doc", accessibilityDescription: localizedBuiltInTitle(definition))
             return
         }
 
@@ -654,8 +654,8 @@ final class FinderSync: FIFinderSync {
         let customDefinitions = (sharedSettings.customExtensions ?? UserDefaults.standard.stringArray(forKey: Self.customExtensionsKey) ?? []).map { fileExtension in
             FileDefinition(
                 id: "custom.\(fileExtension)",
-                title: "新建 \(fileExtension.uppercased()) 文件",
-                baseName: "新建 \(fileExtension.uppercased()) 文件",
+                title: LF("新建 %@ 文件", fileExtension.uppercased()),
+                baseName: LF("新建 %@ 文件", fileExtension.uppercased()),
                 pathExtension: fileExtension
             )
         }
@@ -775,7 +775,7 @@ final class FinderSync: FIFinderSync {
         case .cancel(let reason):
             logger.error("Unable to resolve target directory")
             diagnosticLog("Unable to resolve target directory: \(String(describing: reason))")
-            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: "新建文件"))
+            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: L("新建文件")))
             return
         case .usePath(let path):
             directory = URL(fileURLWithPath: path, isDirectory: true)
@@ -804,7 +804,7 @@ final class FinderSync: FIFinderSync {
         } catch {
             logger.error("Create file failed: \(error.localizedDescription, privacy: .public)")
             diagnosticLog("Create file failed: \(error.localizedDescription)")
-            showError(message: "创建文件失败：\(error.localizedDescription)")
+            showError(message: LF("创建文件失败：%@", error.localizedDescription))
         }
     }
 
@@ -813,7 +813,7 @@ final class FinderSync: FIFinderSync {
             guard let self else { return }
             switch self.resolveDirectory(context: context) {
             case .cancel(let reason):
-                self.showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: "打开终端"))
+                self.showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: L("打开终端")))
             case .usePath(let path):
                 self.openDirectoryInTerminal(URL(fileURLWithPath: path, isDirectory: true))
             }
@@ -827,21 +827,21 @@ final class FinderSync: FIFinderSync {
     }
 
     @objc private func copySelectedItems(_ sender: NSMenuItem) {
-        guard let selection = capturedSelection(for: sender, verb: "拷贝") else { return }
+        guard let selection = capturedSelection(for: sender, verb: L("拷贝")) else { return }
         performOnResolvedTarget { [weak self] context in
             self?.writeSelectedItemsToPasteboard(selection: selection, context: context, isCut: false)
         }
     }
 
     @objc private func cutSelectedItems(_ sender: NSMenuItem) {
-        guard let selection = capturedSelection(for: sender, verb: "剪切") else { return }
+        guard let selection = capturedSelection(for: sender, verb: L("剪切")) else { return }
         performOnResolvedTarget { [weak self] context in
             self?.writeSelectedItemsToPasteboard(selection: selection, context: context, isCut: true)
         }
     }
 
     @objc private func permanentlyDeleteSelectedItems(_ sender: NSMenuItem) {
-        guard let selection = capturedSelection(for: sender, verb: "彻底删除") else { return }
+        guard let selection = capturedSelection(for: sender, verb: L("彻底删除")) else { return }
         performOnResolvedTarget { [weak self] context in
             self?.permanentlyDelete(selection: selection, context: context)
         }
@@ -851,11 +851,11 @@ final class FinderSync: FIFinderSync {
         let selectedURLs: [URL]
         switch resolvedSelectionURLs(selection: selection, context: context, removeCurrentDirectory: true) {
         case .cancel(let reason):
-            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: "彻底删除"))
+            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: L("彻底删除")))
             return
         case .usePaths(let paths):
             guard selection.context != nil, !paths.isEmpty else {
-                showError(message: "请先选择要彻底删除的文件或文件夹。")
+                showError(message: L("请先选择要彻底删除的文件或文件夹。"))
                 return
             }
             selectedURLs = paths.map { URL(fileURLWithPath: $0) }
@@ -897,7 +897,7 @@ final class FinderSync: FIFinderSync {
             diagnosticLog("Submitted permanent deletion request for \(selectedURLs.count) selected item(s)")
         } catch {
             logger.error("Unable to submit permanent deletion request: \(error.localizedDescription, privacy: .public)")
-            showError(message: "无法启动彻底删除操作：\(error.localizedDescription)")
+            showError(message: LF("无法启动彻底删除操作：%@", error.localizedDescription))
         }
     }
 
@@ -906,7 +906,7 @@ final class FinderSync: FIFinderSync {
         context: StoredMenuActionContext,
         isCut: Bool
     ) {
-        let verb = isCut ? "剪切" : "拷贝"
+        let verb = isCut ? L("剪切") : L("拷贝")
         let selectedURLs: [URL]
         switch resolvedSelectionURLs(selection: selection, context: context, removeCurrentDirectory: true) {
         case .cancel(let reason):
@@ -914,7 +914,7 @@ final class FinderSync: FIFinderSync {
             return
         case .usePaths(let paths):
             guard selection.context != nil, !paths.isEmpty else {
-                showError(message: "请先选择要\(verb)的文件或文件夹。")
+                showError(message: LF("请先选择要%@的文件或文件夹。", verb))
                 return
             }
             selectedURLs = paths.map { URL(fileURLWithPath: $0) }
@@ -933,7 +933,7 @@ final class FinderSync: FIFinderSync {
     @objc private func pasteItems(_ sender: NSMenuItem) {
         let sourceURLs = pasteboardFileURLs()
         guard !sourceURLs.isEmpty else {
-            showError(message: "剪贴板中没有可粘贴的文件或文件夹。")
+            showError(message: L("剪贴板中没有可粘贴的文件或文件夹。"))
             return
         }
         let capturedURLs = sourceURLs
@@ -946,7 +946,7 @@ final class FinderSync: FIFinderSync {
         let directory: URL
         switch resolveDirectory(context: context) {
         case .cancel(let reason):
-            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: "粘贴"))
+            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: L("粘贴")))
             return
         case .usePath(let path):
             directory = URL(fileURLWithPath: path, isDirectory: true)
@@ -983,7 +983,7 @@ final class FinderSync: FIFinderSync {
             NSWorkspace.shared.activateFileViewerSelecting(pastedURLs)
         }
         if !failures.isEmpty {
-            showError(message: "部分项目粘贴失败：\n\(failures.joined(separator: "\n"))")
+            showError(message: LF("部分项目粘贴失败：\n%@", failures.joined(separator: "\n")))
         }
         diagnosticLog("\(shouldMove ? "Moved" : "Pasted") \(pastedURLs.count) item(s) into \(directory.path)")
     }
@@ -1011,7 +1011,7 @@ final class FinderSync: FIFinderSync {
 
     private func capturedSelection(for sender: NSMenuItem, verb: String) -> FinderActionSelection? {
         guard let selection = actionSelectionsByTag[sender.tag] else {
-            showError(message: "请先选择要\(verb)的文件或文件夹。")
+            showError(message: LF("请先选择要%@的文件或文件夹。", verb))
             return nil
         }
         return selection
@@ -1020,7 +1020,7 @@ final class FinderSync: FIFinderSync {
     private func copyResolvedPath(context: StoredMenuActionContext) {
         switch resolvePathCopy(context: context) {
         case .cancel(let reason):
-            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: "复制路径"))
+            showError(message: FinderMenuTargetPolicy.userMessage(for: reason, action: L("复制路径")))
         case .copyPath(let path):
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(path, forType: .string)
@@ -1270,7 +1270,7 @@ final class FinderSync: FIFinderSync {
 
     private func openDirectoryInTerminal(_ directory: URL) {
         guard let terminalURL = terminalApplicationURL(sharedSettings: readSharedSettings()) else {
-            showError(message: "未找到可用终端应用。")
+            showError(message: L("未找到可用终端应用。"))
             return
         }
 
@@ -1281,7 +1281,7 @@ final class FinderSync: FIFinderSync {
 
         NSWorkspace.shared.open([directory], withApplicationAt: terminalURL, configuration: configuration) { [weak self] runningApplication, error in
             if let error {
-                self?.showError(message: "打开终端失败：\(error.localizedDescription)")
+                self?.showError(message: LF("打开终端失败：%@", error.localizedDescription))
                 return
             }
 
@@ -1327,7 +1327,7 @@ final class FinderSync: FIFinderSync {
 
     private func uniqueFileURL(in directory: URL, definition: FileDefinition) throws -> URL {
         let fileManager = FileManager.default
-        let baseName = sanitizedBaseName(definition.baseName)
+        let baseName = sanitizedBaseName(localizedBaseName(definition))
         var candidate = directory.appendingPathComponent(baseName)
         if let pathExtension = definition.pathExtension {
             candidate.appendPathExtension(pathExtension)
@@ -1350,6 +1350,20 @@ final class FinderSync: FIFinderSync {
         throw CocoaError(.fileWriteFileExists)
     }
 
+    private func localizedBuiltInTitle(_ definition: FileDefinition) -> String {
+        if definition.id.hasPrefix("custom.") || definition.id.hasPrefix("template.") {
+            return definition.title
+        }
+        return L(definition.title)
+    }
+
+    private func localizedBaseName(_ definition: FileDefinition) -> String {
+        if definition.id.hasPrefix("custom.") || definition.id.hasPrefix("template.") {
+            return definition.baseName
+        }
+        return L(definition.baseName)
+    }
+
     private func sanitizedBaseName(_ value: String) -> String {
         var sanitized = value
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1358,7 +1372,7 @@ final class FinderSync: FIFinderSync {
         while sanitized.contains("  ") {
             sanitized = sanitized.replacingOccurrences(of: "  ", with: " ")
         }
-        return sanitized.isEmpty ? "新建文件" : sanitized
+        return sanitized.isEmpty ? L("新建文件") : sanitized
     }
 
     private func readOnlyVolumeMessage(for directory: URL) -> String? {
@@ -1368,7 +1382,7 @@ final class FinderSync: FIFinderSync {
         }
 
         let volumeName = values.volumeName ?? directory.lastPathComponent
-        return "宗卷“\(volumeName)”当前以只读方式挂载，无法新建文件。请改用可写宗卷，或使用支持 NTFS 写入的驱动后重新挂载。"
+        return LF("宗卷“%@”当前以只读方式挂载，无法新建文件。请改用可写宗卷，或使用支持 NTFS 写入的驱动后重新挂载。", volumeName)
     }
 
     private func showError(message: String) {

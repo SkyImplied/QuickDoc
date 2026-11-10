@@ -10,7 +10,7 @@ struct PermissionStatusCard: View {
             HStack(alignment: .center, spacing: 16) {
                 Label {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("系统扩展权限")
+                        Text(L("系统扩展权限"))
                             .font(.headline)
                         Text(status.description)
                             .font(.callout)
@@ -29,7 +29,7 @@ struct PermissionStatusCard: View {
                     .padding(.vertical, 7)
                     .background(status.backgroundTint, in: Capsule())
 
-                Button("打开系统设置") {
+                Button(L("打开系统设置")) {
                     model.openExtensionSettings()
                 }
                 .glassButtonStyle()
@@ -46,9 +46,9 @@ struct FinderRestartCard: View {
             HStack(spacing: 16) {
                 Label {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("重启访达")
+                        Text(L("重启访达"))
                             .font(.headline)
-                        Text("当右键菜单未更新时，可重启 Finder 使扩展生效")
+                        Text(L("当右键菜单未更新时，可重启 Finder 使扩展生效"))
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
@@ -58,7 +58,7 @@ struct FinderRestartCard: View {
 
                 Spacer()
 
-                Button("立即重启 Finder") {
+                Button(L("立即重启 Finder")) {
                     model.restartFinder()
                 }
                 .disabled(model.isRestartingFinder)

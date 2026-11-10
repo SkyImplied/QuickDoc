@@ -83,6 +83,13 @@
 		C10000000000000000000054 /* 彻底删除.png in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000004D /* 彻底删除.png */; };
 		D10000000000000000000001 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000013 /* main.swift */; };
 		D10000000000000000000002 /* QuickDocLoginItem.app in Embed Login Items */ = {isa = PBXBuildFile; fileRef = D10000000000000000000011 /* QuickDocLoginItem.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E10000000000000000000217 /* QuickDocLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000117 /* QuickDocLocalization.swift */; };
+		A100000000000000000000F3 /* QuickDocLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000117 /* QuickDocLocalization.swift */; };
+		E10000000000000000000218 /* QuickDocLocalizable.json in Resources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000118 /* QuickDocLocalizable.json */; };
+		A100000000000000000000F4 /* QuickDocLocalizable.json in Resources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000118 /* QuickDocLocalizable.json */; };
+		F20000000000000000000011 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000010 /* InfoPlist.strings */; };
+		F30000000000000000000011 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = F30000000000000000000010 /* InfoPlist.strings */; };
+		F40000000000000000000011 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = F40000000000000000000010 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -192,6 +199,20 @@
 		D10000000000000000000013 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		D10000000000000000000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D10000000000000000000016 /* QuickDocLoginItem.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuickDocLoginItem.entitlements; sourceTree = "<group>"; };
+		E10000000000000000000117 /* QuickDocLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDocLocalization.swift; sourceTree = "<group>"; };
+		E10000000000000000000118 /* QuickDocLocalizable.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Resources/QuickDocLocalizable.json; sourceTree = "<group>"; };
+		F20000000000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F20000000000000000000002 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = zh-Hans; path = zh-Hans.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F20000000000000000000003 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = zh-Hant; path = zh-Hant.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F20000000000000000000004 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F30000000000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F30000000000000000000002 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = zh-Hans; path = zh-Hans.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F30000000000000000000003 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = zh-Hant; path = zh-Hant.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F30000000000000000000004 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F40000000000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F40000000000000000000002 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = zh-Hans; path = zh-Hans.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F40000000000000000000003 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = zh-Hant; path = zh-Hant.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		F40000000000000000000004 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -263,6 +284,8 @@
 					E10000000000000000000304 /* Views */,
 					E10000000000000000000305 /* Support */,
 					A10000000000000000000025 /* Assets.xcassets */,
+					E10000000000000000000118 /* QuickDocLocalizable.json */,
+					F20000000000000000000010 /* InfoPlist.strings */,
 					A10000000000000000000015 /* Info.plist */,
 					A10000000000000000000016 /* QuickDoc.entitlements */,
 				);
@@ -307,6 +330,7 @@
 			isa = PBXGroup;
 			children = (
 				E10000000000000000000103 /* QuickDocIcon.swift */,
+				E10000000000000000000117 /* QuickDocLocalization.swift */,
 				E10000000000000000000111 /* ProcessSupport.swift */,
 				E10000000000000000000112 /* ViewModifiers.swift */,
 			);
@@ -351,6 +375,7 @@
 				A10000000000000000000027 /* blank.docx */,
 				A10000000000000000000028 /* blank.xlsx */,
 				A10000000000000000000029 /* blank.pptx */,
+				F30000000000000000000010 /* InfoPlist.strings */,
 				A10000000000000000000018 /* Info.plist */,
 				A10000000000000000000019 /* QuickDocFinderSync.entitlements */,
 			);
@@ -371,6 +396,7 @@
 			isa = PBXGroup;
 			children = (
 				D10000000000000000000013 /* main.swift */,
+				F40000000000000000000010 /* InfoPlist.strings */,
 				D10000000000000000000015 /* Info.plist */,
 				D10000000000000000000016 /* QuickDocLoginItem.entitlements */,
 			);
@@ -424,6 +450,7 @@
 			buildPhases = (
 				D10000000000000000000051 /* Sources */,
 				D10000000000000000000052 /* Frameworks */,
+				D10000000000000000000057 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -464,6 +491,9 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				zh-Hans,
+				zh-Hant,
+				ja,
 				Base,
 			);
 			mainGroup = A10000000000000000000021;
@@ -484,6 +514,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000005 /* Assets.xcassets in Resources */,
+				E10000000000000000000218 /* QuickDocLocalizable.json in Resources */,
+				F20000000000000000000011 /* InfoPlist.strings in Resources */,
 				A1000000000000000000000A /* word_icon.png in Resources */,
 				B1000000000000000000000C /* txt.png in Resources */,
 				B1000000000000000000000E /* md.png in Resources */,
@@ -513,6 +545,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000006 /* menu-icon.png in Resources */,
+				A100000000000000000000F4 /* QuickDocLocalizable.json in Resources */,
+				F30000000000000000000011 /* InfoPlist.strings in Resources */,
 				A10000000000000000000007 /* blank.docx in Resources */,
 				A10000000000000000000008 /* blank.xlsx in Resources */,
 				A10000000000000000000009 /* blank.pptx in Resources */,
@@ -537,6 +571,14 @@
 				C10000000000000000000050 /* 粘贴.png in Resources */,
 				C10000000000000000000052 /* 剪切.png in Resources */,
 				C10000000000000000000054 /* 彻底删除.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000000000000000000057 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F40000000000000000000011 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -571,6 +613,7 @@
 					E10000000000000000000210 /* QuickDocSettingsModel.swift in Sources */,
 					E10000000000000000000211 /* ProcessSupport.swift in Sources */,
 					E10000000000000000000212 /* ViewModifiers.swift in Sources */,
+					E10000000000000000000217 /* QuickDocLocalization.swift in Sources */,
 				);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -580,6 +623,7 @@
 			files = (
 				A10000000000000000000003 /* FinderSync.swift in Sources */,
 				A100000000000000000000F1 /* FinderMenuTargetPolicy.swift in Sources */,
+				A100000000000000000000F3 /* QuickDocLocalization.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -606,6 +650,42 @@
 		};
 /* End PBXTargetDependency section */
 
+/* Begin PBXVariantGroup section */
+		F20000000000000000000010 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				F20000000000000000000001 /* en */,
+				F20000000000000000000002 /* zh-Hans */,
+				F20000000000000000000003 /* zh-Hant */,
+				F20000000000000000000004 /* ja */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		F30000000000000000000010 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				F30000000000000000000001 /* en */,
+				F30000000000000000000002 /* zh-Hans */,
+				F30000000000000000000003 /* zh-Hant */,
+				F30000000000000000000004 /* ja */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		F40000000000000000000010 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				F40000000000000000000001 /* en */,
+				F40000000000000000000002 /* zh-Hans */,
+				F40000000000000000000003 /* zh-Hant */,
+				F40000000000000000000004 /* ja */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin XCBuildConfiguration section */
 		A10000000000000000000071 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -615,7 +695,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDoc/Info.plist;
@@ -624,7 +704,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.8.0;
+				MARKETING_VERSION = 1.8.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc;
 				PRODUCT_NAME = QuickDoc;
 				SWIFT_VERSION = 5.0;
@@ -640,7 +720,7 @@
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				COMPRESS_PNG_FILES = NO;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDoc/Info.plist;
@@ -649,7 +729,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.8.0;
+				MARKETING_VERSION = 1.8.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc;
 				PRODUCT_NAME = QuickDoc;
 				SWIFT_VERSION = 5.0;
@@ -663,7 +743,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocFinderSync/QuickDocFinderSync.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocFinderSync/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -672,7 +752,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.8.0;
+				MARKETING_VERSION = 1.8.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.FinderSync;
 				PRODUCT_NAME = QuickDocFinderSync;
 				SKIP_INSTALL = YES;
@@ -688,7 +768,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocFinderSync/QuickDocFinderSync.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocFinderSync/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -697,7 +777,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.8.0;
+				MARKETING_VERSION = 1.8.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.FinderSync;
 				PRODUCT_NAME = QuickDocFinderSync;
 				SKIP_INSTALL = YES;
@@ -712,7 +792,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocLoginItem/QuickDocLoginItem.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocLoginItem/Info.plist;
@@ -721,7 +801,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.8.0;
+				MARKETING_VERSION = 1.8.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.LoginItem;
 				PRODUCT_NAME = QuickDocLoginItem;
 				SKIP_INSTALL = YES;
@@ -735,7 +815,7 @@
 				CODE_SIGN_ENTITLEMENTS = QuickDocLoginItem/QuickDocLoginItem.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = QuickDocLoginItem/Info.plist;
@@ -744,7 +824,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.8.0;
+				MARKETING_VERSION = 1.8.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.skyimplied.QuickDoc.LoginItem;
 				PRODUCT_NAME = QuickDocLoginItem;
 				SKIP_INSTALL = YES;

@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Create common files directly from Finder's right-click menu and toolbar.</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.0"><img src="https://img.shields.io/badge/version-v1.8.0-blue" alt="Version v1.8.0"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.1"><img src="https://img.shields.io/badge/version-v1.8.1-blue" alt="Version v1.8.1"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="Platform macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Built with Swift">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.0/QuickDoc-1.8.0.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.1/QuickDoc-1.8.1.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="Downloads"></a>
   </p>
   <p>
@@ -17,36 +17,42 @@
 ## Interface
 
 <p align="center">
-  <img src="./photos/v1.8.0/general.png" alt="QuickDoc General" width="720"><br>
+  <img src="./photos/v1.8.1/en/general.png" alt="QuickDoc General" width="720"><br>
   <strong>General</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/efficiency.png" alt="QuickDoc Efficiency Tools" width="720"><br>
+  <img src="./photos/v1.8.1/en/efficiency.png" alt="QuickDoc Efficiency Tools" width="720"><br>
   <strong>Efficiency Tools</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/permissions.png" alt="QuickDoc Permissions and Extensions" width="720"><br>
+  <img src="./photos/v1.8.1/en/permissions.png" alt="QuickDoc Permissions and Extensions" width="720"><br>
   <strong>Permissions and Extensions</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/file-types.png" alt="QuickDoc New File Types" width="720"><br>
+  <img src="./photos/v1.8.1/en/file-types.png" alt="QuickDoc New File Types" width="720"><br>
   <strong>New File Types</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/finder.png" alt="QuickDoc Finder Actions" width="720"><br>
+  <img src="./photos/v1.8.1/en/finder.png" alt="QuickDoc Finder Actions" width="720"><br>
   <strong>Finder Actions</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/about.png" alt="QuickDoc About" width="720"><br>
+  <img src="./photos/v1.8.1/en/about.png" alt="QuickDoc About" width="720"><br>
   <strong>About</strong>
 </p>
 
 QuickDoc is a macOS utility built around a Finder Sync extension. It adds a practical `New File` submenu to Finder's context menu, and since v1.3 it also supports adding QuickDoc to the Finder toolbar so file creation can be invoked directly from the toolbar.
+
+## What's New in v1.8.1
+
+- Added English, Traditional Chinese, and Japanese. Simplified Chinese remains available.
+- QuickDoc follows the macOS preferred language, including regional variants. In Settings you can also choose Follow System, 简体中文, 繁體中文, English, or 日本語.
+- The settings window and menus use the selected language immediately. The Finder extension uses the same language the next time its menu appears.
 
 ## What's New in v1.8.0
 

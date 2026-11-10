@@ -3,7 +3,7 @@ import SwiftUI
 struct EfficiencyToolsPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            PageHeader(title: "效率工具")
+            PageHeader(title: L("效率工具"))
             QuickAccessSettingsCard()
         }
     }
@@ -24,10 +24,10 @@ struct TerminalDirectSettingsCard: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
 
     var body: some View {
-        EfficiencyGroup(title: "终端直达", systemImage: "terminal.fill") {
+        EfficiencyGroup(title: L("终端直达"), systemImage: "terminal.fill") {
             EfficiencyToggleRow(
-                title: "在终端中打开",
-                caption: "显示在 Finder 右键一级菜单。",
+                title: L("在终端中打开"),
+                caption: L("显示在 Finder 右键一级菜单。"),
                 systemImage: "terminal.fill",
                 isOn: $model.terminalDirectEnabled
             )
@@ -41,10 +41,10 @@ struct PathCopySettingsCard: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
 
     var body: some View {
-        EfficiencyGroup(title: "路径复制", systemImage: "doc.on.doc") {
+        EfficiencyGroup(title: L("路径复制"), systemImage: "doc.on.doc") {
             EfficiencyToggleRow(
-                title: "复制当前路径",
-                caption: "空白处复制当前文件夹，选中项复制所选路径。",
+                title: L("复制当前路径"),
+                caption: L("空白处复制当前文件夹，选中项复制所选路径。"),
                 systemImage: "doc.on.doc",
                 isOn: $model.pathCopyEnabled
             )
@@ -68,28 +68,28 @@ struct QuickActionsSettingsCard: View {
     }
 
     private var copyPasteCutGroup: some View {
-        EfficiencyGroup(title: "拷贝、粘贴与剪切", systemImage: "square.on.square") {
+        EfficiencyGroup(title: L("拷贝、粘贴与剪切"), systemImage: "square.on.square") {
             VStack(alignment: .leading, spacing: 0) {
                 EfficiencyToggleRow(
-                    title: "在右键菜单中显示",
-                    caption: model.quickActionsEnabled ? nil : "需先开启拷贝、粘贴与剪切",
+                    title: L("在右键菜单中显示"),
+                    caption: model.quickActionsEnabled ? nil : L("需先开启拷贝、粘贴与剪切"),
                     systemImage: "square.on.square",
                     isOn: $model.quickActionsEnabled,
-                    accessibilityTitle: "拷贝、粘贴与剪切"
+                    accessibilityTitle: L("拷贝、粘贴与剪切")
                 )
 
                 childAction(
-                    title: "拷贝",
+                    title: L("拷贝"),
                     systemImage: "doc.on.doc",
                     isOn: $model.copyActionEnabled
                 )
                 childAction(
-                    title: "粘贴",
+                    title: L("粘贴"),
                     systemImage: "doc.on.clipboard",
                     isOn: $model.pasteActionEnabled
                 )
                 childAction(
-                    title: "剪切",
+                    title: L("剪切"),
                     systemImage: "scissors",
                     isOn: $model.cutActionEnabled
                 )
@@ -116,13 +116,13 @@ struct QuickActionsSettingsCard: View {
     }
 
     private var permanentDeleteGroup: some View {
-        EfficiencyGroup(title: "彻底删除", systemImage: "trash.slash", iconColor: .red) {
+        EfficiencyGroup(title: L("彻底删除"), systemImage: "trash.slash", iconColor: .red) {
             HStack(alignment: .center, spacing: 10) {
                 Image(systemName: "trash.slash")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.red)
                     .frame(width: 18, height: 18)
-                Text("永久删除，执行前会再次确认。")
+                Text(L("永久删除，执行前会再次确认。"))
                     .font(.body)
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -131,25 +131,25 @@ struct QuickActionsSettingsCard: View {
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .controlSize(.small)
-                    .accessibilityLabel("彻底删除")
+                    .accessibilityLabel(L("彻底删除"))
             }
             .padding(.vertical, 2)
         }
     }
 
     private var menuPlacementGroup: some View {
-        EfficiencyGroup(title: "菜单显示位置", systemImage: "list.bullet") {
+        EfficiencyGroup(title: L("菜单显示位置"), systemImage: "list.bullet") {
             VStack(alignment: .leading, spacing: 8) {
                 if !hasEnabledOperations {
-                    Text("启用任一文件操作后可设置")
+                    Text(L("启用任一文件操作后可设置"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 HStack(alignment: .top, spacing: 8) {
                     MenuPlacementOptionCard(
-                        title: "收起显示",
-                        subtitle: "归入“快捷操作”",
+                        title: L("收起显示"),
+                        subtitle: L("归入“快捷操作”"),
                         systemImage: "rectangle.stack",
                         isSelected: !model.quickActionsExpanded,
                         isEnabled: hasEnabledOperations
@@ -160,8 +160,8 @@ struct QuickActionsSettingsCard: View {
                     }
 
                     MenuPlacementOptionCard(
-                        title: "一级菜单",
-                        subtitle: "直接出现在右键菜单",
+                        title: L("一级菜单"),
+                        subtitle: L("直接出现在右键菜单"),
                         systemImage: "list.bullet",
                         isSelected: model.quickActionsExpanded,
                         isEnabled: hasEnabledOperations
@@ -180,18 +180,18 @@ struct ExternalVolumeContextMenuCard: View {
     @EnvironmentObject private var model: QuickDocSettingsModel
 
     var body: some View {
-        EfficiencyGroup(title: "外置硬盘右键菜单（实验性）", systemImage: "externaldrive") {
+        EfficiencyGroup(title: L("外置硬盘右键菜单（实验性）"), systemImage: "externaldrive") {
             EfficiencyToggleRow(
-                title: "在外置硬盘中显示",
+                title: L("在外置硬盘中显示"),
                 systemImage: "externaldrive",
                 isOn: $model.externalVolumeContextMenuEnabled,
-                accessibilityTitle: "外置硬盘右键菜单（实验性）"
+                accessibilityTitle: L("外置硬盘右键菜单（实验性）")
             )
-            Text("不建议开启。开启后会监听外置硬盘，系统可能将磁盘图标显示为 QuickDoc Logo；介意图标变化请保持关闭，建议将 QuickDoc 添加到访达工具栏使用。")
+            Text(L("不建议开启。开启后会监听外置硬盘，系统可能将磁盘图标显示为 QuickDoc Logo；介意图标变化请保持关闭，建议将 QuickDoc 添加到访达工具栏使用。"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("关闭后，Finder 可能仍暂时保留已更换的图标，直到重新读取该磁盘。")
+            Text(L("关闭后，Finder 可能仍暂时保留已更换的图标，直到重新读取该磁盘。"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -204,7 +204,7 @@ private struct QuickActionsCompatibilityNotice: View {
 
     var body: some View {
         Label {
-            Text("拷贝、粘贴、剪切需配套使用，与 Finder 原菜单不互通。")
+            Text(L("拷贝、粘贴、剪切需配套使用，与 Finder 原菜单不互通。"))
                 .fixedSize(horizontal: false, vertical: true)
         } icon: {
             Image(systemName: "exclamationmark.triangle.fill")
@@ -277,7 +277,8 @@ private struct EfficiencyToggleRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.body)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                 if let caption, !caption.isEmpty {
                     Text(caption)
                         .font(.caption)
@@ -320,7 +321,8 @@ private struct MenuPlacementOptionCard: View {
                     Text(title)
                         .font(.callout.weight(.semibold))
                         .foregroundStyle(.primary)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(subtitle)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -351,7 +353,7 @@ private struct MenuPlacementOptionCard: View {
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.55)
         .accessibilityLabel(title)
-        .accessibilityValue(isSelected ? "已选择" : "未选择")
+        .accessibilityValue(isSelected ? L("已选择") : L("未选择"))
     }
 }
 
@@ -390,14 +392,14 @@ struct TerminalApplicationPicker: View {
             Button {
                 model.chooseTerminalApplication()
             } label: {
-                Label("更换终端", systemImage: "folder")
+                Label(L("更换终端"), systemImage: "folder")
             }
             .glassButtonStyle(prominent: true)
 
             Button {
                 model.resetTerminalApplication()
             } label: {
-                Label("恢复默认", systemImage: "arrow.counterclockwise")
+                Label(L("恢复默认"), systemImage: "arrow.counterclockwise")
             }
             .disabled(!model.hasCustomTerminalApplication)
             .glassButtonStyle()
@@ -417,63 +419,5 @@ struct TerminalApplicationPicker: View {
                 }
             }
         }
-    }
-}
-
-struct LanguageSelectionSheet: View {
-    @EnvironmentObject private var model: QuickDocSettingsModel
-    @Environment(\.dismiss) private var dismiss
-
-    private let columns = [
-        GridItem(.flexible(minimum: 180), spacing: 12),
-        GridItem(.flexible(minimum: 180), spacing: 12)
-    ]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("选择软件语言")
-                    .font(.title3.weight(.bold))
-                Text("以下语言将在未来版本逐步支持，当前仅展示选择入口。")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-
-            LazyVGrid(columns: columns, alignment: .leading, spacing: 12) {
-                ForEach(quickDocLanguageOptions) { option in
-                    Button {
-                        model.showLanguageComingSoon(languageName: option.title)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(option.title)
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(.primary)
-                            Text(option.subtitle)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(.quaternary, lineWidth: 1)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            HStack {
-                Spacer()
-                Button("关闭") {
-                    dismiss()
-                }
-                .glassButtonStyle()
-            }
-        }
-        .padding(24)
-        .frame(minWidth: 480, idealWidth: 540, minHeight: 320)
     }
 }

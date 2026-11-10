@@ -11,7 +11,7 @@ struct CustomTemplatesCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SettingsSectionTitle(title: "文件模板", systemImage: "doc.on.doc")
+            SettingsSectionTitle(title: L("文件模板"), systemImage: "doc.on.doc")
             GlassSection {
                 if model.templateFileTypes.isEmpty {
                     emptyFileTypesView
@@ -40,7 +40,7 @@ struct CustomTemplatesCard: View {
     }
 
     private var emptyFileTypesView: some View {
-        Text("先启用带后缀的类型，或添加自定义后缀。")
+        Text(L("先启用带后缀的类型，或添加自定义后缀。"))
             .font(.callout)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -58,7 +58,7 @@ struct CustomTemplatesCard: View {
 
     private var templateTypeList: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("类型")
+            Text(L("类型"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
@@ -99,7 +99,7 @@ struct CustomTemplatesCard: View {
                             .lineLimit(1)
                     }
 
-                    Text(templates.isEmpty ? "尚无模板" : "\(visibleCount) 个显示")
+                    Text(templates.isEmpty ? L("尚无模板") : LF("%ld 个显示", visibleCount))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -155,7 +155,7 @@ struct CustomTemplatesCard: View {
 
                 Spacer(minLength: 8)
 
-                Button("添加模板") {
+                Button(L("添加模板")) {
                     chooseTemplateFile(for: type)
                 }
             }
@@ -168,7 +168,7 @@ struct CustomTemplatesCard: View {
             Divider()
 
             if !templates.isEmpty {
-                Text("\(visibleCount)/\(templates.count) 显示在右键菜单")
+                Text(LF("%ld/%ld 显示在右键菜单", visibleCount, templates.count))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -195,7 +195,7 @@ struct CustomTemplatesCard: View {
     }
 
     private func emptyTemplatesView(for type: TemplateFileType) -> some View {
-        Text("还没有 .\(type.pathExtension) 模板。添加后可创建带预设内容的文件。")
+        Text(LF("还没有 .%@ 模板。添加后可创建带预设内容的文件。", type.pathExtension))
             .font(.callout)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
@@ -206,9 +206,9 @@ struct CustomTemplatesCard: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("新模板")
+                    Text(L("新模板"))
                         .font(.callout.weight(.semibold))
-                    Text(selectedTemplateURL?.lastPathComponent ?? "未选择文件")
+                    Text(selectedTemplateURL?.lastPathComponent ?? L("未选择文件"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -217,17 +217,17 @@ struct CustomTemplatesCard: View {
 
                 Spacer(minLength: 8)
 
-                Button("更换文件") {
+                Button(L("更换文件")) {
                     chooseTemplateFile(for: type)
                 }
                 .buttonStyle(.borderless)
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("右键菜单显示名称")
+                Text(L("右键菜单显示名称"))
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
-                TextField("例如：合同模板", text: $templateDisplayName)
+                TextField(L("例如：合同模板"), text: $templateDisplayName)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit {
                         if canAddTemplate(for: type) {
@@ -237,12 +237,12 @@ struct CustomTemplatesCard: View {
             }
 
             HStack(spacing: 12) {
-                Toggle("添加后显示在 Finder 右键菜单", isOn: $shouldShowInContextMenu)
+                Toggle(L("添加后显示在 Finder 右键菜单"), isOn: $shouldShowInContextMenu)
                     .toggleStyle(.checkbox)
 
                 Spacer(minLength: 8)
 
-                Button("取消") {
+                Button(L("取消")) {
                     resetComposer()
                 }
                 .buttonStyle(.borderless)
@@ -250,7 +250,7 @@ struct CustomTemplatesCard: View {
                 Button {
                     addTemplate(for: type)
                 } label: {
-                    Text("添加模板")
+                    Text(L("添加模板"))
                 }
                 .glassButtonStyle(prominent: true)
                 .disabled(!canAddTemplate(for: type))
@@ -273,19 +273,19 @@ struct CustomTemplatesCard: View {
 
     private func addTemplateHint(for type: TemplateFileType) -> String {
         guard let selectedTemplateURL else {
-            return "请选择一个 .\(type.pathExtension) 文件。"
+            return LF("请选择一个 .%@ 文件。", type.pathExtension)
         }
 
         let selectedExtension = selectedTemplateURL.pathExtension.lowercased()
         guard selectedExtension == type.pathExtension else {
-            return "当前文件是 .\(selectedExtension.isEmpty ? "无后缀" : selectedExtension)，请改选 .\(type.pathExtension) 文件。"
+            return LF("当前文件是 .%@，请改选 .%@ 文件。", selectedExtension.isEmpty ? L("无后缀") : selectedExtension, type.pathExtension)
         }
 
         guard !templateDisplayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return "请输入模板在右键菜单中的显示名称。"
+            return L("请输入模板在右键菜单中的显示名称。")
         }
 
-        return "文件会复制到 QuickDoc 的模板目录，原文件保持不变。"
+        return L("文件会复制到 QuickDoc 的模板目录，原文件保持不变。")
     }
 
     private func ensureSelectedFileType() {
@@ -300,9 +300,9 @@ struct CustomTemplatesCard: View {
 
     private func chooseTemplateFile(for type: TemplateFileType) {
         let panel = NSOpenPanel()
-        panel.title = "选择模板文件"
-        panel.message = "请选择一个 .\(type.pathExtension) 文件作为 \(type.title) 模板。"
-        panel.prompt = "选择"
+        panel.title = L("选择模板文件")
+        panel.message = LF("请选择一个 .%@ 文件作为 %@ 模板。", type.pathExtension, type.title)
+        panel.prompt = L("选择")
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
@@ -383,7 +383,7 @@ struct CustomTemplateRow: View {
             ))
             .toggleStyle(.checkbox)
             .labelsHidden()
-            .help(template.isVisibleInContextMenu ? "在右键菜单中显示" : "已从右键菜单隐藏")
+            .help(template.isVisibleInContextMenu ? L("在右键菜单中显示") : L("已从右键菜单隐藏"))
 
             Image(systemName: fileExists ? "doc.fill" : "doc.badge.ellipsis")
                 .font(.system(size: 15))
@@ -399,9 +399,9 @@ struct CustomTemplateRow: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     if !fileExists {
-                        statusBadge("文件缺失", color: .red)
+                        statusBadge(L("文件缺失"), color: .red)
                     } else if !template.isVisibleInContextMenu {
-                        statusBadge("已隐藏", color: .secondary)
+                        statusBadge(L("已隐藏"), color: .secondary)
                     }
                 }
 
@@ -417,14 +417,14 @@ struct CustomTemplateRow: View {
                 Button {
                     model.moveCustomTemplate(template.id, direction: .up)
                 } label: {
-                    Label("上移", systemImage: "arrow.up")
+                    Label(L("上移"), systemImage: "arrow.up")
                 }
                 .disabled(!canMoveUp)
 
                 Button {
                     model.moveCustomTemplate(template.id, direction: .down)
                 } label: {
-                    Label("下移", systemImage: "arrow.down")
+                    Label(L("下移"), systemImage: "arrow.down")
                 }
                 .disabled(!canMoveDown)
 
@@ -433,13 +433,13 @@ struct CustomTemplateRow: View {
                 Button {
                     model.renameCustomTemplate(template.id)
                 } label: {
-                    Label("重命名", systemImage: "pencil")
+                    Label(L("重命名"), systemImage: "pencil")
                 }
 
                 Button(role: .destructive) {
                     model.removeCustomTemplate(template.id)
                 } label: {
-                    Label("删除模板", systemImage: "trash")
+                    Label(L("删除模板"), systemImage: "trash")
                 }
             } label: {
                 Image(systemName: "ellipsis")
@@ -449,25 +449,25 @@ struct CustomTemplateRow: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .fixedSize()
-            .help("更多操作")
+            .help(L("更多操作"))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
         .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         .contextMenu {
-            Button("重命名") {
+            Button(L("重命名")) {
                 model.renameCustomTemplate(template.id)
             }
-            Button("上移") {
+            Button(L("上移")) {
                 model.moveCustomTemplate(template.id, direction: .up)
             }
             .disabled(!canMoveUp)
-            Button("下移") {
+            Button(L("下移")) {
                 model.moveCustomTemplate(template.id, direction: .down)
             }
             .disabled(!canMoveDown)
             Divider()
-            Button("删除模板", role: .destructive) {
+            Button(L("删除模板"), role: .destructive) {
                 model.removeCustomTemplate(template.id)
             }
         }

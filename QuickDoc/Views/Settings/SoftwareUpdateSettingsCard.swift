@@ -6,14 +6,14 @@ struct SoftwareUpdateSettingsCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SettingsSectionTitle(title: "软件更新", systemImage: "arrow.triangle.2.circlepath")
+            SettingsSectionTitle(title: L("软件更新"), systemImage: "arrow.triangle.2.circlepath")
             GlassSection {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .center, spacing: 12) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("检查更新")
+                        Text(L("检查更新"))
                             .font(.body)
-                        Text("当前版本 v\(model.appVersion)")
+                        Text(LF("当前版本 v%@", model.appVersion))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -38,7 +38,7 @@ struct SoftwareUpdateSettingsCard: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 Label {
-                    Text("QuickDoc 托管于 GitHub，可下载 DMG 覆盖安装或点击上方按钮自动更新；请确保网络可稳定访问 GitHub，否则可能超时。")
+                    Text(L("QuickDoc 托管于 GitHub，可下载 DMG 覆盖安装或点击上方按钮自动更新；请确保网络可稳定访问 GitHub，否则可能超时。"))
                         .fixedSize(horizontal: false, vertical: true)
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill")

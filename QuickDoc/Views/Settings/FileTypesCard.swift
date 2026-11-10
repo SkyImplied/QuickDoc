@@ -14,7 +14,7 @@ struct FileTypesCard: View {
 
     private var builtInGroup: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SettingsSectionTitle(title: "内置类型", systemImage: "doc.badge.plus")
+            SettingsSectionTitle(title: L("内置类型"), systemImage: "doc.badge.plus")
             GlassSection {
                 ViewThatFits(in: .horizontal) {
                     builtInGrid(columnCount: 2)
@@ -49,7 +49,7 @@ struct FileTypesCard: View {
             Text(displayName(for: type))
                 .font(.body)
                 .lineLimit(1)
-            Text(type.pathExtension.map { ".\($0)" } ?? "无后缀")
+            Text(type.pathExtension.map { ".\($0)" } ?? L("无后缀"))
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -61,14 +61,14 @@ struct FileTypesCard: View {
             .labelsHidden()
             .toggleStyle(.switch)
             .controlSize(.small)
-            .accessibilityLabel("\(displayName(for: type))，\(isEnabled ? "已启用" : "未启用")")
+            .accessibilityLabel(LF("%@，%@", displayName(for: type), isEnabled ? L("已启用") : L("未启用")))
         }
         .padding(.vertical, 4)
     }
 
     private var customExtensionGroup: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SettingsSectionTitle(title: "自定义后缀", systemImage: "plus.square.dashed")
+            SettingsSectionTitle(title: L("自定义后缀"), systemImage: "plus.square.dashed")
             GlassSection {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
@@ -76,7 +76,7 @@ struct FileTypesCard: View {
                             Text(".")
                                 .font(.body.monospaced())
                                 .foregroundStyle(.secondary)
-                            TextField("后缀，如 yaml", text: $customExtension)
+                            TextField(L("后缀，如 yaml"), text: $customExtension)
                                 .textFieldStyle(.plain)
                                 .focused($isCustomExtensionFocused)
                                 .onSubmit(addCustomExtension)
@@ -89,7 +89,7 @@ struct FileTypesCard: View {
                                 .stroke(fieldStroke, lineWidth: 1)
                         }
 
-                        Button("添加", action: addCustomExtension)
+                        Button(L("添加"), action: addCustomExtension)
                             .disabled(!canSubmitCustomExtension)
                     }
 
@@ -102,7 +102,7 @@ struct FileTypesCard: View {
 
                     if model.customExtensions.isEmpty {
                         if validationMessage == nil {
-                            Text("尚未添加。添加后自动启用。")
+                            Text(L("尚未添加。添加后自动启用。"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -115,7 +115,7 @@ struct FileTypesCard: View {
                                 customExtensionRow(fileExtension)
                             }
                         }
-                        Text("删除后缀时，该类型下的模板也会移除。")
+                        Text(L("删除后缀时，该类型下的模板也会移除。"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -140,8 +140,8 @@ struct FileTypesCard: View {
                 Image(systemName: "minus.circle")
             }
             .buttonStyle(.borderless)
-            .help("删除 .\(fileExtension)")
-            .accessibilityLabel("删除 .\(fileExtension)")
+            .help(LF("删除 .%@", fileExtension))
+            .accessibilityLabel(LF("删除 .%@", fileExtension))
         }
         .padding(.vertical, 4)
     }
@@ -167,10 +167,10 @@ struct FileTypesCard: View {
         let normalized = normalizedCustomExtension
         guard !normalized.isEmpty else { return nil }
         if quickDocFileTypes.contains(where: { $0.pathExtension == normalized }) {
-            return ".\(normalized) 已在内置类型中。"
+            return LF(".%@ 已在内置类型中。", normalized)
         }
         if model.customExtensions.contains(normalized) {
-            return ".\(normalized) 已经添加。"
+            return LF(".%@ 已经添加。", normalized)
         }
         return nil
     }
@@ -207,7 +207,7 @@ struct FileTypesCard: View {
         case "csv": return "CSV"
         case "pptx": return "PowerPoint"
         case "json": return "JSON"
-        case "blank": return "空白文件"
+        case "blank": return L("空白文件")
         case "py": return "Python"
         case "html": return "HTML"
         case "sh": return "Shell"

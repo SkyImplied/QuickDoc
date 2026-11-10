@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>直接從 Finder 右鍵選單和工具列建立常用檔案。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.0"><img src="https://img.shields.io/badge/version-v1.8.0-blue" alt="版本 v1.8.0"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.1"><img src="https://img.shields.io/badge/version-v1.8.1-blue" alt="版本 v1.8.1"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="平台 macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="使用 Swift 建置">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.0/QuickDoc-1.8.0.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下載 DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.1/QuickDoc-1.8.1.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下載 DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="下載次數"></a>
   </p>
   <p>
@@ -17,36 +17,42 @@
 ## 介面
 
 <p align="center">
-  <img src="./photos/v1.8.0/general.png" alt="QuickDoc 通用" width="720"><br>
+  <img src="./photos/v1.8.1/zh-TW/general.png" alt="QuickDoc 通用" width="720"><br>
   <strong>通用</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/efficiency.png" alt="QuickDoc 效率工具" width="720"><br>
+  <img src="./photos/v1.8.1/zh-TW/efficiency.png" alt="QuickDoc 效率工具" width="720"><br>
   <strong>效率工具</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/permissions.png" alt="QuickDoc 權限與擴充功能" width="720"><br>
+  <img src="./photos/v1.8.1/zh-TW/permissions.png" alt="QuickDoc 權限與擴充功能" width="720"><br>
   <strong>權限與擴充功能</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/file-types.png" alt="QuickDoc 新建檔案類型" width="720"><br>
+  <img src="./photos/v1.8.1/zh-TW/file-types.png" alt="QuickDoc 新建檔案類型" width="720"><br>
   <strong>新建檔案類型</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/finder.png" alt="QuickDoc 訪達操作" width="720"><br>
+  <img src="./photos/v1.8.1/zh-TW/finder.png" alt="QuickDoc 訪達操作" width="720"><br>
   <strong>訪達操作</strong>
 </p>
 
 <p align="center">
-  <img src="./photos/v1.8.0/about.png" alt="QuickDoc 關於" width="720"><br>
+  <img src="./photos/v1.8.1/zh-TW/about.png" alt="QuickDoc 關於" width="720"><br>
   <strong>關於</strong>
 </p>
 
 QuickDoc 是一款以 macOS Finder Sync 擴充功能為核心的效率工具。它會在 Finder 右鍵選單中加入實用的「新建文件」子選單；從 v1.3 開始，也支援將 QuickDoc 加入 Finder 工具列，直接從工具列建立新檔案。
+
+## v1.8.1 更新亮點
+
+1. 新增繁體中文、English 和日本語，並保留简体中文。
+2. 預設跟隨 macOS 偏好的語言，也支援地區變體。可以在設定中選擇「跟隨系統」、简体中文、繁體中文、English 或 日本語。
+3. 設定視窗和選單會立即使用所選語言。訪達擴充功能會在下次顯示選單時使用同一語言。
 
 ## v1.8.0 更新亮點
 

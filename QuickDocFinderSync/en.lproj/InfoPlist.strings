@@ -1,0 +1,2 @@
+"CFBundleDisplayName" = "QuickDoc Extension";
+"NSAppleEventsUsageDescription" = "QuickDoc needs to read and change the Finder selection so it can copy, cut, copy paths, and permanently delete items you confirm, including in iCloud Drive and on external disks.";

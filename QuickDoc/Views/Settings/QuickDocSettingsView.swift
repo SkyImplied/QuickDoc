@@ -1,5 +1,12 @@
 import SwiftUI
 
+#if SIDEBAR_PREVIEW
+enum QuickDocPreviewSelection {
+    static var page: SettingsPage = .general
+    static var presentLanguageSheet = false
+}
+#endif
+
 enum QuickDocWindowMetrics {
     static let defaultContentSize = NSSize(width: 960, height: 720)
     static let minimumContentSize = NSSize(width: 880, height: 660)
@@ -7,8 +14,15 @@ enum QuickDocWindowMetrics {
 
 struct QuickDocSettingsView: View {
     @ObservedObject private var model: QuickDocSettingsModel
-    @State private var selection: SettingsPage? = .general
+    @State private var selection: SettingsPage? = {
+        #if SIDEBAR_PREVIEW
+        QuickDocPreviewSelection.page
+        #else
+        .general
+        #endif
+    }()
     @State private var columnVisibility = NavigationSplitViewVisibility.all
+    @State private var languageRevision = 0
 
     init(model: QuickDocSettingsModel) {
         _model = ObservedObject(wrappedValue: model)
@@ -32,6 +46,10 @@ struct QuickDocSettingsView: View {
             }
         }
         .environmentObject(model)
+        .onReceive(NotificationCenter.default.publisher(for: .quickDocLanguageDidChange)) { _ in
+            languageRevision += 1
+        }
+        .id(languageRevision)
     }
 
     private var sidebar: some View {
@@ -45,7 +63,9 @@ struct QuickDocSettingsView: View {
                 Text("QuickDoc")
                     .font(.title2.weight(.bold))
 
-                Text("版本 \(model.appVersion)")
+                Text(LF("版本 %@", model.appVersion))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -57,6 +77,8 @@ struct QuickDocSettingsView: View {
                 ForEach(SettingsPage.allCases) { page in
                     Label(page.title, systemImage: page.systemImage)
                         .font(.body.weight(.medium))
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                         .tag(page)
                 }
             }
@@ -67,7 +89,7 @@ struct QuickDocSettingsView: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
         .navigationSplitViewColumnWidth(min: 208, ideal: 228, max: 260)
-        .accessibilityLabel("设置导航")
+        .accessibilityLabel(L("设置导航"))
     }
 
     private var detail: some View {
@@ -90,10 +112,10 @@ struct QuickDocSettingsView: View {
         } else {
             ToolbarItem(placement: .navigation) {
                 Button(action: toggleSidebar) {
-                    Label(sidebarShown ? "隐藏侧边栏" : "显示侧边栏", systemImage: "sidebar.leading")
+                    Label(sidebarShown ? L("隐藏侧边栏") : L("显示侧边栏"), systemImage: "sidebar.leading")
                 }
                 .keyboardShortcut("s", modifiers: [.command, .control])
-                .help(sidebarShown ? "隐藏侧边栏" : "显示侧边栏")
+                .help(sidebarShown ? L("隐藏侧边栏") : L("显示侧边栏"))
             }
         }
     }

@@ -27,9 +27,9 @@ struct PermissionWalkthroughCard: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 5) {
-                Label("如何启用扩展", systemImage: "play.rectangle")
+                Label(L("如何启用扩展"), systemImage: "play.rectangle")
                     .font(.headline)
-                Text("跟随真实的系统设置界面，找到 QuickDoc 并打开“文件提供程序”。")
+                Text(L("跟随真实的系统设置界面，找到 QuickDoc 并打开“文件提供程序”。"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -39,7 +39,7 @@ struct PermissionWalkthroughCard: View {
             Button {
                 playbackID += 1
             } label: {
-                Label("重新播放", systemImage: "arrow.clockwise")
+                Label(L("重新播放"), systemImage: "arrow.clockwise")
             }
             .controlSize(.small)
             .glassButtonStyle()
@@ -93,13 +93,13 @@ private enum PermissionWalkthroughStep: Int, CaseIterable, Identifiable {
     var instruction: String {
         switch self {
         case .loginItems:
-            return "1. 进入“登录项与扩展”"
+            return L("1. 进入“登录项与扩展”")
         case .quickDoc:
-            return "2. 找到 QuickDoc"
+            return L("2. 找到 QuickDoc")
         case .details:
-            return "3. 点击右侧的信息按钮"
+            return L("3. 点击右侧的信息按钮")
         case .toggle:
-            return "4. 打开“文件提供程序”开关"
+            return L("4. 打开“文件提供程序”开关")
         }
     }
 
@@ -146,7 +146,7 @@ private struct SystemSettingsWalkthrough: View {
         .shadow(color: .black.opacity(0.08), radius: 12, y: 5)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.7), value: step)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("启用 QuickDoc 扩展的四步演示：进入登录项与扩展，找到 QuickDoc，点击信息按钮，然后打开文件提供程序开关。")
+        .accessibilityLabel(L("启用 QuickDoc 扩展的四步演示：进入登录项与扩展，找到 QuickDoc，点击信息按钮，然后打开文件提供程序开关。"))
     }
 }
 
@@ -164,7 +164,7 @@ private struct SystemSettingsSidebar: View {
             .padding(.top, 10)
             .padding(.leading, 12)
 
-            Label("搜索", systemImage: "magnifyingglass")
+            Label(L("搜索"), systemImage: "magnifyingglass")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 10)
@@ -176,8 +176,8 @@ private struct SystemSettingsSidebar: View {
                 .padding(.horizontal, 14)
 
             VStack(spacing: 5) {
-                SettingsSidebarRow(title: "通用", systemImage: "gearshape.fill", tint: .gray, isSelected: true)
-                SettingsSidebarRow(title: "隐私与安全性", systemImage: "hand.raised.fill", tint: .blue)
+                SettingsSidebarRow(title: L("通用"), systemImage: "gearshape.fill", tint: .gray, isSelected: true)
+                SettingsSidebarRow(title: L("隐私与安全性"), systemImage: "hand.raised.fill", tint: .blue)
             }
             .padding(.horizontal, 10)
 
@@ -234,7 +234,7 @@ private struct ExtensionSettingsPane: View {
                 .frame(height: 30)
                 .background(.regularMaterial, in: Capsule())
 
-                Text("登录项与扩展")
+                Text(L("登录项与扩展"))
                     .font(.system(size: 18, weight: .bold))
                     .overlay {
                         if step == .loginItems {
@@ -252,14 +252,14 @@ private struct ExtensionSettingsPane: View {
             .padding(.bottom, 8 + rhythm * 0.25)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("扩展")
+                Text(L("扩展"))
                     .font(.system(size: 15, weight: .bold))
 
-                Text("扩展可在 Mac 和 App 中添加额外功能，部分扩展可能会在后台运行。")
+                Text(L("扩展可在 Mac 和 App 中添加额外功能，部分扩展可能会在后台运行。"))
                     .font(.system(size: 12.5))
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.82)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 8 + rhythm * 0.35)
@@ -288,7 +288,7 @@ private struct ExtensionSettingsPane: View {
             }
             .padding(.horizontal, 16)
 
-            Text("点击信息按钮可以管理该应用安装的扩展。")
+            Text(L("点击信息按钮可以管理该应用安装的扩展。"))
                 .font(.system(size: 11.5))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 24)
@@ -305,7 +305,7 @@ private struct ExtensionScopeSwitcher: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            Text("按 App")
+            Text(L("按 App"))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(
@@ -313,7 +313,7 @@ private struct ExtensionScopeSwitcher: View {
                     in: RoundedRectangle(cornerRadius: 8, style: .continuous)
                 )
 
-            Text("按类别")
+            Text(L("按类别"))
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.clear)
@@ -376,7 +376,7 @@ private struct QuickDocExtensionRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("QuickDoc")
                     .font(.system(size: 15, weight: .medium))
-                Text("文件提供程序")
+                Text(L("文件提供程序"))
                     .font(.system(size: 12.5))
                     .foregroundStyle(.secondary)
             }
@@ -426,9 +426,9 @@ private struct SystemServiceRow: View {
                 .background(Color.gray, in: RoundedRectangle(cornerRadius: 9))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("系统服务")
+                Text(L("系统服务"))
                     .font(.system(size: 15, weight: .medium))
-                Text("标记、创建 PDF、转换图像")
+                Text(L("标记、创建 PDF、转换图像"))
                     .font(.system(size: 12.5))
                     .foregroundStyle(.secondary)
             }

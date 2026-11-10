@@ -5,7 +5,7 @@ struct AboutPage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            PageHeader(title: "关于", subtitle: "从 Finder 右键菜单、工具栏和菜单栏快速创建文件，并管理常用 Finder 操作。")
+            PageHeader(title: L("关于"), subtitle: L("从 Finder 右键菜单、工具栏和菜单栏快速创建文件，并管理常用 Finder 操作。"))
 
             GlassSection {
                 HStack(spacing: 18) {
@@ -17,10 +17,10 @@ struct AboutPage: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("QuickDoc")
                             .font(.title2.weight(.bold))
-                        Text("版本 v\(model.appVersion)")
+                        Text(LF("版本 v%@", model.appVersion))
                             .font(.headline)
                             .foregroundStyle(.secondary)
-                        Text("围绕 Finder Sync 扩展构建的 macOS 效率工具，让新建文件、打开终端、复制路径和扩展管理都更顺手。")
+                        Text(L("围绕 Finder Sync 扩展构建的 macOS 效率工具，让新建文件、打开终端、复制路径和扩展管理都更顺手。"))
                             .font(.callout)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -34,9 +34,9 @@ struct AboutPage: View {
 
             GlassSection {
                 VStack(alignment: .leading, spacing: 10) {
-                    Label("声明", systemImage: "info.circle")
+                    Label(L("声明"), systemImage: "info.circle")
                         .font(.headline)
-                    Text("本软件为免费开源项目，仅供交流学习与个人使用。请遵守相关法律法规与开源协议，勿用于任何商业或非法用途。")
+                    Text(L("本软件为免费开源项目，仅供交流学习与个人使用。请遵守相关法律法规与开源协议，勿用于任何商业或非法用途。"))
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -45,13 +45,13 @@ struct AboutPage: View {
 
             GlassSection {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label("联系与主页", systemImage: "link")
+                    Label(L("联系与主页"), systemImage: "link")
                         .font(.headline)
 
                     ContactRow(title: "Bilibili", value: "默示天空")
                     ContactRow(title: "GitHub", value: "SkyImplied")
-                    ContactRow(title: "邮箱", value: "skyimplied@163.com")
-                    ContactRow(title: "交流QQ群", value: "201478754")
+                    ContactRow(title: L("邮箱"), value: "skyimplied@163.com")
+                    ContactRow(title: L("交流QQ群"), value: "201478754")
                 }
             }
         }
@@ -63,12 +63,12 @@ private struct AboutFeatureGrid: View {
 
     var body: some View {
         EqualFeatureGrid {
-            feature("doc.badge.plus", "多类型文件一键新建", "支持常用文档、代码与空白文件。")
-            feature("rectangle.and.hand.point.up.left", "Finder 右键与工具栏", "在 Finder 右键菜单或工具栏快速新建文件。")
-            feature("menubar.rectangle", "菜单栏快捷配置", "在菜单栏调整显示方式与常用功能。")
-            feature("terminal", "自定义终端与路径操作", "用指定终端打开当前文件夹，或复制路径。")
-            feature("slider.horizontal.3", "菜单内容可自定义", "管理文件类型、自定义后缀及显示顺序。")
-            feature("checkmark.shield", "扩展状态与更新管理", "查看扩展状态、打开系统设置并检查更新。")
+            feature("doc.badge.plus", L("多类型文件一键新建"), L("支持常用文档、代码与空白文件。"))
+            feature("rectangle.and.hand.point.up.left", L("Finder 右键与工具栏"), L("在 Finder 右键菜单或工具栏快速新建文件。"))
+            feature("menubar.rectangle", L("菜单栏快捷配置"), L("在菜单栏调整显示方式与常用功能。"))
+            feature("terminal", L("自定义终端与路径操作"), L("用指定终端打开当前文件夹，或复制路径。"))
+            feature("slider.horizontal.3", L("菜单内容可自定义"), L("管理文件类型、自定义后缀及显示顺序。"))
+            feature("checkmark.shield", L("扩展状态与更新管理"), L("查看扩展状态、打开系统设置并检查更新。"))
         }
         .onPreferenceChange(AboutTitleHeightPreference.self) { newValue in
             guard newValue > 0, abs(titleHeight - newValue) > 0.5 else { return }
