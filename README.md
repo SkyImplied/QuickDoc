@@ -14,6 +14,38 @@
   </p>
 </div>
 
+## Interface
+
+<p align="center">
+  <img src="./photos/v1.8.0/general.png" alt="QuickDoc General" width="720"><br>
+  <strong>General</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/efficiency.png" alt="QuickDoc Efficiency Tools" width="720"><br>
+  <strong>Efficiency Tools</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/permissions.png" alt="QuickDoc Permissions and Extensions" width="720"><br>
+  <strong>Permissions and Extensions</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/file-types.png" alt="QuickDoc New File Types" width="720"><br>
+  <strong>New File Types</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/finder.png" alt="QuickDoc Finder Actions" width="720"><br>
+  <strong>Finder Actions</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/about.png" alt="QuickDoc About" width="720"><br>
+  <strong>About</strong>
+</p>
+
 QuickDoc is a macOS utility built around a Finder Sync extension. It adds a practical `New File` submenu to Finder's context menu, and since v1.3 it also supports adding QuickDoc to the Finder toolbar so file creation can be invoked directly from the toolbar.
 
 ## What's New in v1.8.0
@@ -90,18 +122,6 @@ QuickDoc is a macOS utility built around a Finder Sync extension. It adds a prac
 - Added Finder right-click menu support for external drives. Older versions only supported external drive access through the toolbar. Due to Apple platform restrictions, cloud drive folders do not yet support direct right-click invocation; please continue using the toolbar there.
 - Improved the DMG installation window with a cleaner drag-to-install layout.
 
-### External Drive Right-Click Menu
-
-<p align="center">
-  <img src="./photos/支持外置硬盘访达调用右键菜单功能.png" alt="QuickDoc Finder right-click menu on external drives" width="680">
-</p>
-
-### Improved DMG Installer
-
-<p align="center">
-  <img src="./photos/改进的dmg安装界面.png" alt="QuickDoc improved DMG installer" width="680">
-</p>
-
 ## What's New in v1.5.5
 
 - `Copy Current Path` now follows the current Finder selection: with nothing selected it copies the current folder path, and with a file or folder selected it copies that selected item's full path.
@@ -114,16 +134,6 @@ QuickDoc is a macOS utility built around a Finder Sync extension. It adds a prac
 - Added a dedicated template manager that separates templates by file type and supports custom display names, visibility toggles, ordering, renaming, and deletion.
 - Finder's `New File` menu now expands into a third-level template menu when a file type has visible templates, with `Blank default document` kept as the first option.
 - Custom file types now use the unified blank-file icon, and the template manager only shows file types that are enabled in the main new-file settings.
-
-### Custom file templates
-
-Upload your own template documents, choose the menu name, and decide whether each template should appear in Finder.
-
-![QuickDoc custom file templates](./photos/自定义文件模版.png)
-
-When templates are visible for a file type, Finder shows them in a third-level menu under that type.
-
-![QuickDoc custom template submenu](./photos/自定义文件模版三级菜单.png)
 
 ## What's New in v1.5.2
 
@@ -142,12 +152,6 @@ When templates are visible for a file type, Finder shows them in a third-level m
 - The General settings page now shows the selected terminal app with its icon, name, and path, plus direct actions to change it or restore the system Terminal
 - Refactored the built-in file type icons with a more unified visual style
 
-### Custom terminal app
-
-Choose your preferred terminal app from General settings. QuickDoc will use that app when opening the current Finder folder from the right-click menu.
-
-![QuickDoc custom terminal app setting](./photos/新增功能自定义终端.png)
-
 ## What's New in v1.4.1
 
 - Added a `Silent Launch` option beneath `Launch at Login` in General settings
@@ -160,26 +164,6 @@ Choose your preferred terminal app from General settings. QuickDoc will use that
 - Added menu bar shortcuts for configuring new file types and optional Finder actions without opening the main window
 - Secondary menu toggles stay open so multiple settings can be changed in one pass
 - Added an in-app update checker that asks for confirmation before downloading a new version, validates the ZIP package, replaces the previous app after quitting, relaunches QuickDoc, and confirms when the upgrade is complete
-
-### Menu bar shortcuts
-
-Configure Finder new-file types and optional quick actions directly from the menu bar.
-
-<p align="center">
-  <img src="./photos/菜单栏界面.png" alt="QuickDoc v1.4.0 menu bar shortcuts" width="680">
-</p>
-
-### Update confirmation
-
-When a newer version is available, QuickDoc asks for confirmation before downloading and installing it.
-
-![QuickDoc software update confirmation](./photos/软件检查更新.png)
-
-### Update complete
-
-After replacement succeeds, QuickDoc relaunches automatically and confirms that the upgrade is complete.
-
-![QuickDoc software update completed](./photos/软件检查更新成功.png)
 
 ## What's New in v1.3.1
 
@@ -228,69 +212,6 @@ Built-in file types in v1.8.0:
 - Rich Text (`.rtf`)
 
 Default-enabled types are `TXT`, `Markdown`, `Word`, `Excel`, `CSV`, `PowerPoint`, `JSON`, and `Blank file`.
-
-## Screenshots
-
-### General settings
-
-The general page manages launch behavior, display mode, right-click quick actions such as `Open in Terminal` and `Copy Current Path`, custom terminal app selection, and in-app update checks.
-
-<p align="center">
-  <img src="./photos/通用设置界面1.png" alt="QuickDoc general settings" width="680">
-  <img src="./photos/通用设置界面2.png" alt="QuickDoc general settings details" width="680">
-</p>
-
-### Finder context menu
-
-After the extension is enabled, `New File` appears in Finder together with optional quick actions.
-
-<p align="center">
-  <img src="./photos/新版右键菜单界面.png" alt="QuickDoc Finder context menu" width="680">
-</p>
-
-### Permissions and extensions
-
-QuickDoc can verify whether the Finder Sync extension is enabled and guide you to the correct macOS settings page.
-
-![QuickDoc permissions and extensions](./photos/权限与扩展界面.png)
-
-### New file types and templates
-
-Enable or disable built-in file types, add custom extensions, manage templates, and edit the menu order from the preview area.
-
-<p align="center">
-  <img src="./photos/新建文件类型界面1.png" alt="QuickDoc new file types" width="680">
-  <img src="./photos/新建文件类型界面2.png" alt="QuickDoc new file templates" width="680">
-</p>
-
-### Menu bar shortcuts
-
-Configure Finder new-file types and optional quick actions directly from the menu bar.
-
-<p align="center">
-  <img src="./photos/菜单栏界面.png" alt="QuickDoc menu bar shortcuts" width="680">
-</p>
-
-### Custom file templates
-
-Manage templates by file type, control which templates are visible in Finder, and use template submenus from Finder.
-
-<p align="center">
-  <img src="./photos/自定义文件模版.png" alt="QuickDoc custom file templates" width="680">
-  <img src="./photos/自定义文件模版三级菜单.png" alt="QuickDoc custom template submenu" width="680">
-</p>
-
-### Finder actions
-
-If Finder does not refresh immediately, QuickDoc provides a one-click restart action to reload the extension.
-
-![QuickDoc Finder actions](./photos/访达操作界面.png)
-
-### About
-
-The About page collects the app overview, version, and contact entry points.
-
-![QuickDoc About page](./photos/关于界面.png)
 
 ## How It Works
 

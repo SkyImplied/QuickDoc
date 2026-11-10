@@ -14,6 +14,38 @@
   </p>
 </div>
 
+## 界面
+
+<p align="center">
+  <img src="./photos/v1.8.0/general.png" alt="QuickDoc 通用" width="720"><br>
+  <strong>通用</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/efficiency.png" alt="QuickDoc 效率工具" width="720"><br>
+  <strong>效率工具</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/permissions.png" alt="QuickDoc 权限与扩展" width="720"><br>
+  <strong>权限与扩展</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/file-types.png" alt="QuickDoc 新建文件类型" width="720"><br>
+  <strong>新建文件类型</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/finder.png" alt="QuickDoc 访达操作" width="720"><br>
+  <strong>访达操作</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/about.png" alt="QuickDoc 关于" width="720"><br>
+  <strong>关于</strong>
+</p>
+
 QuickDoc 是一个围绕 macOS Finder Sync 扩展构建的效率工具。它会在 Finder 右键菜单中加入一个实用的“新建文件”子菜单；从 v1.3 开始，它还支持把 QuickDoc 添加到 Finder 工具栏，从工具栏直接调用新建文件能力。
 
 ## v1.8.0 更新亮点
@@ -90,18 +122,6 @@ QuickDoc 是一个围绕 macOS Finder Sync 扩展构建的效率工具。它会�
 - 新增外置硬盘访达右键菜单快捷调用支持。旧版本只支持通过工具栏调用；云盘受限于 Apple 政策，暂时未支持右键直接调用，仍请通过工具栏调用。
 - 美化通过 DMG 安装时的安装界面。
 
-### 外置硬盘访达右键菜单
-
-<p align="center">
-  <img src="./photos/支持外置硬盘访达调用右键菜单功能.png" alt="QuickDoc 外置硬盘访达右键菜单" width="680">
-</p>
-
-### 改进的 DMG 安装界面
-
-<p align="center">
-  <img src="./photos/改进的dmg安装界面.png" alt="QuickDoc 改进的 DMG 安装界面" width="680">
-</p>
-
 ## v1.5.5 更新亮点
 
 - “复制当前路径”现在会跟随 Finder 当前选择：未选中文件时复制当前文件夹路径，选中文件或文件夹时复制所选项目的完整路径。
@@ -114,16 +134,6 @@ QuickDoc 是一个围绕 macOS Finder Sync 扩展构建的效率工具。它会�
 - 新增按文件类型分组的模板管理板块，支持自定义右键菜单显示名、显示/隐藏、排序、重命名和删除。
 - Finder 右键的“新建文件”菜单在某个文件类型存在可显示模板时，会自动变成三级菜单，并保留“空白默认文档”作为第一个选项。
 - 自定义文件类型统一使用 `icons/空白.png` 图标；模板管理区只展示已在上方新建文件类型设置中启用的类型。
-
-### 自定义文件模板
-
-上传自己的模板文档后，可以设置右键菜单里显示的名字，并决定是否立刻显示到 Finder 菜单中。
-
-![QuickDoc 自定义文件模板](./photos/自定义文件模版.png)
-
-当某个文件类型有可显示模板时，Finder 右键菜单会在该类型下展开三级菜单。
-
-![QuickDoc 自定义文件模板三级菜单](./photos/自定义文件模版三级菜单.png)
 
 ## v1.5.2 更新亮点
 
@@ -142,12 +152,6 @@ QuickDoc 是一个围绕 macOS Finder Sync 扩展构建的效率工具。它会�
 - “通用”设置页会展示当前选定终端的图标、名称与路径，并提供“更换终端 App”和“恢复系统终端”两个直接操作
 - 内置文件类型 icons 进行统一化风格重构，整体视觉更一致
 
-### 自定义终端 App
-
-你可以在“通用”设置页选择偏好的终端 App。之后从 Finder 右键菜单打开当前文件夹时，QuickDoc 会使用你选定的终端。
-
-![QuickDoc 自定义终端设置](./photos/新增功能自定义终端.png)
-
 ## v1.4.1 更新亮点
 
 - 在“通用”设置页的“开机自启动”下新增“静默启动”开关
@@ -160,26 +164,6 @@ QuickDoc 是一个围绕 macOS Finder Sync 扩展构建的效率工具。它会�
 - 菜单栏新增“新建文件类型”和“其他功能”快捷配置，无需打开主窗口即可调整 Finder 右键菜单
 - 二级菜单中的开关支持连续勾选，调整多个项目时菜单不会反复关闭
 - 通用设置页新增“检查更新”，发现新版本后会先请求用户确认，再下载 ZIP 安装包、校验并在退出后覆盖旧版本，重新启动后提示更新完成
-
-### 菜单栏快捷配置
-
-直接从菜单栏调整 Finder 右键新建文件类型和其他快捷功能。
-
-<p align="center">
-  <img src="./photos/菜单栏界面.png" alt="QuickDoc v1.4.0 菜单栏快捷配置" width="680">
-</p>
-
-### 检查更新确认
-
-发现新版本后，QuickDoc 会先询问用户是否下载并安装。
-
-![QuickDoc 软件检查更新确认](./photos/软件检查更新.png)
-
-### 更新完成提示
-
-覆盖安装成功后，QuickDoc 会自动重新打开，并明确提示已经升级到最新版。
-
-![QuickDoc 软件更新成功](./photos/软件检查更新成功.png)
 
 ## v1.3.1 更新亮点
 
@@ -228,69 +212,6 @@ v1.8.0 内置支持：
 - Rich Text（`.rtf`）
 
 默认启用的类型为：`TXT`、`Markdown`、`Word`、`Excel`、`CSV`、`PowerPoint`、`JSON`、`空白文件`。
-
-## 界面预览
-
-### 通用设置
-
-“通用”页负责管理启动行为、显示方式、“在终端中打开”“复制当前路径”等右键快捷操作、自定义终端 App，也可以检查并安装新版本。
-
-<p align="center">
-  <img src="./photos/通用设置界面1.png" alt="QuickDoc 通用设置界面" width="680">
-  <img src="./photos/通用设置界面2.png" alt="QuickDoc 通用设置详情界面" width="680">
-</p>
-
-### Finder 右键菜单
-
-扩展启用后，Finder 右键中会出现“新建文件”，并可按需显示终端直达与路径复制功能。
-
-<p align="center">
-  <img src="./photos/新版右键菜单界面.png" alt="QuickDoc Finder 右键菜单界面" width="680">
-</p>
-
-### 权限与扩展
-
-QuickDoc 会检查 Finder Sync 扩展是否已经启用，并引导你进入正确的 macOS 设置页面。
-
-![QuickDoc 权限与扩展界面](./photos/权限与扩展界面.png)
-
-### 新建文件类型与文件模板
-
-你可以勾选内置类型、添加自定义后缀、管理文件模板，并通过预览区域编辑 Finder 菜单中的显示顺序。
-
-<p align="center">
-  <img src="./photos/新建文件类型界面1.png" alt="QuickDoc 新建文件类型界面" width="680">
-  <img src="./photos/新建文件类型界面2.png" alt="QuickDoc 新建文件模板界面" width="680">
-</p>
-
-### 菜单栏快捷配置
-
-直接从菜单栏调整 Finder 右键新建文件类型和其他快捷功能。
-
-<p align="center">
-  <img src="./photos/菜单栏界面.png" alt="QuickDoc 菜单栏快捷配置" width="680">
-</p>
-
-### 自定义文件模板
-
-按文件类型分别管理模板，控制哪些模板显示在 Finder 右键菜单中，并在 Finder 中使用模板三级菜单。
-
-<p align="center">
-  <img src="./photos/自定义文件模版.png" alt="QuickDoc 自定义文件模板" width="680">
-  <img src="./photos/自定义文件模版三级菜单.png" alt="QuickDoc 自定义文件模板三级菜单" width="680">
-</p>
-
-### 访达操作
-
-当 Finder 没有立刻刷新菜单时，可以在应用内一键重启 Finder，让扩展重新载入。
-
-![QuickDoc 访达操作界面](./photos/访达操作界面.png)
-
-### 关于页面
-
-“关于”页面集中展示应用介绍、版本信息和联系入口。
-
-![QuickDoc 关于页面](./photos/关于界面.png)
 
 ## 使用方式
 

@@ -14,6 +14,38 @@
   </p>
 </div>
 
+## 介面
+
+<p align="center">
+  <img src="./photos/v1.8.0/general.png" alt="QuickDoc 通用" width="720"><br>
+  <strong>通用</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/efficiency.png" alt="QuickDoc 效率工具" width="720"><br>
+  <strong>效率工具</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/permissions.png" alt="QuickDoc 權限與擴充功能" width="720"><br>
+  <strong>權限與擴充功能</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/file-types.png" alt="QuickDoc 新建檔案類型" width="720"><br>
+  <strong>新建檔案類型</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/finder.png" alt="QuickDoc 訪達操作" width="720"><br>
+  <strong>訪達操作</strong>
+</p>
+
+<p align="center">
+  <img src="./photos/v1.8.0/about.png" alt="QuickDoc 關於" width="720"><br>
+  <strong>關於</strong>
+</p>
+
 QuickDoc 是一款以 macOS Finder Sync 擴充功能為核心的效率工具。它會在 Finder 右鍵選單中加入實用的「新建文件」子選單；從 v1.3 開始，也支援將 QuickDoc 加入 Finder 工具列，直接從工具列建立新檔案。
 
 ## v1.8.0 更新亮點
@@ -90,18 +122,6 @@ QuickDoc 是一款以 macOS Finder Sync 擴充功能為核心的效率工具。�
 - 新增外接硬碟 Finder 右鍵選單快捷呼叫支援。舊版本只支援透過工具列呼叫；雲端硬碟受限於 Apple 政策，暫時不支援右鍵直接呼叫，仍請透過工具列呼叫。
 - 美化透過 DMG 安裝時的安裝介面。
 
-### 外接硬碟 Finder 右鍵選單
-
-<p align="center">
-  <img src="./photos/支持外置硬盘访达调用右键菜单功能.png" alt="QuickDoc 外接硬碟 Finder 右鍵選單" width="680">
-</p>
-
-### 改進的 DMG 安裝介面
-
-<p align="center">
-  <img src="./photos/改进的dmg安装界面.png" alt="QuickDoc 改進的 DMG 安裝介面" width="680">
-</p>
-
 ## v1.5.5 更新亮點
 
 - 「复制当前路径」現在會依照 Finder 目前選取狀態決定內容：未選取檔案時複製目前資料夾路徑，選取檔案或資料夾時複製所選項目的完整路徑。
@@ -114,16 +134,6 @@ QuickDoc 是一款以 macOS Finder Sync 擴充功能為核心的效率工具。�
 - 新增依檔案類型分組的範本管理區，支援自訂右鍵選單顯示名稱、顯示/隱藏、排序、重新命名與刪除。
 - Finder 右鍵的「新建文件」選單在某個檔案類型有可顯示範本時，會自動展開為第三層選單，並保留「空白預設文檔」作為第一個選項。
 - 自訂檔案類型會統一使用 `icons/空白.png` 圖示；範本管理區只顯示已在上方新建檔案類型設定中啟用的類型。
-
-### 自訂檔案範本
-
-上傳自己的範本文檔後，可以設定右鍵選單中顯示的名稱，並決定是否立刻顯示到 Finder 選單中。
-
-![QuickDoc 自訂檔案範本](./photos/自定义文件模版.png)
-
-當某個檔案類型有可顯示範本時，Finder 右鍵選單會在該類型下展開第三層選單。
-
-![QuickDoc 自訂檔案範本第三層選單](./photos/自定义文件模版三级菜单.png)
 
 ## v1.5.2 更新亮點
 
@@ -154,26 +164,6 @@ QuickDoc 是一款以 macOS Finder Sync 擴充功能為核心的效率工具。�
 - 選單列新增「新建文件类型」與「其他功能」快捷設定，不必開啟主視窗即可調整 Finder 右鍵選單
 - 次層選單中的開關可連續勾選，調整多個項目時選單不會重複關閉
 - 一般設定頁新增「检查更新」，發現新版本後會先詢問使用者，再下載 ZIP 安裝包、驗證並在結束程式後覆蓋舊版本，重新啟動後提示更新完成
-
-### 選單列快捷設定
-
-直接從選單列調整 Finder 右鍵新建檔案類型與其他快捷功能。
-
-<p align="center">
-  <img src="./photos/菜单栏界面.png" alt="QuickDoc v1.4.0 選單列快捷設定" width="680">
-</p>
-
-### 更新確認
-
-發現新版本後，QuickDoc 會先詢問使用者是否下載並安裝。
-
-![QuickDoc 軟體更新確認](./photos/软件检查更新.png)
-
-### 更新完成提示
-
-覆蓋安裝成功後，QuickDoc 會自動重新開啟，並明確提示已升級至最新版本。
-
-![QuickDoc 軟體更新完成](./photos/软件检查更新成功.png)
 
 ## v1.3.1 更新亮點
 
@@ -221,69 +211,6 @@ v1.8.0 內建支援：
 - Rich Text（`.rtf`）
 
 預設啟用的類型為：`TXT`、`Markdown`、`Word`、`Excel`、`CSV`、`PowerPoint`、`JSON`、`空白檔案`。
-
-## 畫面預覽
-
-### 一般設定
-
-「一般」頁面可管理啟動行為、顯示方式、「在终端中打开」「复制当前路径」等右鍵快捷操作，也可檢查並安裝新版本。
-
-<p align="center">
-  <img src="./photos/通用设置界面1.png" alt="QuickDoc 一般設定畫面" width="680">
-  <img src="./photos/通用设置界面2.png" alt="QuickDoc 一般設定詳細畫面" width="680">
-</p>
-
-### Finder 右鍵選單
-
-啟用擴充功能後，Finder 右鍵選單會出現「新建文件」，也可依需求顯示終端機捷徑與路徑複製功能。
-
-<p align="center">
-  <img src="./photos/新版右键菜单界面.png" alt="QuickDoc Finder 右鍵選單" width="680">
-</p>
-
-### 權限與擴充功能
-
-QuickDoc 會檢查 Finder Sync 擴充功能是否已啟用，並引導你前往正確的 macOS 設定頁面。
-
-![QuickDoc 權限與擴充功能畫面](./photos/权限与扩展界面.png)
-
-### 新建檔案類型與檔案範本
-
-你可以勾選內建類型、新增自訂副檔名、管理檔案範本，並透過預覽區域編輯 Finder 選單中的顯示順序。
-
-<p align="center">
-  <img src="./photos/新建文件类型界面1.png" alt="QuickDoc 新建檔案類型畫面" width="680">
-  <img src="./photos/新建文件类型界面2.png" alt="QuickDoc 新建檔案範本畫面" width="680">
-</p>
-
-### 選單列快捷設定
-
-直接從選單列調整 Finder 右鍵新建檔案類型與其他快捷功能。
-
-<p align="center">
-  <img src="./photos/菜单栏界面.png" alt="QuickDoc 選單列快捷設定" width="680">
-</p>
-
-### 自訂檔案範本
-
-依檔案類型分別管理範本，控制哪些範本顯示在 Finder 右鍵選單中，並在 Finder 中使用範本第三層選單。
-
-<p align="center">
-  <img src="./photos/自定义文件模版.png" alt="QuickDoc 自訂檔案範本" width="680">
-  <img src="./photos/自定义文件模版三级菜单.png" alt="QuickDoc 自訂檔案範本第三層選單" width="680">
-</p>
-
-### Finder 操作
-
-若 Finder 沒有立即重新整理選單，可在應用程式內一鍵重新啟動 Finder，讓擴充功能重新載入。
-
-![QuickDoc Finder 操作畫面](./photos/访达操作界面.png)
-
-### 關於頁面
-
-「關於」頁面集中展示應用程式介紹、版本資訊與聯絡入口。
-
-![QuickDoc 關於頁面](./photos/关于界面.png)
 
 ## 使用方式
 
