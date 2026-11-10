@@ -12,6 +12,101 @@ func expect(_ condition: Bool, _ message: String) {
     fputs("FAIL \(message)\n", stderr)
 }
 
+func directAppleLanguages(_ domain: String) -> [String] {
+    let value = CFPreferencesCopyValue(
+        "AppleLanguages" as CFString,
+        domain as CFString,
+        kCFPreferencesCurrentUser,
+        kCFPreferencesAnyHost
+    )
+    return value as? [String] ?? []
+}
+
+func runIsolatedLanguageChoiceTests() {
+    let domain = "com.skyimplied.QuickDoc.localization-test.\(UUID().uuidString)"
+    let realDomains = [
+        QuickDocLocalization.hostBundleIdentifier,
+        QuickDocLocalization.extensionBundleIdentifier,
+        QuickDocLocalization.loginItemBundleIdentifier
+    ]
+    precondition(!realDomains.contains(domain))
+    let savedPreview = QuickDocLocalization.previewOverride
+    let realChoices = realDomains.map { directAppleLanguages($0) }
+    defer {
+        QuickDocLocalization.clearIsolatedPreferencesDomainForTesting()
+        QuickDocLocalization.previewOverride = savedPreview
+        for (domain, choice) in zip(realDomains, realChoices) {
+            expect(directAppleLanguages(domain) == choice, "隔离测试不得改写用户的语言选择")
+        }
+    }
+
+    QuickDocLocalization.previewOverride = nil
+    QuickDocLocalization.useIsolatedPreferencesDomainForTesting(domain)
+    let inherited = CFPreferencesCopyAppValue("AppleLanguages" as CFString, domain as CFString) as? [String] ?? []
+    expect(!inherited.isEmpty, "空白应用域通过 CopyAppValue 会继承系统语言列表")
+    expect(directAppleLanguages(domain).isEmpty, "空白应用域本身没有语言选择")
+    QuickDocLocalization.reloadStoredChoiceForTesting()
+    expect(QuickDocLocalization.explicitChoice() == nil, "继承到的系统语言列表不能当作显式选择")
+    expect(
+        QuickDocLocalization.resolvedCode(preferredLanguages: ["zh-Hans-HK", "en-US", "zh-Hant-HK"]) == "zh-Hans",
+        "跟随系统时简体香港应优先于后面的繁体"
+    )
+    expect(
+        QuickDocLocalization.resolvedCode(preferredLanguages: ["zh-Hant-HK", "zh-Hans-CN"]) == "zh-Hant",
+        "跟随系统时排在前面的繁体应生效"
+    )
+    if let first = Locale.preferredLanguages.first, QuickDocLocalization.code(matching: first) == "zh-Hans" {
+        expect(QuickDocLocalization.resolvedCode() == "zh-Hans", "当前系统首选是简体时，跟随系统不得变成繁体")
+    }
+
+    CFPreferencesSetAppValue(
+        "AppleLanguages" as CFString,
+        ["zh-Hans-HK", "en-US", "zh-Hant-HK"] as CFArray,
+        domain as CFString
+    )
+    CFPreferencesAppSynchronize(domain as CFString)
+    QuickDocLocalization.reloadStoredChoiceForTesting()
+    expect(QuickDocLocalization.explicitChoice() == "zh-Hans", "应用域里的 zh-Hans-HK 是显式简体选择")
+    expect(
+        QuickDocLocalization.resolvedCode(preferredLanguages: ["zh-Hant-TW", "zh-Hans-CN"]) == "zh-Hans",
+        "显式简体选择优先于系统繁体"
+    )
+
+    CFPreferencesSetAppValue(
+        "AppleLanguages" as CFString,
+        ["zh-Hant-HK", "zh-Hans-HK"] as CFArray,
+        domain as CFString
+    )
+    CFPreferencesAppSynchronize(domain as CFString)
+    QuickDocLocalization.reloadStoredChoiceForTesting()
+    expect(QuickDocLocalization.explicitChoice() == "zh-Hant", "应用域里的 zh-Hant-HK 是显式繁体选择")
+    expect(
+        QuickDocLocalization.resolvedCode(preferredLanguages: ["zh-Hans-HK", "zh-Hant-HK"]) == "zh-Hant",
+        "显式繁体选择优先于系统简体"
+    )
+
+    QuickDocLocalization.select("ja")
+    QuickDocLocalization.reloadStoredChoiceForTesting()
+    expect(QuickDocLocalization.explicitChoice() == "ja", "软件内选择日文后应保留该选择")
+    expect(
+        QuickDocLocalization.resolvedCode(preferredLanguages: ["zh-Hans-HK"]) == "ja",
+        "软件内选择优先于跟随系统"
+    )
+
+    QuickDocLocalization.select(nil)
+    QuickDocLocalization.reloadStoredChoiceForTesting()
+    expect(directAppleLanguages(domain).isEmpty, "选择跟随系统后应删除应用域语言键")
+    expect(QuickDocLocalization.explicitChoice() == nil, "删除选择后不再有显式语言")
+    expect(
+        QuickDocLocalization.resolvedCode(preferredLanguages: ["zh-Hans-HK", "zh-Hant-HK"]) == "zh-Hans",
+        "删除选择后重新跟随系统，简体在前应使用简体"
+    )
+    expect(
+        QuickDocLocalization.resolvedCode(preferredLanguages: ["zh-Hant-TW", "zh-Hans-CN"]) == "zh-Hant",
+        "删除选择后重新跟随系统，繁体在前应使用繁体"
+    )
+}
+
 func rememberedDirectoryDuringMenuBuild(origin: FinderMenuOrigin, finderSyncPath: String?) -> String? {
     switch FinderMenuTargetPolicy.menuBuildPlan(for: origin) {
     case .deferDirectoryUntilAction:
@@ -372,19 +467,54 @@ enum FinderMenuTargetPolicyTestRunner {
     }
     try? FileManager.default.removeItem(at: temporaryDirectory)
 
-    expect(QuickDocLocalization.code(matching: "zh-CN") == "zh-Hans", "zh-CN 应使用简体中文")
-    expect(QuickDocLocalization.code(matching: "zh-Hans-SG") == "zh-Hans", "zh-Hans-SG 应使用简体中文")
-    expect(QuickDocLocalization.code(matching: "zh-TW") == "zh-Hant", "zh-TW 应使用繁体中文")
-    expect(QuickDocLocalization.code(matching: "zh-HK") == "zh-Hant", "zh-HK 应使用繁体中文")
-    expect(QuickDocLocalization.code(matching: "zh-Hant-MO") == "zh-Hant", "zh-Hant-MO 应使用繁体中文")
+    let simplifiedIdentifiers = [
+        "zh-Hans", "zh-Hans-CN", "zh-Hans-SG", "zh-Hans-MY", "zh-Hans-HK", "zh-Hans-MO", "zh-Hans-TW", "zh_Hans_HK",
+        "zh-CN", "zh-SG", "zh-MY"
+    ]
+    let traditionalIdentifiers = [
+        "zh-Hant", "zh-Hant-TW", "zh-Hant-HK", "zh-Hant-MO", "zh-Hant-CN", "zh_Hant_HK",
+        "zh-TW", "zh-HK", "zh-MO"
+    ]
+    for identifier in simplifiedIdentifiers {
+        expect(QuickDocLocalization.code(matching: identifier) == "zh-Hans", "\(identifier) 应使用简体中文")
+    }
+    for identifier in traditionalIdentifiers {
+        expect(QuickDocLocalization.code(matching: identifier) == "zh-Hant", "\(identifier) 应使用繁体中文")
+    }
     expect(QuickDocLocalization.code(matching: "ja-JP") == "ja", "ja-JP 应使用日文")
     expect(QuickDocLocalization.code(matching: "en-GB") == "en", "en-GB 应使用英文")
     expect(QuickDocLocalization.code(matching: "fr-FR") == nil, "未支持的语言应留给英文 fallback")
+    expect(
+        QuickDocLocalization.code(matchingPreferred: ["zh-Hans-HK", "en-US", "zh-Hant-HK"]) == "zh-Hans",
+        "简体排在繁体前面时应使用简体"
+    )
+    expect(
+        QuickDocLocalization.code(matchingPreferred: ["zh-Hant-HK", "zh-Hans-HK"]) == "zh-Hant",
+        "繁体排在简体前面时应使用繁体"
+    )
+    expect(
+        QuickDocLocalization.code(matchingPreferred: ["zh-Hans-CN", "zh-Hant-TW"]) == "zh-Hans",
+        "简体地区码排在前面时应使用简体"
+    )
+    expect(
+        QuickDocLocalization.code(matchingPreferred: ["zh-Hant-TW", "zh-Hans-CN"]) == "zh-Hant",
+        "繁体地区码排在前面时应使用繁体"
+    )
+    expect(
+        QuickDocLocalization.code(matchingPreferred: ["fr-FR", "de-DE"]) == "en",
+        "没有支持的语言时应回退英文"
+    )
+    expect(
+        QuickDocLocalization.code(matchingPreferred: ["fr-FR", "zh-Hant-HK"]) == "zh-Hant",
+        "应跳过未知语言并使用后面的繁体"
+    )
+    expect(QuickDocLocalization.code(matchingPreferred: []) == "en", "空语言列表应回退英文")
     expect(QuickDocLocalization.text("新建文件") == "新建文件", "预览锁定简体中文时菜单标题保持原文")
     QuickDocLocalization.previewOverride = "en"
     expect(QuickDocLocalization.text("新建文件") == "New File", "英文目录应翻译菜单标题")
     expect(!QuickDocLocalization.text("新建文件").contains("%"), "翻译结果不应留下占位符")
     QuickDocLocalization.previewOverride = "zh-Hans"
+    runIsolatedLanguageChoiceTests()
 
     if !failures.isEmpty {
         fputs("\(failures.count) failed\n", stderr)

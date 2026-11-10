@@ -39,6 +39,10 @@ enum QuickDocLocalization {
     }
 
     static func resolvedCode() -> String {
+        resolvedCode(preferredLanguages: Locale.preferredLanguages)
+    }
+
+    static func resolvedCode(preferredLanguages: [String]) -> String {
         if let previewOverride, supportedCodes.contains(previewOverride) {
             return previewOverride
         }
@@ -46,12 +50,7 @@ enum QuickDocLocalization {
         if case .language(let code) = storedChoice, supportedCodes.contains(code) {
             return code
         }
-        for identifier in Locale.preferredLanguages {
-            if let code = code(matching: identifier) {
-                return code
-            }
-        }
-        return "en"
+        return code(matchingPreferred: preferredLanguages)
     }
 
     static func explicitChoice() -> String? {
@@ -87,6 +86,11 @@ enum QuickDocLocalization {
         let region = parts.dropFirst().first { $0.count == 2 && $0.allSatisfy(\.isLetter) }?.uppercased()
         switch language {
         case "zh":
+            // An explicit script wins over the region. zh-Hans-HK is Simplified
+            // Chinese used with a Hong Kong region, not Traditional Chinese.
+            if markers.contains("hans") {
+                return "zh-Hans"
+            }
             if markers.contains("hant") || region == "TW" || region == "HK" || region == "MO" {
                 return "zh-Hant"
             }
@@ -98,6 +102,15 @@ enum QuickDocLocalization {
         default:
             return nil
         }
+    }
+
+    static func code(matchingPreferred identifiers: [String]) -> String {
+        for identifier in identifiers {
+            if let code = code(matching: identifier) {
+                return code
+            }
+        }
+        return "en"
     }
 
     private static func table(for code: String) -> [String: String] {
@@ -142,7 +155,7 @@ enum QuickDocLocalization {
         storedChoice = .system
         return
         #else
-        let languages = appleLanguages(inDomain: hostBundleIdentifier)
+        let languages = appleLanguages(inDomain: preferenceDomains()[0])
         if let first = languages.first, let code = code(matching: first), supportedCodes.contains(code) {
             storedChoice = .language(code)
         } else if languages.isEmpty {
@@ -158,17 +171,59 @@ enum QuickDocLocalization {
         return
         #else
         let value = code.map { [$0] as CFArray }
-        for domain in [hostBundleIdentifier, extensionBundleIdentifier, loginItemBundleIdentifier] {
+        for domain in preferenceDomains() {
             CFPreferencesSetAppValue("AppleLanguages" as CFString, value, domain as CFString)
             CFPreferencesAppSynchronize(domain as CFString)
         }
         #endif
     }
 
+    private static var preferencesDomainOverride: String?
+
+    static func useIsolatedPreferencesDomainForTesting(_ domain: String) {
+        preferencesDomainOverride = domain
+        storedChoice = nil
+        didLoadStoredChoice = false
+    }
+
+    static func reloadStoredChoiceForTesting() {
+        storedChoice = nil
+        didLoadStoredChoice = false
+        loadStoredChoiceIfNeeded()
+    }
+
+    static func clearIsolatedPreferencesDomainForTesting() {
+        if let domain = preferencesDomainOverride {
+            CFPreferencesSetAppValue("AppleLanguages" as CFString, nil, domain as CFString)
+            CFPreferencesAppSynchronize(domain as CFString)
+            let url = FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Library/Preferences/\(domain).plist")
+            try? FileManager.default.removeItem(at: url)
+        }
+        preferencesDomainOverride = nil
+        storedChoice = nil
+        didLoadStoredChoice = false
+    }
+
+    private static func preferenceDomains() -> [String] {
+        if let preferencesDomainOverride {
+            return [preferencesDomainOverride]
+        }
+        return [hostBundleIdentifier, extensionBundleIdentifier, loginItemBundleIdentifier]
+    }
+
     private static func appleLanguages(inDomain domain: String) -> [String] {
         let domainName = domain as CFString
         CFPreferencesAppSynchronize(domainName)
-        guard let value = CFPreferencesCopyAppValue("AppleLanguages" as CFString, domainName) else {
+        // Read this application domain only. CFPreferencesCopyAppValue also
+        // searches the global domain and would treat the system language list
+        // as an explicit per-app choice.
+        guard let value = CFPreferencesCopyValue(
+            "AppleLanguages" as CFString,
+            domainName,
+            kCFPreferencesCurrentUser,
+            kCFPreferencesAnyHost
+        ) else {
             return []
         }
         if let languages = value as? [String] {
