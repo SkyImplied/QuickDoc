@@ -4,6 +4,9 @@ enum SoftwareUpdateState: Equatable {
     case idle
     case checking
     case downloading(version: String)
+    case verifying(version: String)
+    case ready(version: String)
+    case failed(version: String)
     case preparing(version: String)
 
     var isWorking: Bool {
@@ -16,8 +19,12 @@ enum SoftwareUpdateState: Equatable {
             return L("检查更新")
         case .checking:
             return L("正在检查")
-        case .downloading:
+        case .downloading, .verifying:
             return L("正在下载")
+        case .ready:
+            return L("可以开始安装了")
+        case .failed:
+            return L("重试")
         case .preparing:
             return L("正在安装")
         }
@@ -29,12 +36,26 @@ enum SoftwareUpdateState: Equatable {
             return L("检查是否有新版本。")
         case .checking:
             return L("正在检查是否有新版本...")
-        case let .downloading(version):
-            return LF("发现新版本 v%@，正在下载安装包...", version)
-        case let .preparing(version):
-            return LF("已下载 v%@，正在校验并准备替换当前版本...", version)
+        case .downloading:
+            return L("正在下载更新...")
+        case .verifying:
+            return L("正在校验更新包...")
+        case .ready:
+            return L("可以开始安装了")
+        case .failed:
+            return L("下载更新失败，请检查网络后重试。")
+        case .preparing:
+            return L("正在安装")
         }
     }
+}
+
+enum SoftwareUpdatePanelPhase: Equatable {
+    case downloading(received: Int64, expected: Int64)
+    case verifying
+    case ready
+    case failed(String)
+    case installing
 }
 
 struct GitHubRelease {
@@ -46,12 +67,14 @@ struct GitHubRelease {
 struct GitHubReleaseAsset {
     let name: String
     let downloadURL: URL
+    let digest: String
 }
 
 struct PreparedSoftwareUpdate {
     let rootURL: URL
     let appURL: URL
     let version: String
+    let byteCount: Int64
 }
 
 enum SoftwareUpdateCompletionStore {
@@ -116,6 +139,10 @@ enum SoftwareUpdateError: LocalizedError {
     case invalidCodeSignature(String)
     case unsupportedInstallLocation
     case installerLaunchFailed(String)
+    case cancelled
+    case missingDigest
+    case digestMismatch
+    case networkFailed
 
     var errorDescription: String? {
         switch self {
@@ -143,6 +170,19 @@ enum SoftwareUpdateError: LocalizedError {
             return L("当前 QuickDoc 位于磁盘映像或临时隔离目录中。请先将应用移动到“应用程序”文件夹，再检查更新。")
         case let .installerLaunchFailed(message):
             return LF("无法启动更新安装程序：%@", message)
+        case .cancelled:
+            return L("更新已取消。")
+        case .missingDigest:
+            return L("发布记录没有校验值，已停止更新。")
+        case .digestMismatch:
+            return L("更新包的校验值与发布记录不一致，已停止安装。")
+        case .networkFailed:
+            return L("下载更新失败，请检查网络后重试。")
         }
+    }
+
+    var isCancellation: Bool {
+        if case .cancelled = self { return true }
+        return false
     }
 }

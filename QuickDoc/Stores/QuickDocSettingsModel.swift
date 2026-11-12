@@ -21,10 +21,12 @@ final class QuickDocSettingsModel: ObservableObject {
     private struct GitHubReleaseAssetResponse: Decodable {
         let name: String
         let downloadURL: URL
+        let digest: String?
 
         enum CodingKeys: String, CodingKey {
             case name
             case downloadURL = "browser_download_url"
+            case digest
         }
     }
 
@@ -88,6 +90,12 @@ final class QuickDocSettingsModel: ObservableObject {
     @Published private(set) var extensionStatus = ExtensionStatus(isConfirmed: false)
     @Published private(set) var isRestartingFinder = false
     @Published private(set) var softwareUpdateState = SoftwareUpdateState.idle
+    private var pendingUpdateAsset: GitHubReleaseAsset?
+    private var pendingUpdateVersion: String?
+    private var preparedSoftwareUpdate: PreparedSoftwareUpdate?
+    private var activeUpdateTransfer: SoftwareUpdateTransfer?
+    private var updateWindowController: SoftwareUpdateWindowController?
+    private var updateCloseHandled = false
 
     @Published var enabledFileTypes: Set<String> {
         didSet {
@@ -716,7 +724,10 @@ final class QuickDocSettingsModel: ObservableObject {
     }
 
     func checkForSoftwareUpdate() {
-        guard !softwareUpdateState.isWorking else { return }
+        guard !softwareUpdateState.isWorking else {
+            updateWindowController?.orderFront()
+            return
+        }
         softwareUpdateState = .checking
 
         Task {
@@ -724,9 +735,40 @@ final class QuickDocSettingsModel: ObservableObject {
                 try await checkForSoftwareUpdateWorkflow()
             } catch {
                 softwareUpdateState = .idle
+                closeUpdateWindow()
                 showAlert(title: L("检查更新失败"), message: error.localizedDescription)
             }
         }
+    }
+
+    func installDownloadedSoftwareUpdate() {
+        guard case let .ready(version) = softwareUpdateState,
+              let preparedSoftwareUpdate else {
+            return
+        }
+        softwareUpdateState = .preparing(version: version)
+        updateWindowController?.update(.installing)
+        do {
+            try scheduleSoftwareUpdateInstallation(preparedSoftwareUpdate)
+        } catch {
+            softwareUpdateState = .failed(version: version)
+            updateWindowController?.update(.failed(error.localizedDescription))
+        }
+    }
+
+    func retrySoftwareUpdateDownload() {
+        guard pendingUpdateAsset != nil, pendingUpdateVersion != nil else { return }
+        Task {
+            await downloadPendingSoftwareUpdate()
+        }
+    }
+
+    func cancelSoftwareUpdateDownload() {
+        activeUpdateTransfer?.cancel()
+        activeUpdateTransfer = nil
+        discardPreparedSoftwareUpdate()
+        softwareUpdateState = .idle
+        closeUpdateWindow()
     }
 
     func showFeatureComingSoon(featureName: String) {
@@ -762,23 +804,71 @@ final class QuickDocSettingsModel: ObservableObject {
         }) else {
             throw SoftwareUpdateError.missingZipAsset
         }
+        guard !asset.digest.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw SoftwareUpdateError.missingDigest
+        }
 
-        softwareUpdateState = .downloading(version: latestVersion)
-        let preparedUpdate = try await downloadAndPrepareUpdate(asset: asset, version: latestVersion)
-        softwareUpdateState = .preparing(version: latestVersion)
+        pendingUpdateAsset = asset
+        pendingUpdateVersion = latestVersion
+        await downloadPendingSoftwareUpdate()
+    }
 
+    private func downloadPendingSoftwareUpdate() async {
+        guard let asset = pendingUpdateAsset, let version = pendingUpdateVersion else { return }
+        discardPreparedSoftwareUpdate()
+        updateCloseHandled = false
+        let transfer = SoftwareUpdateTransfer()
+        activeUpdateTransfer = transfer
+        softwareUpdateState = .downloading(version: version)
+        presentUpdateWindow(.downloading(received: 0, expected: 0))
+
+        let rootURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("QuickDocUpdate-\(UUID().uuidString)", isDirectory: true)
         do {
-            try scheduleSoftwareUpdateInstallation(preparedUpdate)
+            let prepared = try await SoftwareUpdatePipeline.prepare(
+                asset: asset,
+                version: version,
+                bundleIdentifier: Self.bundleIdentifier,
+                appexBundleIdentifier: "com.skyimplied.QuickDoc.FinderSync",
+                loginItemBundleIdentifier: "com.skyimplied.QuickDoc.LoginItem",
+                rootURL: rootURL,
+                fetcher: transfer,
+                progress: { received, expected in
+                    Task { @MainActor in
+                        guard case .downloading = self.softwareUpdateState else { return }
+                        self.updateWindowController?.update(.downloading(received: received, expected: expected))
+                    }
+                },
+                onVerify: {
+                    Task { @MainActor in
+                        guard self.softwareUpdateState.isWorking else { return }
+                        self.softwareUpdateState = .verifying(version: version)
+                        self.updateWindowController?.update(.verifying)
+                    }
+                }
+            )
+            guard !updateCloseHandled else {
+                try? FileManager.default.removeItem(at: prepared.rootURL)
+                return
+            }
+            preparedSoftwareUpdate = prepared
+            activeUpdateTransfer = nil
+            softwareUpdateState = .ready(version: version)
+            presentUpdateWindow(.ready)
+        } catch let error as SoftwareUpdateError where error.isCancellation || updateCloseHandled {
+            softwareUpdateState = .idle
+            closeUpdateWindow()
         } catch {
-            try? FileManager.default.removeItem(at: preparedUpdate.rootURL)
-            throw error
+            activeUpdateTransfer = nil
+            softwareUpdateState = .failed(version: version)
+            presentUpdateWindow(.failed(error.localizedDescription))
         }
     }
 
     private func confirmSoftwareUpdate(version: String, releaseNotes: String) -> Bool {
         let alert = NSAlert()
         alert.messageText = LF("发现新版本 v%@", version)
-        alert.informativeText = L("是否立即下载并安装新版本？确认后 QuickDoc 会自动下载更新，在替换完成后重新打开并提示升级成功。")
+        alert.informativeText = L("是否下载新版本？下载并校验完成后，需要你在更新窗口点击“安装并重启应用”，QuickDoc 才会替换并重新打开。")
         alert.alertStyle = .informational
         alert.accessoryView = releaseNotesAccessoryView(version: version, releaseNotes: releaseNotes)
         alert.addButton(withTitle: L("确认更新"))
@@ -848,7 +938,7 @@ final class QuickDocSettingsModel: ObservableObject {
             tagName: apiRelease.tagName,
             body: apiRelease.body ?? "",
             assets: apiRelease.assets.map {
-                GitHubReleaseAsset(name: $0.name, downloadURL: $0.downloadURL)
+                GitHubReleaseAsset(name: $0.name, downloadURL: $0.downloadURL, digest: $0.digest ?? "")
             }
         )
     }
@@ -874,84 +964,35 @@ final class QuickDocSettingsModel: ObservableObject {
             throw SoftwareUpdateError.invalidReleaseVersion(tagName)
         }
 
+        let digest = try await fetchReleaseDigest(tagName: tagName, assetName: "QuickDoc-\(version).zip")
         return GitHubRelease(
             tagName: tagName,
             body: "",
-            assets: [GitHubReleaseAsset(name: "QuickDoc-\(version).zip", downloadURL: downloadURL)]
+            assets: [GitHubReleaseAsset(name: "QuickDoc-\(version).zip", downloadURL: downloadURL, digest: digest)]
         )
     }
 
-    private func downloadAndPrepareUpdate(asset: GitHubReleaseAsset, version: String) async throws -> PreparedSoftwareUpdate {
-        guard asset.downloadURL.scheme == "https",
-              asset.downloadURL.host == "github.com" else {
-            throw SoftwareUpdateError.invalidDownloadURL
+    private func fetchReleaseDigest(tagName: String, assetName: String) async throws -> String {
+        guard let url = URL(string: "https://api.github.com/repos/SkyImplied/QuickDoc/releases/tags/\(tagName)") else {
+            throw SoftwareUpdateError.missingDigest
         }
-
-        let rootURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("QuickDocUpdate-\(UUID().uuidString)", isDirectory: true)
-
-        do {
-            try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
-
-            var request = URLRequest(url: asset.downloadURL)
-            request.setValue("QuickDoc/\(appVersion)", forHTTPHeaderField: "User-Agent")
-            let (downloadURL, response) = try await URLSession.shared.download(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200..<300).contains(httpResponse.statusCode) else {
-                throw SoftwareUpdateError.downloadFailed((response as? HTTPURLResponse)?.statusCode ?? -1)
-            }
-
-            let archiveURL = rootURL.appendingPathComponent(asset.name)
-            try FileManager.default.moveItem(at: downloadURL, to: archiveURL)
-
-            let extractedURL = rootURL.appendingPathComponent("extracted", isDirectory: true)
-            try FileManager.default.createDirectory(at: extractedURL, withIntermediateDirectories: true)
-            let extractResult = await runProcess(
-                executablePath: "/usr/bin/ditto",
-                arguments: ["-x", "-k", archiveURL.path, extractedURL.path]
-            )
-            guard extractResult.exitCode == 0 else {
-                throw SoftwareUpdateError.extractionFailed(
-                    extractResult.errorDescription ?? LF("ditto 返回了退出码 %ld。", extractResult.exitCode)
-                )
-            }
-
-            let appURL = extractedURL.appendingPathComponent("QuickDoc.app", isDirectory: true)
-            guard FileManager.default.fileExists(atPath: appURL.path) else {
-                throw SoftwareUpdateError.missingAppBundle
-            }
-
-            try await validatePreparedUpdate(at: appURL, expectedVersion: version)
-            return PreparedSoftwareUpdate(rootURL: rootURL, appURL: appURL, version: version)
-        } catch {
-            try? FileManager.default.removeItem(at: rootURL)
-            throw error
+        var request = URLRequest(url: url)
+        request.setValue("QuickDoc/\(appVersion)", forHTTPHeaderField: "User-Agent")
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode),
+              let payload = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let assets = payload["assets"] as? [[String: Any]] else {
+            throw SoftwareUpdateError.missingDigest
         }
-    }
-
-    private func validatePreparedUpdate(at appURL: URL, expectedVersion: String) async throws {
-        let infoPlistURL = appURL.appendingPathComponent("Contents/Info.plist")
-        let data = try Data(contentsOf: infoPlistURL)
-        guard let payload = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
-              payload["CFBundleIdentifier"] as? String == Self.bundleIdentifier else {
-            throw SoftwareUpdateError.invalidBundleIdentifier
+        let digest = assets.first {
+            ($0["name"] as? String)?.caseInsensitiveCompare(assetName) == .orderedSame
+        }?["digest"] as? String
+        guard let digest, !digest.isEmpty else {
+            throw SoftwareUpdateError.missingDigest
         }
-
-        let actualVersion = payload["CFBundleShortVersionString"] as? String ?? ""
-        guard actualVersion == expectedVersion else {
-            throw SoftwareUpdateError.mismatchedBundleVersion(expected: expectedVersion, actual: actualVersion)
-        }
-
-        let verifyResult = await runProcess(
-            executablePath: "/usr/bin/codesign",
-            arguments: ["--verify", "--deep", "--strict", appURL.path]
-        )
-        guard verifyResult.exitCode == 0 else {
-            throw SoftwareUpdateError.invalidCodeSignature(
-                verifyResult.errorDescription ?? LF("codesign 返回了退出码 %ld。", verifyResult.exitCode)
-            )
-        }
+        return digest
     }
 
     private func scheduleSoftwareUpdateInstallation(_ update: PreparedSoftwareUpdate) throws {
@@ -962,10 +1003,7 @@ final class QuickDocSettingsModel: ObservableObject {
         }
 
         let scriptURL = update.rootURL.appendingPathComponent("install-update.sh")
-        try Self.installerScript(
-            failureTitle: L("QuickDoc 更新失败"),
-            failureMessage: L("自动替换没有完成，旧版本已保留。请在 Finder 中手动替换应用。")
-        ).write(to: scriptURL, atomically: true, encoding: .utf8)
+        try SoftwareUpdateInstaller.script().write(to: scriptURL, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptURL.path)
 
         let arguments = [
@@ -1221,58 +1259,42 @@ final class QuickDocSettingsModel: ObservableObject {
         return "\"\(escapedValue)\""
     }
 
-    private static func installerScript(failureTitle: String, failureMessage: String) -> String {
-        _ = (failureTitle, failureMessage)
-        return """
-    #!/bin/sh
-    set -u
-
-    target_app="$1"
-    source_app="$2"
-    old_pid="$3"
-    cleanup_root="$4"
-    update_marker="$5"
-    installed_version="$6"
-    parent_dir="$(/usr/bin/dirname "$target_app")"
-    incoming_app="$parent_dir/.QuickDoc.update-$$.app"
-    backup_app="$parent_dir/.QuickDoc.backup-$$.app"
-    lsregister="/System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister"
-    failure_title="$7"
-    failure_message="$8"
-
-    show_failure() {
-      if [ -e "$backup_app" ] && [ ! -e "$target_app" ]; then
-        /bin/mv "$backup_app" "$target_app" >/dev/null 2>&1 || true
-      fi
-      /usr/bin/open -R "$source_app" >/dev/null 2>&1 || true
-      /usr/bin/osascript -e "on run argv" -e "display alert (item 1 of argv) message (item 2 of argv)" -e "end run" - "$failure_title" "$failure_message" >/dev/null 2>&1 || true
-      exit 1
+    private func presentUpdateWindow(_ phase: SoftwareUpdatePanelPhase) {
+        let controller = updateWindowController ?? SoftwareUpdateWindowController()
+        updateWindowController = controller
+        controller.show(
+            phase: phase,
+            onCancel: { [weak self] in self?.cancelSoftwareUpdateDownload() },
+            onInstall: { [weak self] in self?.installDownloadedSoftwareUpdate() },
+            onRetry: { [weak self] in self?.retrySoftwareUpdateDownload() },
+            onUserClose: { [weak self] in self?.userClosedUpdateWindow() }
+        )
     }
 
-    while /bin/kill -0 "$old_pid" >/dev/null 2>&1; do
-      /bin/sleep 0.2
-    done
+    private func userClosedUpdateWindow() {
+        guard !updateCloseHandled else { return }
+        updateCloseHandled = true
+        if case .preparing = softwareUpdateState {
+            return
+        }
+        activeUpdateTransfer?.cancel()
+        activeUpdateTransfer = nil
+        discardPreparedSoftwareUpdate()
+        softwareUpdateState = .idle
+        updateWindowController = nil
+    }
 
-    /usr/bin/pkill -x QuickDocFinderSync >/dev/null 2>&1 || true
-    /bin/rm -rf "$incoming_app" "$backup_app"
-    /usr/bin/ditto "$source_app" "$incoming_app" || show_failure
+    private func closeUpdateWindow() {
+        updateCloseHandled = true
+        updateWindowController?.dismiss()
+        updateWindowController = nil
+    }
 
-    if [ -e "$target_app" ]; then
-      /bin/mv "$target_app" "$backup_app" || show_failure
-    fi
-
-    if /bin/mv "$incoming_app" "$target_app"; then
-      /bin/rm -rf "$backup_app"
-      "$lsregister" -f -R -trusted "$target_app" >/dev/null 2>&1 || true
-      /bin/mkdir -p "$(/usr/bin/dirname "$update_marker")" >/dev/null 2>&1 || true
-      /usr/bin/printf '%s\n' "$installed_version" > "$update_marker" 2>/dev/null || true
-      /usr/bin/open -n "$target_app"
-      /bin/rm -rf "$cleanup_root"
-      exit 0
-    fi
-
-    show_failure
-    """
+    private func discardPreparedSoftwareUpdate() {
+        if let preparedSoftwareUpdate {
+            try? FileManager.default.removeItem(at: preparedSoftwareUpdate.rootURL)
+        }
+        preparedSoftwareUpdate = nil
     }
 
     private func normalizeExtension(_ value: String) -> String {

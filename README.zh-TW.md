@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>直接從 Finder 右鍵選單和工具列建立常用檔案。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.2"><img src="https://img.shields.io/badge/version-v1.8.2-blue" alt="版本 v1.8.2"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.3"><img src="https://img.shields.io/badge/version-v1.8.3-blue" alt="版本 v1.8.3"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="平台 macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="使用 Swift 建置">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.2/QuickDoc-1.8.2.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下載 DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.3/QuickDoc-1.8.3.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="下載 DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="下載次數"></a>
   </p>
   <p>
@@ -47,6 +47,15 @@
 </p>
 
 QuickDoc 是一款以 macOS Finder Sync 擴充功能為核心的效率工具。它會在 Finder 右鍵選單中加入實用的「新建文件」子選單；從 v1.3 開始，也支援將 QuickDoc 加入 Finder 工具列，直接從工具列建立新檔案。
+
+## v1.8.3 更新亮點
+
+1. 檢查更新仍會先詢問，確認後才下載 GitHub 上的 ZIP。
+2. 確認後開啟緊湊的獨立更新視窗，顯示進度、已下載和總大小，並可以取消。下載過程中主程式保持開啟。
+3. 更新套件會核對發布記錄中的 SHA-256，以及主程式、訪達擴充功能和登入項目的身分與版本，再執行 `codesign --verify --deep --strict`。
+4. 只有點擊「安裝並重新啟動」後，QuickDoc 才會替換並重新開啟。
+5. 替換失敗時恢復剛才的版本。
+6. 發布套件仍是 ad-hoc 簽名，沒有 Developer ID，也沒有公證。macOS 仍可能提示無法驗證開發者。這項檢查不會繞過 Gatekeeper。
 
 ## v1.8.2 更新亮點
 
@@ -245,7 +254,7 @@ v1.8.0 內建支援：
 3. 在 `系統設定 > 隱私權與安全性 > 登入項目與擴充功能` 中啟用 `QuickDocFinderSync`
 4. 若右鍵選單沒有立即出現，可使用 QuickDoc 中的 `立即重启 Finder`
 
-安裝 v1.4.0 後，後續版本可在「一般」頁面底部點擊 `检查更新`。發現新版本時，QuickDoc 會先詢問是否安裝；使用者確認後才會自動下載並安裝，完成覆蓋後重新開啟並提示升級成功。
+安裝 v1.4.0 後，可在「一般」頁面底部點擊 `检查更新`。QuickDoc 會先詢問是否下載。從 v1.8.3 起，確認後開啟緊湊更新視窗，顯示進度、已下載和總大小，並可以取消；下載過程中主程式保持開啟。SHA-256、應用程式身分、版本和程式碼簽名核對完成後，QuickDoc 會等待。只有點擊「安裝並重新啟動」才會替換並重新開啟。替換失敗時恢復剛才的版本。已經安裝的 v1.8.3 之前版本在確認後仍會立刻替換，因為那一步屬於舊版本本身。
 
 若 macOS 提示應用程式來自未識別的開發者，可在 Finder 中按住 `Control` 點擊應用程式，再選擇 `打開`。發布包使用 ad-hoc 簽名，沒有 Developer ID，也沒有公證。
 

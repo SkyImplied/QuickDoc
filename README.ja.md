@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Finder の右クリックメニューとツールバーから一般的なファイルを直接作成できます。</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.2"><img src="https://img.shields.io/badge/version-v1.8.2-blue" alt="バージョン v1.8.2"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.3"><img src="https://img.shields.io/badge/version-v1.8.3-blue" alt="バージョン v1.8.3"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="プラットフォーム macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Swift で開発">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.2/QuickDoc-1.8.2.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.3/QuickDoc-1.8.3.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="DMG をダウンロード"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="ダウンロード数"></a>
   </p>
   <p>
@@ -47,6 +47,15 @@
 </p>
 
 QuickDoc は macOS の Finder Sync 拡張機能を活用したユーティリティです。Finder のコンテキストメニューに実用的な「新建文件」サブメニューを追加します。v1.3 以降では Finder のツールバーにも QuickDoc を追加でき、ツールバーから直接ファイルを作成できます。
+
+## v1.8.3 の新機能
+
+1. アップデートの確認では、これまでどおりダウンロード前に確認します。確認後に GitHub の ZIP をダウンロードします。
+2. 確認すると、進捗、ダウンロード済みサイズと合計サイズ、キャンセルを表示する小さなウィンドウが開きます。ダウンロード中も本体は開いたままです。
+3. パッケージは公開された SHA-256、アプリ、Finder 拡張機能、ログイン項目の識別子とバージョン、そして `codesign --verify --deep --strict` で確認します。
+4. 「インストールして再起動」をクリックしたときだけ、QuickDoc は自身を置き換えて開き直します。
+5. 置き換えに失敗した場合は、直前のバージョンを戻します。
+6. 配布物は引き続き ad-hoc 署名です。Developer ID 署名や公証はありません。macOS が開発元を確認できないと表示することがあります。この確認は Gatekeeper を回避しません。
 
 ## v1.8.2 の修正
 
@@ -245,7 +254,7 @@ v1.8.0 に組み込まれているファイル形式：
 3. `システム設定 > プライバシーとセキュリティ > ログイン項目と機能拡張` で `QuickDocFinderSync` を有効化
 4. メニューがすぐに表示されない場合は QuickDoc の `立即重启 Finder` を使用
 
-v1.4.0 をインストールすると、以降のバージョンは一般設定ページ下部の `检查更新` から確認できます。新しいバージョンが見つかると QuickDoc はインストール前に確認を求め、同意後にダウンロードと置き換えを行います。完了すると自動的に再起動し、アップグレード完了を通知します。
+v1.4.0 以降では、一般設定ページ下部の `检查更新` から新しいバージョンを確認できます。QuickDoc はダウンロード前に確認します。v1.8.3 からは、確認後に小さなアップデートウィンドウが開きます。進捗、ダウンロード済みサイズと合計サイズ、キャンセルを表示し、ダウンロード中も本体は開いたままです。公開された SHA-256、識別子、バージョン、コード署名の確認が終わると待機します。「インストールして再起動」をクリックしたときだけ置き換えて開き直します。置き換えに失敗した場合は直前のバージョンを戻します。すでにインストールされている v1.8.3 より前のバージョンは、確認後すぐに置き換えます。その動作は古いアプリ自身に含まれています。
 
 macOS で開発元を確認できないという警告が表示された場合は、Finder で `Control` キーを押しながらアプリをクリックし、`開く` を選択してください。配布物は ad-hoc 署名です。Developer ID 署名や公証はありません。
 

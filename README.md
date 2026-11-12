@@ -3,10 +3,10 @@
   <h1>QuickDoc</h1>
   <p>Create common files directly from Finder's right-click menu and toolbar.</p>
   <p>
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.2"><img src="https://img.shields.io/badge/version-v1.8.2-blue" alt="Version v1.8.2"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/tag/v1.8.3"><img src="https://img.shields.io/badge/version-v1.8.3-blue" alt="Version v1.8.3"></a>
     <img src="https://img.shields.io/badge/platform-macOS%2026%2B-lightgrey?logo=apple" alt="Platform macOS 26+">
     <img src="https://img.shields.io/badge/built%20with-Swift-F05138?logo=swift&logoColor=white" alt="Built with Swift">
-    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.2/QuickDoc-1.8.2.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
+    <a href="https://github.com/SkyImplied/QuickDoc/releases/download/v1.8.3/QuickDoc-1.8.3.dmg"><img src="https://img.shields.io/badge/download-DMG-brightgreen?logo=apple&logoColor=white" alt="Download DMG"></a>
     <a href="https://github.com/SkyImplied/QuickDoc/releases"><img src="https://img.shields.io/github/downloads/SkyImplied/QuickDoc/total?label=downloads" alt="Downloads"></a>
   </p>
   <p>
@@ -47,6 +47,15 @@
 </p>
 
 QuickDoc is a macOS utility built around a Finder Sync extension. It adds a practical `New File` submenu to Finder's context menu, and since v1.3 it also supports adding QuickDoc to the Finder toolbar so file creation can be invoked directly from the toolbar.
+
+## What's New in v1.8.3
+
+- The update check still asks before downloading the GitHub ZIP.
+- Confirmation opens a compact update window with a progress bar, the downloaded and total size, and Cancel. The main app stays open during the download.
+- The package is checked against the published SHA-256, the identity and version of the app, Finder extension, and login item, and `codesign --verify --deep --strict`.
+- QuickDoc replaces itself and reopens only after you click Install and Restart.
+- If replacement fails, the previous copy is restored.
+- Release builds remain ad-hoc signed. They are not Developer ID signed and they are not notarized. macOS may still say the developer cannot be verified. This check does not bypass Gatekeeper.
 
 ## What's New in v1.8.2
 
@@ -248,7 +257,7 @@ Then:
 3. Enable `QuickDocFinderSync` in `System Settings > Privacy & Security > Login Items & Extensions`
 4. If the menu does not appear right away, use QuickDoc's `立即重启 Finder` action
 
-After installing v1.4.0 or later, future versions can be checked from the `检查更新` button at the bottom of the General page. QuickDoc asks for confirmation before downloading an available update, then relaunches automatically and confirms when the upgrade is complete.
+After installing v1.4.0 or later, future versions can be checked from the `检查更新` button at the bottom of the General page. QuickDoc asks for confirmation before downloading. Starting with v1.8.3, confirmation opens a compact update window. It shows progress, the downloaded and total size, and Cancel, and the main app stays open. After the published SHA-256, bundle identity, version, and code signature are checked, QuickDoc waits. It replaces itself and reopens only when you click Install and Restart. If replacement fails, the previous copy is restored. A copy already installed from a version before v1.8.3 still replaces itself immediately after confirmation, because that step is part of the older app.
 
 If macOS warns that the app is from an unidentified developer, open it once from Finder with `Control` + click and choose `Open`. Release builds are ad-hoc signed. They are not Developer ID signed and they are not notarized.
 
